@@ -51,14 +51,40 @@ make build
 
 
 1. Project Structure
-Smartie-Pants/
- ├─ backend/
- │   ├─ package.json
- │   ├─ prisma/
- │   └─ src/
- ├─ frontend/
- │   ├─ package.json
- │   └─ src/
- ├─ docker-compose.yml
- ├─ .dockerignore
- ├─ README.md
+Smartie-Pants
+├── backend
+│   ├── Dockerfile
+│   ├── generated
+│   │   └── prisma
+│   ├── node_modules
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── prisma
+│   │   ├── schema.prisma
+│   │   └── seed.js
+│   └── src
+│       └── index.js
+├── docker-compose.yml
+├── frontend
+│   ├── design-tokens.md
+│   ├── Dockerfile
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── node_modules
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
+│   ├── public
+│   │   └── vite.svg
+│   ├── src
+│   │   ├── App.jsx
+│   │   ├── assets
+│   │   ├── components
+│   │   ├── index.css
+│   │   ├── main.jsx
+│   │   ├── modals
+│   │   └── pages
+│   ├── tailwind.config.js
+│   └── vite.config.js
+├── Makefile
+└── README.md
