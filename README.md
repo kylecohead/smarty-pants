@@ -1,5 +1,6 @@
 # Smartie-Pants
-
+## Frontend
+http://localhost:5173/
 
 ## Project commands
 1. Run with no changes
