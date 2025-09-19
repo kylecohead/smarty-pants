@@ -1,15 +1,74 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  matches   Match[]        @relation("PlayerMatches")
+  hosted    Match[]        @relation("HostedMatches")
+  answers   Answer[]
+}
+
+model Match {
+  id          Int       @id @default(autoincrement())
+  title       String
+  category    String
+  difficulty  String?
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  finishedAt  DateTime?
+
+  // Relations
+  hostId Int
+  host   User   @relation("HostedMatches", fields: [hostId], references: [id])
+  players User[]   @relation("PlayerMatches")
+  questions Question[]
+  answers   Answer[]
+}
+
+
+model Question {
+  id         Int      @id @default(autoincrement())
+  category   String
+  difficulty String?
+  question   String
+  correct    String
+  options    String[]  // store choices as string array
+
+  // Relations
+  matchId Int?
+  match   Match? @relation(fields: [matchId], references: [id])
+  answers Answer[]
+}
+
+model Answer {
+  id         Int      @id @default(autoincrement())
+  selected   String
+  isCorrect  Boolean
+  createdAt  DateTime @default(now())
+
+  // Relations
+  userId   Int
+  user     User   @relation(fields: [userId], references: [id])
+
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id])
+
+  matchId Int
+  match   Match @relation(fields: [matchId], references: [id])
 }

@@ -2,17 +2,17 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Install dependencies
-COPY backend/package*.json ./
+# install dependencies
+COPY package*.json ./
 RUN npm install
 
-# Copy code
-COPY backend/ .
+# copy backend code
+COPY . .
 
-# Generate prisma client
+# build-time generate (for prod images)
 RUN npx prisma generate
 
-# Expose API port
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+# runtime generate (for dev) + start server
+CMD ["sh", "-c", "npx prisma generate && npm run dev"]
