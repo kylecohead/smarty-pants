@@ -1,26 +1,50 @@
 # Smartie-Pants
 
 
-## Running the project ( no changes made)
-1. docker compose up
-    Front-end:
-    - http://localhost:5173
-
-
-## Nuke project (Full reset)
+## Project commands
+1. Run with no changes
 ```bash
- docker compose down -v            # stop and drop volumes
- docker compose rm -f              # remove stopped containers
- docker builder prune -af          # clear build cache
- docker image prune -af            # clear dangling/old images
- docker volume prune -f            # (optional) extra cleanup
- docker compose build --no-cache 
- docker compose up -d 
- docker compose exec backend npx prisma db push   # creates tables
- docker compose exec backend npx prisma db seed   # fills with minimal test data
+make run
+```
 
+2. Full reset (Nuke everything)
+```bash
+make reset
+```
 
+3. Rebuild only backend
+```bash
+make backend
+```
 
+4. Rebuild only frontend
+```bash
+make frontend
+```
+
+5. Re-seed database (drop + recreate schema + seed)
+```bash
+make seed
+```
+
+6. View logs(usefull if startup fails)
+```bash
+make logs
+```
+
+7. Access Postgres shell
+```bash
+make db
+```
+
+8. Stop docker
+```bash
+make stop
+```
+
+9. Rebuild entire image
+```bash
+make build
 ```
 
 

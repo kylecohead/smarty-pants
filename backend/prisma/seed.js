@@ -15,7 +15,7 @@ async function main() {
     where: { email: "test@example.com" },
     update: {}, // nothing to update for now
     create: {
-      username: "testuser",
+      username: "testuser1",
       email: "test@example.com",
       password: hashedPassword,
       avatarUrl: "https://example.com/avatar.png",
