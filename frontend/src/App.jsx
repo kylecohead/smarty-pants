@@ -16,6 +16,11 @@ import SettingsModal from "./modals/SettingsModal.jsx";
 import PauseModal from "./modals/PauseModal.jsx";
 import RoundModal from "./modals/RoundModal.jsx";
 
+// App routes and nested modal structure.
+// Notes:
+// - Most modals use the shared <Modal> wrapper that includes a close button.
+// - The recap between questions (under /game/play/pause) is a custom
+//   container that intentionally has NO close button and matches the question card sizing.
 export default function App() {
   return (
     <Routes>
@@ -78,14 +83,18 @@ export default function App() {
         />
       </Route>
 
-      {/* 7) Play + Pause modal */}
+      {/* 7) Play + Recap (uses custom non-dismissible overlay) */}
       <Route path="/game/play" element={<PlayGame />}>
         <Route
           path="pause"
           element={
-            <Modal>
-              <PauseModal />
-            </Modal>
+            // overlay so user can't peek the next question
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+              <div className="relative w-full max-w-4xl rounded-2xl bg-white p-10 shadow-xl min-h-[28rem] border-2 border-smart-green flex items-center justify-center">
+                {/* Intentionally no close button here */}
+                <PauseModal />
+              </div>
+            </div>
           }
         />
       </Route>
