@@ -51,6 +51,7 @@ make build
 
 
 1. Project Structure
+```
 Smartie-Pants
 ├── backend
 │   ├── Dockerfile
@@ -88,3 +89,4 @@ Smartie-Pants
 │   └── vite.config.js
 ├── Makefile
 └── README.md
+```
