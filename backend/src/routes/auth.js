@@ -26,21 +26,29 @@ router.post("/signup", async (req, res) => {
 
 // --- LOGIN ---
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { identifier, password } = req.body; // 👈 allow email OR username
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: identifier },
+        { username: identifier }
+      ]
+    }
+  });
+
   if (!user) return res.status(400).json({ error: "Invalid credentials" });
 
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) return res.status(400).json({ error: "Invalid credentials" });
 
-  // Include role in both tokens
   const payload = { userId: user.id, role: user.role };
   const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
   const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
   res.json({ accessToken, refreshToken, role: user.role });
 });
+
 
 // --- REFRESH ---
 router.post("/refresh", (req, res) => {

@@ -27,7 +27,7 @@ export default function LoginModal({ mode = "login", onAuth }) {
     const body =
       mode === "signup"
         ? { username, email, password }
-        : { email, password };
+        : { identifier: email, password };
 
     const res = await fetch(url, {
       method: "POST",
@@ -66,20 +66,26 @@ export default function LoginModal({ mode = "login", onAuth }) {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Username"
+            required
             className="w-full rounded-lg border border-smart-light-blue px-3 py-2"
           />
         )}
+
         <input
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
+          placeholder={mode === "login" ? "Username or Email" : "Email"}
+          type={mode === "login" ? "text" : "email"}
+          required
           className="w-full rounded-lg border border-smart-light-blue px-3 py-2"
         />
+
         <input
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           type="password"
           placeholder="Password"
+          required
           className="w-full rounded-lg border border-smart-light-blue px-3 py-2"
         />
 
@@ -90,6 +96,7 @@ export default function LoginModal({ mode = "login", onAuth }) {
           {mode === "login" ? "Login" : "Signup"}
         </button>
       </form>
+
     </div>
   );
 }
