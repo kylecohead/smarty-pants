@@ -16,6 +16,7 @@ import SettingsModal from "./modals/SettingsModal.jsx";
 import PauseModal from "./modals/PauseModal.jsx";
 import RoundModal from "./modals/RoundModal.jsx";
 
+
 export default function App() {
   return (
     <Routes>
@@ -25,7 +26,7 @@ export default function App() {
           path="login"
           element={
             <Modal>
-              <LoginModal />
+              <LoginModal mode="login" onAuth={() => { /* close modal, update state */ }} />
             </Modal>
           }
         />

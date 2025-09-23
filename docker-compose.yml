@@ -25,6 +25,8 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/trivia
       NODE_ENV: development
+      ACCESS_TOKEN_SECRET: supersecretaccess
+      REFRESH_TOKEN_SECRET: supersecretrefresh
     ports:
       - "3000:3000"
     volumes:
