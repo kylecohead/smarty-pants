@@ -21,6 +21,7 @@ import RoundModal from "./modals/RoundModal.jsx";
 // - Most modals use the shared <Modal> wrapper that includes a close button.
 // - The recap between questions (under /game/play/pause) is a custom
 //   container that intentionally has NO close button and matches the question card sizing.
+
 export default function App() {
   return (
     <Routes>
@@ -30,7 +31,7 @@ export default function App() {
           path="login"
           element={
             <Modal>
-              <LoginModal />
+              <LoginModal mode="login" onAuth={() => { /* close modal, update state */ }} />
             </Modal>
           }
         />
