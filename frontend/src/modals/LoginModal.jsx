@@ -1,5 +1,5 @@
 /**
- * WIKUS
+ * WIKUS :)
  * MODAL: Login (from Home)
  * Buttons:
  *  - Save (normal user) -> /landing

@@ -5,10 +5,15 @@ http://localhost:5173/
 
 ## Login Details
 Nina	nina@example.com	1234	USER
+
 Wikus	wikus@example.com	1234	USER
+
 Amy	    amy@example.com	    1234	USER
+
 Conrad	conrad@example.com	1234	USER
+
 Kyle	kyle@example.com	1234	USER
+
 Admin	admin@example.com	1234	ADMIN
 
 ## Project commands
