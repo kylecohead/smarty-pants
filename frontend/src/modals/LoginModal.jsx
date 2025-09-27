@@ -41,12 +41,12 @@ export default function LoginModal({ mode = "login", onAuth }) {
       localStorage.setItem("refreshToken", data.refreshToken);
       onAuth?.(data);
       if (mode === "signup") {
-        navigate("/landing"); // new users
+        navigate("/landing", { replace: true }); // new users
       } else {
         if (data.role === "ADMIN") {
-          navigate("/admin");
+          navigate("/admin", { replace: true });// admins
         } else {
-          navigate("/landing");
+          navigate("/landing", { replace: true }); // normal users
         }
       }
     } else {

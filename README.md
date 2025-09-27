@@ -50,6 +50,8 @@ make logs
 7. Access Postgres shell
 ```bash
 make db
+#SELECT * FROM "User";
+
 ```
 
 8. Stop docker

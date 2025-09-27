@@ -35,6 +35,15 @@ export default function App() {
             </Modal>
           }
         />
+       <Route
+          path="signup"
+          element={
+            <Modal>
+              <LoginModal mode="signup" onAuth={() => { /* close modal, update state */ }} />
+            </Modal>
+          }
+        />
+      
         <Route
           path="about"
           element={

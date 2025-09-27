@@ -18,11 +18,22 @@ router.post("/signup", async (req, res) => {
     const user = await prisma.user.create({
       data: { username, email, password: hashed, role: "USER" },
     });
-    res.json({ message: "User created", userId: user.id });
+
+    const payload = { userId: user.id, role: user.role };
+    const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
+    const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
+
+    res.json({
+      accessToken,
+      refreshToken,
+      role: user.role,
+      userId: user.id,
+    });
   } catch (err) {
     res.status(400).json({ error: "User already exists" });
   }
 });
+
 
 // --- LOGIN ---
 router.post("/login", async (req, res) => {
