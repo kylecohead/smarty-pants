@@ -6,8 +6,8 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const router = express.Router();
 
-const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
-const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET;
+const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET || "secret";
+const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET || "refreshsecret";
 
 // --- SIGNUP ---
 router.post("/signup", async (req, res) => {
@@ -19,33 +19,24 @@ router.post("/signup", async (req, res) => {
       data: { username, email, password: hashed, role: "USER" },
     });
 
-    const payload = { userId: user.id, role: user.role };
+    const payload = { id: user.id, role: user.role };
     const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
     const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
-    res.json({
-      accessToken,
-      refreshToken,
-      role: user.role,
-      userId: user.id,
-    });
+    res.json({ accessToken, refreshToken, role: user.role, id: user.id });
   } catch (err) {
     res.status(400).json({ error: "User already exists" });
   }
 });
 
-
 // --- LOGIN ---
 router.post("/login", async (req, res) => {
-  const { identifier, password } = req.body; // 👈 allow email OR username
+  const { identifier, password } = req.body;
 
   const user = await prisma.user.findFirst({
     where: {
-      OR: [
-        { email: identifier },
-        { username: identifier }
-      ]
-    }
+      OR: [{ email: identifier }, { username: identifier }],
+    },
   });
 
   if (!user) return res.status(400).json({ error: "Invalid credentials" });
@@ -53,13 +44,12 @@ router.post("/login", async (req, res) => {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) return res.status(400).json({ error: "Invalid credentials" });
 
-  const payload = { userId: user.id, role: user.role };
+  const payload = { id: user.id, role: user.role };  // ✅ fixed
   const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
   const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
-  res.json({ accessToken, refreshToken, role: user.role });
+  res.json({ accessToken, refreshToken, role: user.role, id: user.id });
 });
-
 
 // --- REFRESH ---
 router.post("/refresh", (req, res) => {
@@ -69,9 +59,8 @@ router.post("/refresh", (req, res) => {
   jwt.verify(token, REFRESH_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: "Invalid refresh token" });
 
-    // re-sign with same role
     const newAccessToken = jwt.sign(
-      { userId: user.userId, role: user.role },
+      { id: user.id, role: user.role },  // ✅ fixed
       ACCESS_SECRET,
       { expiresIn: "15m" }
     );

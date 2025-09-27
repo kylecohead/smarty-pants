@@ -11,12 +11,12 @@ async function main() {
 
   // Define your users
   const users = [
-    { username: "Nina", email: "nina@example.com", role: "USER" },
-    { username: "Wikus", email: "wikus@example.com", role: "USER" },
-    { username: "Amy", email: "amy@example.com", role: "USER" },
-    { username: "Conrad", email: "conrad@example.com", role: "USER" },
-    { username: "Kyle", email: "kyle@example.com", role: "USER" },
-    { username: "Admin", email: "admin@example.com", role: "ADMIN" },
+    { username: "Nina", email: "nina@example.com", role: "USER" , avatarUrl: "/uploads/avatar1.png"},
+    { username: "Wikus", email: "wikus@example.com", role: "USER", avatarUrl: "/uploads/avatar2.png" },
+    { username: "Amy", email: "amy@example.com", role: "USER", avatarUrl: "/uploads/avatar3.png" },
+    { username: "Conrad", email: "conrad@example.com", role: "USER", avatarUrl: "/uploads/avatar4.png" },
+    { username: "Kyle", email: "kyle@example.com", role: "USER", avatarUrl: "/uploads/avatar5.png" },
+    { username: "Admin", email: "admin@example.com", role: "ADMIN", avatarUrl: "/uploads/avatar6.png" },
   ];
 
   // Upsert all users
@@ -30,7 +30,7 @@ async function main() {
         email: u.email,
         password,
         role: u.role,
-        avatarUrl: `https://api.dicebear.com/7.x/identicon/svg?seed=${u.username}`,
+        avatarUrl: u.avatarUrl,
       },
     });
     createdUsers.push(user);

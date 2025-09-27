@@ -6,17 +6,33 @@ import { Link, Outlet,useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 
+
 export default function Home() {
 
   //This handles the login login rendering (if user is logged in it shows sign out button)
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+
+  
 
   //This is for when the user refreshes the page, it checks if there is a token in localStorage
   useEffect(() => {
     // check localStorage on mount
     const token = localStorage.getItem("accessToken");
     setIsLoggedIn(!!token);
+
+    //Get the actual user data if logged in
+    if (token) {
+    fetch("http://localhost:3000/api/me", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => setUser(data.user))
+      .catch(() => setUser(null));
+  }
   }, []);
 
   //Signs the user out by removing the tokens from localStorage and redirecting to home page
@@ -32,6 +48,7 @@ export default function Home() {
 
   return (
     <div className="center-screen bg-smart-light-blue font-body text-smart-black">
+
       <div className="text-center space-y-6">
         {/* heading font */}
         <h1 className="text-5xl font-heading text-smart-dark-blue">
@@ -41,11 +58,12 @@ export default function Home() {
         {/* buttons with button font + smart colors */}
         <div className="flex flex-col items-center gap-3">
           {isLoggedIn ? (
+            
             // Show Sign Out if logged in
             <button
               onClick={handleSignOut}
               className="rounded-xl border border-smart-black bg-red-500 px-6 py-3 font-button text-white hover:bg-red-600"
-            >
+            >  
               Sign Out
             </button>
           ) : (
