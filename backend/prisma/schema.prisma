@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,45 +7,71 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
+//
+// Enums
+//
 enum Role {
   USER
   ADMIN
 }
 
+enum MatchStatus {
+  LOBBY
+  ACTIVE
+  FINISHED
+}
+
+//
+// Models
+//
 
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  email     String   @unique
+  id        Int           @id @default(autoincrement())
+  username  String        @unique
+  email     String        @unique
   password  String
   avatarUrl String?
-  createdAt DateTime @default(now())
-  role      Role     @default(USER)
+  createdAt DateTime      @default(now())
+  role      Role          @default(USER)
 
   // Relations
-  matches   Match[]        @relation("PlayerMatches")
-  hosted    Match[]        @relation("HostedMatches")
-  answers   Answer[]
+  hostedMatches Match[]       @relation("HostedMatches")
+  matchPlayers   MatchPlayer[]
+  answers        Answer[]
 }
 
 model Match {
-  id          Int       @id @default(autoincrement())
+  id          Int           @id @default(autoincrement())
   title       String
   category    String
   difficulty  String?
-  createdAt   DateTime  @default(now())
+  status      MatchStatus   @default(LOBBY)
+  createdAt   DateTime      @default(now())
   startedAt   DateTime?
   finishedAt  DateTime?
 
   // Relations
   hostId Int
-  host   User   @relation("HostedMatches", fields: [hostId], references: [id])
-  players User[]   @relation("PlayerMatches")
-  questions Question[]
+  host   User          @relation("HostedMatches", fields: [hostId], references: [id])
+
+  players   MatchPlayer[]
+  questions MatchQuestion[]
   answers   Answer[]
 }
 
+model MatchPlayer {
+  id        Int      @id @default(autoincrement())
+  matchId   Int
+  userId    Int
+  joinedAt  DateTime @default(now())
+  score     Int      @default(0)
+  isReady   Boolean  @default(false)
+
+  match     Match    @relation(fields: [matchId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([matchId, userId]) // prevent duplicate joins
+}
 
 model Question {
   id         Int      @id @default(autoincrement())
@@ -54,12 +79,23 @@ model Question {
   difficulty String?
   question   String
   correct    String
-  options    String[]  // store choices as string array
+  options    String[]  // store multiple choices
 
   // Relations
-  matchId Int?
-  match   Match? @relation(fields: [matchId], references: [id])
-  answers Answer[]
+  matches   MatchQuestion[]
+  answers   Answer[]
+}
+
+model MatchQuestion {
+  id         Int      @id @default(autoincrement())
+  matchId    Int
+  questionId Int
+  order      Int      // order in match (1st, 2nd, etc.)
+
+  match      Match    @relation(fields: [matchId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id])
+
+  @@unique([matchId, questionId])
 }
 
 model Answer {
@@ -69,12 +105,12 @@ model Answer {
   createdAt  DateTime @default(now())
 
   // Relations
-  userId   Int
-  user     User   @relation(fields: [userId], references: [id])
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
 
   questionId Int
   question   Question @relation(fields: [questionId], references: [id])
 
-  matchId Int
-  match   Match @relation(fields: [matchId], references: [id])
+  matchId    Int
+  match      Match    @relation(fields: [matchId], references: [id])
 }

@@ -33,7 +33,6 @@ app.use("/api", imageRoutes);
 
 // static serve (so /uploads/<file> works)
 app.use("/uploads", express.static("uploads"));
-//===========================================================
 
 
 

@@ -9,9 +9,9 @@ async function main() {
 
   const password = await bcrypt.hash("1234", 10);
 
-  // Define your users
+  // Define users
   const users = [
-    { username: "Nina", email: "nina@example.com", role: "USER" , avatarUrl: "/uploads/avatar1.png"},
+    { username: "Nina", email: "nina@example.com", role: "USER", avatarUrl: "/uploads/avatar1.png" },
     { username: "Wikus", email: "wikus@example.com", role: "USER", avatarUrl: "/uploads/avatar2.png" },
     { username: "Amy", email: "amy@example.com", role: "USER", avatarUrl: "/uploads/avatar3.png" },
     { username: "Conrad", email: "conrad@example.com", role: "USER", avatarUrl: "/uploads/avatar4.png" },
@@ -24,7 +24,7 @@ async function main() {
   for (const u of users) {
     const user = await prisma.user.upsert({
       where: { email: u.email },
-      update: {}, // no updates for now
+      update: {},
       create: {
         username: u.username,
         email: u.email,
@@ -36,10 +36,10 @@ async function main() {
     createdUsers.push(user);
   }
 
-  // Pick first user as match host
+  // Pick first user as host
   const host = createdUsers[0];
 
-  // Create or update a match
+  // Create a match
   const match = await prisma.match.upsert({
     where: { id: 1 },
     update: {},
@@ -48,11 +48,24 @@ async function main() {
       category: "General Knowledge",
       difficulty: "easy",
       hostId: host.id,
-      players: {
-        connect: createdUsers.map((u) => ({ id: u.id })), // all 6 join
-      },
+      status: "LOBBY",
     },
   });
+
+  // Create MatchPlayer records (all users join the match)
+  for (const u of createdUsers) {
+    await prisma.matchPlayer.upsert({
+      where: {
+        matchId_userId: { matchId: match.id, userId: u.id }, // requires @@unique([matchId, userId])
+      },
+      update: {},
+      create: {
+        matchId: match.id,
+        userId: u.id,
+        score: 0,
+      },
+    });
+  }
 
   // Questions
   const q1 = await prisma.question.upsert({
@@ -60,10 +73,10 @@ async function main() {
     update: {},
     create: {
       category: "General Knowledge",
+      difficulty: "easy",
       question: "What is 2 + 2?",
       correct: "4",
       options: ["3", "4", "5", "6"],
-      matchId: match.id,
     },
   });
 
@@ -72,14 +85,35 @@ async function main() {
     update: {},
     create: {
       category: "Science",
+      difficulty: "easy",
       question: "What planet is known as the Red Planet?",
       correct: "Mars",
       options: ["Earth", "Mars", "Jupiter", "Venus"],
-      matchId: match.id,
     },
   });
 
-  // Answers (just Nina for demo)
+  // Link questions to the match (MatchQuestion table)
+  await prisma.matchQuestion.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      matchId: match.id,
+      questionId: q1.id,
+      order: 1,
+    },
+  });
+
+  await prisma.matchQuestion.upsert({
+    where: { id: 2 },
+    update: {},
+    create: {
+      matchId: match.id,
+      questionId: q2.id,
+      order: 2,
+    },
+  });
+
+  // Answers
   await prisma.answer.upsert({
     where: { id: 1 },
     update: {},
@@ -104,7 +138,7 @@ async function main() {
     },
   });
 
-  console.log("✅ Database seeded with 6 users, 1 match, 2 questions, 2 answers");
+  console.log("✅ Database seeded with users, match, players, questions, and answers");
 }
 
 main()
