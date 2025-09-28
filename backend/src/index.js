@@ -62,24 +62,30 @@ const io = new Server(server, {
   cors: { origin: "*" }, // allow frontend dev server
 });
 
+const socketUsers = {};
+
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("⚡ User connected:", socket.id);
 
   socket.on("joinMatch", ({ matchId, username }) => {
     socket.join(`match-${matchId}`);
-    console.log(`${username} joined match ${matchId}`);
+    socketUsers[socket.id] = username;  // save username
 
-    // Notify all players in this match
-    const players = Array.from(io.sockets.adapter.rooms.get(`match-${matchId}`) || []);
+    // Get all players in this room, map to usernames
+    const socketIds = Array.from(io.sockets.adapter.rooms.get(`match-${matchId}`) || []);
+    const players = socketIds.map((id) => socketUsers[id] || id);
+
     io.to(`match-${matchId}`).emit("playersUpdate", { matchId, players });
   });
 
   socket.on("disconnect", () => {
     console.log("❌ User disconnected:", socket.id);
+    delete socketUsers[socket.id];
   });
 });
 //  ===========================================================
 
-app.listen(3000, () => {
-  console.log("🚀 Backend running on http://localhost:3000");
+// start the *server*, not the app
+server.listen(3000, () => {
+  console.log("🚀 Backend + Socket.IO running on http://localhost:3000");
 });
