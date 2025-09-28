@@ -6,6 +6,8 @@ import matchesRouter from "./routes/matches.js";
 import imageRoutes from "./routes/images.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import { PrismaClient } from "@prisma/client";
+import http from "http";               
+import { Server } from "socket.io";    
 
 const prisma = new PrismaClient();
 const app = express();
@@ -52,6 +54,31 @@ app.get("/api/me", authMiddleware, async (req, res) => {
   }
 });
 //============================================================
+
+
+// Socker.IO =================================================
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: "*" }, // allow frontend dev server
+});
+
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.on("joinMatch", ({ matchId, username }) => {
+    socket.join(`match-${matchId}`);
+    console.log(`${username} joined match ${matchId}`);
+
+    // Notify all players in this match
+    const players = Array.from(io.sockets.adapter.rooms.get(`match-${matchId}`) || []);
+    io.to(`match-${matchId}`).emit("playersUpdate", { matchId, players });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ User disconnected:", socket.id);
+  });
+});
+//  ===========================================================
 
 app.listen(3000, () => {
   console.log("🚀 Backend running on http://localhost:3000");
