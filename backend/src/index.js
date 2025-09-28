@@ -2,67 +2,42 @@
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.js";
+import matchesRouter from "./routes/matches.js";
+import imageRoutes from "./routes/images.js";
+import authMiddleware from "./middleware/authMiddleware.js";
 import { PrismaClient } from "@prisma/client";
-import jwt from "jsonwebtoken";
-
-
-
 
 const prisma = new PrismaClient();
-
-
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-
-
-
+// Health check
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// Authentication ================
+// Mount auth under /api/auth (consistent with the rest of API)
+app.use("/api/auth", authRoutes);
 
-//Use authentication routes
-app.use("/auth", authRoutes);
+// Images ========================
+// Mount image upload routes under /api/images
+app.use("/api/images", imageRoutes);
 
-
-//Use image upload routes
-import imageRoutes from "./routes/images.js";
-app.use("/api", imageRoutes);
-
-// static serve (so /uploads/<file> works)
+// Static serve (so /uploads/<file> works)
 app.use("/uploads", express.static("uploads"));
 
+// Matches =======================
+// Protected routes
+app.use("/api/matches", authMiddleware, matchesRouter);
 
-
-
-
-// Middleware to check JWT ===========================================
-function authMiddleware(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ error: "No token provided" });
-  }
-
-  const token = authHeader.split(" ")[1];
-  try {
-    // use ACCESS_TOKEN_SECRET here (not JWT_SECRET) to be consistent
-    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || "secret");
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: "Invalid token" });
-  }
-}
-//====================================================================
-
-
-// Get the current users info==================================
+// Get the current user info ================================
 app.get("/api/me", authMiddleware, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id }, // now works
+      where: { id: req.user.id },
       select: { id: true, username: true, email: true, avatarUrl: true },
     });
 
@@ -71,13 +46,12 @@ app.get("/api/me", authMiddleware, async (req, res) => {
     }
 
     res.json({ user });
-  } catch {
+  } catch (err) {
+    console.error("❌ /api/me error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
-
 //============================================================
-
 
 app.listen(3000, () => {
   console.log("🚀 Backend running on http://localhost:3000");
