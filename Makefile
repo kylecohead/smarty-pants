@@ -64,12 +64,8 @@ test-socket:
 
 
 # -------- PRODUCTION --------
-# These commands dont work yet!!!
-build-frontend:
-	cd frontend && npm install && npm run build
-
+#this is not working.... yet
 prod:
-	make build-frontend
 	docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 prod-logs:
@@ -81,4 +77,4 @@ tunnel:
 
 # -------- CLEAN UP --------
 down:
-	docker compose down -v
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml down -v
