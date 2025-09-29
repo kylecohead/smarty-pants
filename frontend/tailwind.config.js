@@ -19,6 +19,7 @@ module.exports = {
         "smart-purple": "#BF00FF", // vivid purple
         "smart-white": "#FFFFFF",
         "smart-black": "#000000",
+        "smart-login-bg": "#0c1b2a",
       },
       fontFamily: {
         //Add fonts here

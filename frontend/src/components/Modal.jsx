@@ -6,7 +6,7 @@ export default function Modal({ children }) {
   const navigate = useNavigate();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <div className="relative w-full max-w-md rounded-2xl bg-smart-login-bg p-6 shadow-xl">
         <button
           aria-label="Close modal"
           className="absolute right-3 top-3 rounded-full border px-2 py-1 text-sm hover:bg-slate-100"
