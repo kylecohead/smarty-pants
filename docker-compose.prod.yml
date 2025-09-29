@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: trivia
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/trivia
+      NODE_ENV: production
+      ACCESS_TOKEN_SECRET: supersecretaccess
+      REFRESH_TOKEN_SECRET: supersecretrefresh
+    expose:
+      - "3000"
+    depends_on:
+      - db
+    command: >
+      sh -c "
+      npx prisma db push --accept-data-loss &&
+      node prisma/seed.js &&
+      node src/index.js
+      "
+
+  frontend:
+    build:
+      context: ./frontend
+      target: prod     # 👈 uses Nginx stage
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    # no volumes here! 👈 avoids overwriting dist
+    restart: always
+
+volumes:
+  db_data:

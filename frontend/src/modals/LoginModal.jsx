@@ -1,11 +1,3 @@
-/**
- * WIKUS :)
- * MODAL: Login (from Home)
- * Buttons:
- *  - Save (normal user) -> /landing
- *  - Login as Admin -> /admin
- * Close (X) handled by Modal wrapper
- */
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -15,14 +7,16 @@ export default function LoginModal({ mode = "login", onAuth }) {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-
   async function handleSubmit(e) {
     e.preventDefault();
-    
-    // const url = mode === "login" ? "/auth/login" : "/auth/signup";
-    const API_URL = "http://localhost:3000";
-    const url = mode === "login" ? `${API_URL}/auth/login` : `${API_URL}/auth/signup`;
 
+    // const API_URL = "http://localhost:3000";
+    const API_URL = "/api";
+
+    const url =
+      mode === "login"
+        ? `${API_URL}/api/auth/login`
+        : `${API_URL}/api/auth/signup`;
 
     const body =
       mode === "signup"
@@ -40,13 +34,14 @@ export default function LoginModal({ mode = "login", onAuth }) {
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
       onAuth?.(data);
+
       if (mode === "signup") {
-        navigate("/landing"); // new users
+        navigate("/landing", { replace: true }); // new users
       } else {
         if (data.role === "ADMIN") {
-          navigate("/admin");
+          navigate("/admin", { replace: true }); // admins
         } else {
-          navigate("/landing");
+          navigate("/landing", { replace: true }); // normal users
         }
       }
     } else {
@@ -96,7 +91,6 @@ export default function LoginModal({ mode = "login", onAuth }) {
           {mode === "login" ? "Login" : "Signup"}
         </button>
       </form>
-
     </div>
   );
 }

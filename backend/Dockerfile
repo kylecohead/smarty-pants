@@ -9,6 +9,10 @@ RUN npm install
 # copy backend code
 COPY . .
 
+
+# Ensure uploads folder exists
+RUN mkdir -p /app/uploads
+
 # build-time generate (for prod images)
 RUN npx prisma generate
 

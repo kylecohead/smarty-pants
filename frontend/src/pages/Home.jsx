@@ -2,10 +2,49 @@
  * PAGE: Home
  * Demo of smart colors + fonts
  */
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet,useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import backgroundImg from "../assets/home-background.jpg";
 
 export default function Home() {
+
+  //This handles the login login rendering (if user is logged in it shows sign out button)
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+
+  
+
+  //This is for when the user refreshes the page, it checks if there is a token in localStorage
+  useEffect(() => {
+    // check localStorage on mount
+    const token = localStorage.getItem("accessToken");
+    setIsLoggedIn(!!token);
+
+    //Get the actual user data if logged in
+    if (token) {
+    fetch("/api/me", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => setUser(data.user))
+      .catch(() => setUser(null));
+  }
+  }, []);
+
+  //Signs the user out by removing the tokens from localStorage and redirecting to home page
+  function handleSignOut() {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    setIsLoggedIn(false);
+    navigate("/"); // back to home
+  }
+
+
+
+
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-no-repeat font-body text-smart-black relative"
@@ -40,18 +79,46 @@ export default function Home() {
 
           {/* buttons with button font + smart colors - much bigger and right-aligned */}
           <div className="flex flex-col items-end gap-4">
-            <Link
-              to="/login"
-              className="rounded-2xl border-4 border-smart-white bg-smart-yellow px-12 py-4 font-button text-2xl font-bold text-smart-black hover:bg-smart-orange hover:scale-105 transition-all duration-200 shadow-2xl min-w-[200px] text-center"
-            >
-              LOGIN
-            </Link>
-            <Link
-              to="/about"
-              className="rounded-2xl border-4 border-smart-white bg-smart-green px-12 py-4 font-button text-2xl font-bold text-smart-white hover:bg-smart-purple hover:scale-105 transition-all duration-200 shadow-2xl min-w-[200px] text-center"
-            >
-              ABOUT GAME
-            </Link>
+            {isLoggedIn ? (
+              // Show Sign Out if logged in
+              <>
+              <button
+                onClick={handleSignOut}
+                className="rounded-2xl border-4 border-smart-white bg-smart-yellow px-12 py-4 font-button text-2xl font-bold text-smart-black hover:bg-smart-orange hover:scale-105 transition-all duration-200 shadow-2xl min-w-[200px] text-center"
+              >
+                Sign Out
+              </button>
+              <Link
+                to="/about"
+                className="rounded-2xl border-4 border-smart-white bg-smart-green px-12 py-4 font-button text-2xl font-bold text-smart-white hover:bg-smart-purple hover:scale-105 transition-all duration-200 shadow-2xl min-w-[200px] text-center"
+              >
+                ABOUT GAME
+              </Link>
+              </>
+              
+            ) : (
+              <>
+              <Link
+                to="/login"
+                className="rounded-2xl border-4 border-smart-white bg-smart-yellow px-12 py-4 font-button text-2xl font-bold text-smart-black hover:bg-smart-orange hover:scale-105 transition-all duration-200 shadow-2xl min-w-[200px] text-center"              >
+                Login
+              </Link>
+
+              <Link
+                to="/signup"
+                className="rounded-2xl border-4 border-smart-white bg-smart-yellow px-12 py-4 font-button text-2xl font-bold text-smart-black hover:bg-smart-orange hover:scale-105 transition-all duration-200 shadow-2xl min-w-[200px] text-center"
+              >
+                Sign Up
+              </Link>
+              <Link
+                to="/about"
+                className="rounded-2xl border-4 border-smart-white bg-smart-green px-12 py-4 font-button text-2xl font-bold text-smart-white hover:bg-smart-purple hover:scale-105 transition-all duration-200 shadow-2xl min-w-[200px] text-center"
+              >
+                ABOUT GAME
+              </Link>
+            </>
+          )}
+        
           </div>
         </div>
       </div>

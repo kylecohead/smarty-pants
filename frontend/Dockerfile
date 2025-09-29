@@ -1,7 +1,27 @@
 # -----------------------------
-# Stage 1: Build the frontend
+# Stage 1: Development (Vite dev server)
 # -----------------------------
-FROM node:18-alpine AS build
+FROM node:20-alpine AS dev
+
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy all source code
+COPY . .
+
+# Expose Vite's default port
+EXPOSE 5173
+
+# Run Vite dev server
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+# -----------------------------
+# Stage 2: Build for production
+# -----------------------------
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
@@ -12,9 +32,9 @@ COPY . .
 RUN npm run build
 
 # -----------------------------
-# Stage 2: Serve with Nginx
+# Stage 3: Serve with Nginx
 # -----------------------------
-FROM nginx:alpine
+FROM nginx:alpine AS prod
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf

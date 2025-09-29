@@ -58,3 +58,23 @@ stop:
 # Build entire image and run
 build:
 	docker compose up --build -d
+
+test-socket:
+	@node backend/src/test.js $(USER)
+
+
+# -------- PRODUCTION --------
+#this is not working.... yet
+prod:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+prod-logs:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f
+
+# -------- DEPLOY WITH CLOUDFLARE --------
+tunnel:
+	cloudflared tunnel --url http://localhost:80
+
+# -------- CLEAN UP --------
+down:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml down -v

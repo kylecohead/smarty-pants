@@ -50,6 +50,8 @@ make logs
 7. Access Postgres shell
 ```bash
 make db
+#SELECT * FROM "User";
+
 ```
 
 8. Stop docker
@@ -60,6 +62,15 @@ make stop
 9. Rebuild entire image
 ```bash
 make build
+```
+
+
+10. Socket Testing (Real time Updates)
+- Run the following commands after the docker is running:
+- Run each in a different terminal
+```bash
+make test-socket USER=Alice
+make test-socket USER=Bob
 ```
 
 
