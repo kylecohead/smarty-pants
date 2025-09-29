@@ -4,6 +4,7 @@ import Landing from "./pages/Landing.jsx";
 import GameMenu from "./pages/GameMenu.jsx";
 import CreateGame from "./pages/CreateGame.jsx";
 import JoinGame from "./pages/JoinGame.jsx";
+import JoinGameLobby from "./pages/JoinGameLobby.jsx";
 import Lobby from "./pages/Lobby.jsx";
 import PlayGame from "./pages/PlayGame.jsx";
 import Admin from "./pages/Admin.jsx";
@@ -31,7 +32,12 @@ export default function App() {
           path="login"
           element={
             <Modal>
-              <LoginModal mode="login" onAuth={() => { /* close modal, update state */ }} />
+              <LoginModal
+                mode="login"
+                onAuth={() => {
+                  /* close modal, update state */
+                }}
+              />
             </Modal>
           }
         />
@@ -80,6 +86,7 @@ export default function App() {
       {/* 5) Create / 6) Join */}
       <Route path="/game/create" element={<CreateGame />} />
       <Route path="/game/join" element={<JoinGame />} />
+      <Route path="/join-lobby" element={<JoinGameLobby />} />
 
       {/* 6) Lobby + "Round number" modal */}
       <Route path="/lobby" element={<Lobby />}>
