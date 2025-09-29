@@ -58,3 +58,6 @@ stop:
 # Build entire image and run
 build:
 	docker compose up --build -d
+
+test-socket:
+	@node backend/src/test.js $(USER)

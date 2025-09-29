@@ -65,6 +65,15 @@ make build
 ```
 
 
+10. Socket Testing (Real time Updates)
+- Run the following commands after the docker is running:
+- Run each in a different terminal
+```bash
+make test-socket USER=Alice
+make test-socket USER=Bob
+```
+
+
 
 1. Project Structure
 ```

@@ -1,13 +1,14 @@
 // backend/src/test.js
 import { io } from "socket.io-client";
 
+const username = process.argv[2] || "Tester"; // pass username via CLI
+const matchId = 1;
+
 const socket = io("http://localhost:3000");
 
 socket.on("connect", () => {
-  console.log("✅ Connected to server with id:", socket.id);
-
-  // Emit join *after* connection
-  socket.emit("joinMatch", { matchId: 1, username: "Tester" });
+  console.log(`✅ Connected as ${username} (id: ${socket.id})`);
+  socket.emit("joinMatch", { matchId, username });
 });
 
 socket.on("playersUpdate", (data) => {
