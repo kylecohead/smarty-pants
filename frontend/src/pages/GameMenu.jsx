@@ -3,8 +3,10 @@
  * PAGE: Game Menu (spec #4 "The game page")
  * Buttons:
  *  - Create Game -> /game/create
- *  - Join Game -> /game/join
+ *  - Join Game -> /join-lobby (JoinGameLobby)
  * Back: to Landing "/landing"
+ *
+ * Flow: GameMenu -> JoinGameLobby -> JoinGame (for specific game details)
  */
 import { Link, useNavigate } from "react-router-dom";
 
@@ -62,7 +64,7 @@ export default function GameMenu() {
               CREATE GAME
             </Link>
             <Link
-              to="/game/join"
+              to="/join-lobby"
               className="w-full max-w-md rounded-2xl bg-smart-light-blue border-4 border-smart-white px-12 py-6 text-2xl font-bold text-smart-white font-button hover:opacity-80 transition-opacity shadow-2xl"
             >
               JOIN GAME
