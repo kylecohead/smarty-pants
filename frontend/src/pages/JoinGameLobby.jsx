@@ -1,9 +1,44 @@
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 
 // Navigation helper
 const DETAILS_ROUTE = "/game/join";
 function goToDetails(id) {
   window.location.href = `${DETAILS_ROUTE}?matchId=${encodeURIComponent(id)}`;
+}
+
+/**
+ * Brand heading component displaying "SMARTIE PANTS" with individual letter colors
+ * Creates a vibrant, playful brand identity matching the main app design
+ * @returns {JSX.Element} Multi-colored brand heading
+ */
+function Heading() {
+  // Each letter mapped to its corresponding brand color class
+  const letters = [
+    { t: "S", c: "text-smart-green" },
+    { t: "m", c: "text-smart-orange" },
+    { t: "a", c: "text-smart-light-blue" },
+    { t: "r", c: "text-smart-light-pink" },
+    { t: "t", c: "text-smart-green" },
+    { t: "i", c: "text-smart-red" },
+    { t: "e", c: "text-smart-purple" },
+    { t: " ", c: "" }, // Space with no styling
+    { t: "P", c: "text-smart-light-blue" },
+    { t: "a", c: "text-smart-yellow" },
+    { t: "n", c: "text-smart-green" },
+    { t: "t", c: "text-smart-pink" },
+    { t: "s", c: "text-smart-dark-blue" },
+  ];
+
+  return (
+    <h1 className="text-center font-heading text-4xl sm:text-5xl font-black leading-none mb-2">
+      {letters.map((l, i) => (
+        <span key={i} className={l.c}>
+          {String(l.t).toUpperCase()}
+        </span>
+      ))}
+    </h1>
+  );
 }
 
 // Design system colors
@@ -170,22 +205,39 @@ export default function JoinGameLobby() {
     return date.toLocaleDateString();
   };
 
+  const navigate = useNavigate(); // Hook for programmatic navigation
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
-      <div className="max-w-3xl mx-auto px-4 py-10 space-y-6">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">Join a Game</h1>
+      <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
+        {/* Back navigation button - returns to previous page */}
+        <button
+          onClick={() => navigate(-1)}
+          className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-white transition-colors"
+        >
+          ← Back
+        </button>
+
+        {/* Header with colorful SMARTIE PANTS branding */}
+        <div className="text-center mb-8">
+          <Heading />
+          <h2 className="text-smart-orange font-heading text-2xl font-bold tracking-wider">
+            ~JOIN A GAME~
+          </h2>
         </div>
 
-        {/* Join by Code/URL */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-6">
-          <form onSubmit={handleJoinSubmit} className="space-y-3">
+        {/* Join by Code/URL Section - Smart Orange Theme */}
+        <div className="rounded-3xl border border-orange-400/30 bg-orange-500/10 shadow-xl backdrop-blur-sm p-8">
+          <h2 className="text-2xl font-bold text-smart-orange mb-6 text-center">
+            Join with Code or Link
+          </h2>
+          <form onSubmit={handleJoinSubmit} className="space-y-4">
             <div>
               <label
                 htmlFor="joinInput"
-                className="block text-sm font-medium text-white/90 mb-1"
+                className="block text-lg font-semibold text-smart-orange mb-3"
               >
-                Join Code or Link
+                Enter Join Code or Paste Link
               </label>
               <input
                 id="joinInput"
@@ -193,17 +245,17 @@ export default function JoinGameLobby() {
                 value={joinInput}
                 onChange={handleInputChange}
                 placeholder="ABCD-1234"
-                className="w-full rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full rounded-xl bg-orange-500/20 border-2 border-orange-400/40 text-white placeholder:text-orange-200/70 px-6 py-4 text-lg outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
                 aria-describedby="joinInputHelp joinInputError"
               />
-              <p id="joinInputHelp" className="text-xs text-white/60 mt-1">
+              <p id="joinInputHelp" className="text-sm text-orange-200/80 mt-2">
                 Paste link or enter code (e.g., ABCD-1234 or
                 https://…/join/ABCD-1234)
               </p>
               {inputError && (
                 <p
                   id="joinInputError"
-                  className="text-xs text-red-400 mt-1"
+                  className="text-sm text-red-400 mt-2 font-medium"
                   aria-live="polite"
                 >
                   {inputError}
@@ -212,50 +264,58 @@ export default function JoinGameLobby() {
             </div>
             <button
               type="submit"
-              className="w-full rounded-xl px-4 py-3 bg-smart-red text-white font-medium hover:opacity-90 transition"
+              className="w-full rounded-xl px-6 py-4 bg-smart-orange text-white text-lg font-bold hover:opacity-90 transition shadow-lg"
             >
               Join Game
             </button>
           </form>
         </div>
 
-        {/* Your Invitations */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">
+        {/* Your Invitations Section - Light Blue Theme */}
+        <div className="rounded-3xl border border-blue-400/30 bg-blue-500/10 shadow-xl backdrop-blur-sm p-8">
+          <h2 className="text-2xl font-bold text-smart-light-blue mb-6 text-center">
             Your Invitations
           </h2>
           {mockInvitations.length === 0 ? (
-            <p className="text-white/60 text-center py-4">
-              No invitations yet.
-            </p>
+            <div className="text-center py-8">
+              <p className="text-blue-200/80 text-lg mb-2">
+                No invitations yet.
+              </p>
+              <p className="text-blue-200/60 text-sm">
+                Check back later for game invites!
+              </p>
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* Future API call: GET /api/invitations?status=pending */}
               {mockInvitations.map((invite) => (
                 <div
                   key={invite.invitationId}
-                  className="rounded-xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition"
+                  className="rounded-xl border-2 border-blue-400/30 bg-blue-500/20 p-6 hover:border-blue-400/50 transition"
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-white">
+                      <h3 className="font-bold text-smart-light-blue text-lg mb-2">
                         {invite.title}
                       </h3>
-                      <p className="text-sm text-white/70">
-                        Host: @{invite.hostName}
+                      <p className="text-base text-blue-200/80 mb-1">
+                        Host:{" "}
+                        <span className="font-semibold">
+                          @{invite.hostName}
+                        </span>
                       </p>
-                      <p className="text-sm text-white/70">
+                      <p className="text-sm text-blue-200/70 mb-1">
                         {formatStartTime(invite.startTimeISO)} •{" "}
                         {invite.categories.join(", ")}
                       </p>
-                      <p className="text-sm text-white/50">
+                      <p className="text-sm text-blue-200/60">
                         {invite.players}/{invite.maxPlayers} players
                       </p>
                     </div>
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex gap-3 ml-6">
                       <button
                         onClick={() => goToDetails(invite.matchId)}
-                        className="rounded-xl px-4 py-2 bg-smart-red text-white text-sm hover:opacity-90 transition"
+                        className="rounded-xl px-5 py-3 bg-smart-green text-white text-base font-bold hover:opacity-90 transition shadow-lg"
                         aria-label={`Accept invitation to ${invite.title}`}
                       >
                         Accept
@@ -264,7 +324,7 @@ export default function JoinGameLobby() {
                         onClick={() => {
                           /* Future API call: POST /api/invitations/${invite.invitationId}/decline */
                         }}
-                        className="rounded-xl px-4 py-2 border border-white/30 text-white/70 text-sm hover:bg-white/10 transition"
+                        className="rounded-xl px-5 py-3 border-2 border-blue-400/40 text-blue-200 text-base font-medium hover:bg-blue-500/30 transition"
                         aria-label={`Decline invitation to ${invite.title}`}
                       >
                         Decline
@@ -277,26 +337,26 @@ export default function JoinGameLobby() {
           )}
         </div>
 
-        {/* Public Games */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">
+        {/* Public Games Section - Pink Theme */}
+        <div className="rounded-3xl border border-pink-400/30 bg-pink-500/10 shadow-xl backdrop-blur-sm p-8">
+          <h2 className="text-2xl font-bold text-smart-pink mb-6 text-center">
             Public Games
           </h2>
 
           {/* Search and Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <input
               type="text"
               placeholder="Search games..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+              className="rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white placeholder:text-pink-200/70 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
               aria-label="Search public games"
             />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="rounded-xl bg-white/10 border border-white/20 text-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+              className="rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400"
               aria-label="Filter by category"
             >
               <option value="" className="bg-gray-800">
@@ -318,7 +378,7 @@ export default function JoinGameLobby() {
             <select
               value={startsFilter}
               onChange={(e) => setStartsFilter(e.target.value)}
-              className="rounded-xl bg-white/10 border border-white/20 text-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+              className="rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400"
               aria-label="Filter by start time"
             >
               <option value="" className="bg-gray-800">
@@ -337,7 +397,7 @@ export default function JoinGameLobby() {
             <select
               value={difficultyFilter}
               onChange={(e) => setDifficultyFilter(e.target.value)}
-              className="rounded-xl bg-white/10 border border-white/20 text-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+              className="rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400"
               aria-label="Filter by difficulty"
             >
               <option value="" className="bg-gray-800">
@@ -356,54 +416,60 @@ export default function JoinGameLobby() {
           </div>
 
           {filteredGames.length === 0 ? (
-            <p className="text-white/60 text-center py-4">
-              No public games right now.
-            </p>
+            <div className="text-center py-8">
+              <p className="text-pink-200/80 text-lg mb-2">
+                No public games right now.
+              </p>
+              <p className="text-pink-200/60 text-sm">
+                Try adjusting your filters or check back later!
+              </p>
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* Future API call: GET /api/matches/public?search=&category=&startsBefore=&sort= */}
               {filteredGames.map((game) => (
                 <div
                   key={game.matchId}
-                  className="rounded-xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition"
+                  className="rounded-xl border-2 border-pink-400/30 bg-pink-500/20 p-6 hover:border-pink-400/50 transition"
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-white">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-bold text-smart-pink text-lg">
                           {game.title}
                         </h3>
                         {!game.startsAtISO && (
-                          <span className="px-2 py-1 bg-green-500 text-black text-xs rounded-full">
+                          <span className="px-3 py-1 bg-smart-green text-white text-sm font-semibold rounded-full">
                             Instant
                           </span>
                         )}
-                        <span className="px-2 py-1 bg-white/20 text-white text-xs rounded-full">
+                        <span className="px-3 py-1 bg-pink-500/40 text-pink-200 text-sm font-medium rounded-full">
                           {game.difficulty}
                         </span>
                       </div>
-                      <p className="text-sm text-white/70">
-                        Host: @{game.hostName}
+                      <p className="text-base text-pink-200/80 mb-1">
+                        Host:{" "}
+                        <span className="font-semibold">@{game.hostName}</span>
                       </p>
-                      <p className="text-sm text-white/70">
+                      <p className="text-sm text-pink-200/70 mb-1">
                         {formatStartTime(game.startsAtISO)} •{" "}
                         {game.categories.join(", ")}
                       </p>
-                      <p className="text-sm text-white/50">
+                      <p className="text-sm text-pink-200/60">
                         {game.players}/{game.maxPlayers} players
                       </p>
                     </div>
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex gap-3 ml-6">
                       <button
                         onClick={() => goToDetails(game.matchId)}
-                        className="rounded-xl px-4 py-2 border border-white/30 text-white/70 text-sm hover:bg-white/10 transition"
+                        className="rounded-xl px-5 py-3 border-2 border-pink-400/40 text-pink-200 text-base font-medium hover:bg-pink-500/30 transition"
                         aria-label={`Preview ${game.title}`}
                       >
                         Preview
                       </button>
                       <button
                         onClick={() => goToDetails(game.matchId)}
-                        className="rounded-xl px-4 py-2 bg-smart-red text-white text-sm hover:opacity-90 transition"
+                        className="rounded-xl px-5 py-3 bg-smart-pink text-white text-base font-bold hover:opacity-90 transition shadow-lg"
                         aria-label={`Join ${game.title}`}
                       >
                         Join
