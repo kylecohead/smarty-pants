@@ -23,7 +23,7 @@ export default function Home() {
 
     //Get the actual user data if logged in
     if (token) {
-    fetch("http://localhost:3000/api/me", {
+    fetch("/api/me", {
       headers: {
         Authorization: `Bearer ${token}`,
       },

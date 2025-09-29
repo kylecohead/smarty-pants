@@ -10,7 +10,9 @@ export default function LoginModal({ mode = "login", onAuth }) {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    const API_URL = "http://localhost:3000";
+    // const API_URL = "http://localhost:3000";
+    const API_URL = "/api";
+
     const url =
       mode === "login"
         ? `${API_URL}/api/auth/login`
