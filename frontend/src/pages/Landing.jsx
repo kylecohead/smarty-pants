@@ -47,7 +47,7 @@ function Heading() {
     { t: "a", c: "text-smart-yellow" },
     { t: "n", c: "text-smart-green" },
     { t: "t", c: "text-smart-pink" },
-    { t: "s", c: "text-smart-dark-blue" },
+    { t: "s", c: "text-smart-light-blue" },
   ];
   return (
     <h1 className="text-center font-heading text-3xl sm:text-4xl lg:text-5xl font-black leading-none mb-8">
