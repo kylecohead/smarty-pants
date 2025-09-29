@@ -81,12 +81,20 @@ export default function Home() {
           <div className="flex flex-col items-end gap-4">
             {isLoggedIn ? (
               // Show Sign Out if logged in
+              <>
               <button
                 onClick={handleSignOut}
                 className="rounded-2xl border-4 border-smart-white bg-smart-yellow px-12 py-4 font-button text-2xl font-bold text-smart-black hover:bg-smart-orange hover:scale-105 transition-all duration-200 shadow-2xl min-w-[200px] text-center"
               >
                 Sign Out
               </button>
+              <Link
+                to="/about"
+                className="rounded-2xl border-4 border-smart-white bg-smart-green px-12 py-4 font-button text-2xl font-bold text-smart-white hover:bg-smart-purple hover:scale-105 transition-all duration-200 shadow-2xl min-w-[200px] text-center"
+              >
+                ABOUT GAME
+              </Link>
+              </>
               
             ) : (
               <>
