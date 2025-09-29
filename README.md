@@ -2,6 +2,10 @@
 ## Frontend
 http://localhost:5173/
 
+## Requirements
+-Docker
+-Compose
+
 
 ## Login Details
 Nina	nina@example.com	1234	USER
