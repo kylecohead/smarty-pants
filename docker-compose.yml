@@ -43,14 +43,24 @@ services:
       timeout: 3s
       retries: 5
 
+  # frontend:
+  #   build: ./frontend
+  #   depends_on:
+  #     - backend
+  #   ports:
+  #     - "5173:80"
+  #   volumes:
+  #     - ./backend/uploads:/app/uploads  
+
   frontend:
-    build: ./frontend
-    depends_on:
-      - backend
+    build:
+      context: ./frontend
+      target: dev  
     ports:
-      - "5173:80"
+      - "5173:5173"
     volumes:
-      - ./backend/uploads:/app/uploads  
+      - ./frontend:/app
+    command: npm run dev -- --host 0.0.0.0
 
 volumes:
   db_data:

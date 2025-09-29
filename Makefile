@@ -61,3 +61,24 @@ build:
 
 test-socket:
 	@node backend/src/test.js $(USER)
+
+
+# -------- PRODUCTION --------
+# These commands dont work yet!!!
+build-frontend:
+	cd frontend && npm install && npm run build
+
+prod:
+	make build-frontend
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+prod-logs:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f
+
+# -------- DEPLOY WITH CLOUDFLARE --------
+tunnel:
+	cloudflared tunnel --url http://localhost:80
+
+# -------- CLEAN UP --------
+down:
+	docker compose down -v

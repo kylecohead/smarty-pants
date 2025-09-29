@@ -1,0 +1,29 @@
+services:
+  backend:
+    command: >
+      sh -c "
+      npx prisma db push --accept-data-loss &&
+      node prisma/seed.js &&
+      node src/index.js
+      "
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+
+  frontend:
+    build:
+      context: ./frontend
+      target: prod   # 👈 use prod stage
+    ports:
+      - "80:80"
+
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
