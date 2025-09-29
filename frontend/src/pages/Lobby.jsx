@@ -7,10 +7,32 @@
  * Back: to previous (Create/Join)
  */
 import { Link, useNavigate, Outlet } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 
 export default function Lobby() {
   const navigate = useNavigate();
+  const [players, setPlayers] = useState(Array(6).fill(null));
+
+  // Simulate players joining every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlayers(current => {
+        const firstEmpty = current.findIndex(p => p === null);
+        if (firstEmpty === -1) return current; // all slots filled
+
+        const newPlayers = [...current];
+        newPlayers[firstEmpty] = {
+          id: firstEmpty,
+          image: `https://api.dicebear.com/7.x/avatars/svg?seed=player${firstEmpty}` // placeholder avatar
+        };
+        return newPlayers;
+      });
+    }, 2000);
+  
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen relative flex items-center justify-center">
       <button
@@ -22,6 +44,27 @@ export default function Lobby() {
 
       <div className="text-center space-y-6">
         <h1 className="text-3xl font-bold">Game Lobby</h1>
+
+        {/* Player squares grid */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {players.map((player, index) => (
+            <div
+              key={index}
+              className="w-24 h-24 border-2 border-gray-300 rounded-lg flex items-center justify-center"
+            >
+              {player ? (
+                <img
+                  src={player.image}
+                  alt={`Player ${index + 1}`}
+                  className="w-20 h-20 object-cover rounded"
+                />
+              ) : (
+                <span className="text-gray-400">Empty</span>
+              )}
+            </div>
+          ))}
+        </div>
+
         <div className="flex gap-3 justify-center">
           <Link
             to="/game/play"
