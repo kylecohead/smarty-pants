@@ -83,16 +83,14 @@ export default function Home() {
               // Show Sign Out if logged in
               <button
                 onClick={handleSignOut}
-                className="rounded-xl border border-smart-black bg-red-500 px-6 py-3 font-button text-white hover:bg-red-600"
-              >  
+                className="rounded-2xl border-4 border-smart-white bg-smart-yellow px-12 py-4 font-button text-2xl font-bold text-smart-black hover:bg-smart-orange hover:scale-105 transition-all duration-200 shadow-2xl min-w-[200px] text-center"              >  
                 Sign Out
               </button>
             ) : (
               <>
               <Link
                 to="/login"
-                className="rounded-2xl border-4 border-smart-white bg-smart-yellow px-12 py-4 font-button text-2xl font-bold text-smart-black hover:bg-smart-orange hover:scale-105 transition-all duration-200 shadow-2xl min-w-[200px] text-center"
-              >
+                className="rounded-2xl border-4 border-smart-white bg-smart-yellow px-12 py-4 font-button text-2xl font-bold text-smart-black hover:bg-smart-orange hover:scale-105 transition-all duration-200 shadow-2xl min-w-[200px] text-center"              >
                 Login
               </Link>
 
