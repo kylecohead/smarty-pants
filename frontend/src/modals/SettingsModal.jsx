@@ -54,7 +54,7 @@ export default function SettingsModal() {
           ))}
         </nav>
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/landing")}
           className="mt-3 w-full rounded-lg border border-slate-500 px-2 py-1.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-slate-100"
         >
           ✕ Close
