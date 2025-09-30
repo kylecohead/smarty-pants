@@ -96,5 +96,11 @@ tunnel:
 	cloudflared tunnel --url http://localhost:80
 
 # -------- CLEAN UP --------
-down:
-	docker compose -f docker-compose.yml -f docker-compose.prod.yml down -v
+free-ports:
+	# Free up ports used by this project
+	-docker stop $$(docker ps -q --filter "publish=5173") || true
+	-docker rm -f $$(docker ps -q --filter "publish=5173") || true
+	-docker stop $$(docker ps -q --filter "publish=3000") || true
+	-docker rm -f $$(docker ps -q --filter "publish=3000") || true
+	-docker stop $$(docker ps -q --filter "publish=5432") || true
+	-docker rm -f $$(docker ps -q --filter "publish=5432") || true
