@@ -62,7 +62,7 @@ export default function SettingsModal() {
       </aside>
 
       {/* Content */}
-      <section className="flex-1 rounded-xl border border-slate-600 bg-slate-800/50 p-6">
+      <section className="flex-1 rounded-xl border border-slate-600 bg-slate-800/50 p-6 min-h-[450px]">
         {active === "1" ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
             {/* Left: Form (smaller: 1/4) */}
