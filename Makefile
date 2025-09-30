@@ -2,7 +2,7 @@
 
 .PHONY: reset backend frontend seed logs
 
-# Reset everything: stop, nuke containers/images/volumes, rebuild, start, push schema, seed DB
+# Reset database and code: stop
 reset:
 	docker compose down -v
 	docker compose build
@@ -14,6 +14,24 @@ reset:
 	@echo "✅ DB is ready. Reapplying schema..."
 	docker compose exec backend npx prisma db push --force-reset
 	docker compose exec backend node prisma/seed.js
+# nuke containers/images/volumes, rebuild, start, push schema, seed DB
+nuke:
+	# Stop and remove all containers, networks, volumes, and images
+	docker compose down -v --rmi all --remove-orphans
+	docker system prune -af --volumes
+	# Rebuild everything with no cache
+	docker compose build --no-cache
+	docker compose up -d --force-recreate
+	# Wait a bit for DB to be ready
+	@echo "⏳ Waiting for Postgres..."
+	@until docker compose exec -T db pg_isready -U postgres -d trivia; do \
+		sleep 2; \
+	done
+	# Push schema and seed database
+	@echo "✅ Postgres is ready. Resetting schema..."
+	docker compose exec backend npx prisma db push --force-reset
+	docker compose exec backend npx prisma db seed
+
 
 
 # Rebuild and restart backend only
