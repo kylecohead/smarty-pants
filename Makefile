@@ -5,14 +5,16 @@
 # Reset everything: stop, nuke containers/images/volumes, rebuild, start, push schema, seed DB
 reset:
 	docker compose down -v
-	docker compose rm -f
-	docker builder prune -af
-	docker image prune -af
-	docker volume prune -f
-	docker compose build --no-cache
+	docker compose build
 	docker compose up -d
-	docker compose exec backend npx prisma db push
-	docker compose exec backend npx prisma db seed
+	@echo "⏳ Waiting for Postgres..."
+	@until docker compose exec -T db pg_isready -U postgres -d trivia; do \
+		sleep 2; \
+	done
+	@echo "✅ DB is ready. Reapplying schema..."
+	docker compose exec backend npx prisma db push --force-reset
+	docker compose exec backend node prisma/seed.js
+
 
 # Rebuild and restart backend only
 backend:
