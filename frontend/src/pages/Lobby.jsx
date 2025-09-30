@@ -13,25 +13,55 @@ import { useState, useEffect } from "react";
 export default function Lobby() {
   const navigate = useNavigate();
   const [players, setPlayers] = useState(Array(6).fill(null));
+  const [isLobbyFull, setIsLobbyFull] = useState(false); // To track if lobby is full
 
   // Simulate players joining every 2 seconds
   useEffect(() => {
+    let playerCount = 0;
     const interval = setInterval(() => {
-      setPlayers(current => {
-        const firstEmpty = current.findIndex(p => p === null);
-        if (firstEmpty === -1) return current; // all slots filled
+      if (playerCount >= 6) {
+        clearInterval(interval);
+        setIsLobbyFull(true);
+        return; // Stop adding players when full
+      }
 
-        const newPlayers = [...current];
+      setPlayers(current => {
+        const newPlayers = [...current];        
         newPlayers[firstEmpty] = {
-          id: firstEmpty,
-          image: `https://api.dicebear.com/7.x/avatars/svg?seed=player${firstEmpty}` // placeholder avatar
+          id: playerCount,
+          username: `Player ${playerCount + 1}`,
+          image: `https://api.dicebear.com/7.x/avatars/svg?seed=player${playerCount}`, // placeholder avatar
+          joinedAt: new Date().toISOString()
         };
         return newPlayers;
       });
+      playerCount++;
     }, 2000);
   
     return () => clearInterval(interval);
   }, []);
+
+  // Player square component
+  const PlayerSquare = ({ player, index }) => (
+    <div
+      className={`w-24 h-24 border-2 ${
+        player ? 'border-green-500' : 'border-gray-300'
+      } rounded-lg flex flex-col items-center justify-center transition-all duration-300`}
+    >
+      {player ? (
+        <>
+          <img
+            src={player.image}
+            alt = {player.username}
+            className="w-16 h-16 object-cover rounded-full"
+          />
+          <span className="text-cs mt-1 test-gray-600">{player.username}</span>
+        </>
+      ) : (
+        <span className="text-gray-400">Waiting...</span>
+      )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen relative flex items-center justify-center">
@@ -45,32 +75,29 @@ export default function Lobby() {
       <div className="text-center space-y-6">
         <h1 className="text-3xl font-bold">Game Lobby</h1>
 
+        {/* Player count display */}
+        <div className="test-sm text-gray-600">
+          Players: {players.filter(p => p !== null).length} / 6
+        </div>
+
         {/* Player squares grid */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           {players.map((player, index) => (
-            <div
-              key={index}
-              className="w-24 h-24 border-2 border-gray-300 rounded-lg flex items-center justify-center"
-            >
-              {player ? (
-                <img
-                  src={player.image}
-                  alt={`Player ${index + 1}`}
-                  className="w-20 h-20 object-cover rounded"
-                />
-              ) : (
-                <span className="text-gray-400">Empty</span>
-              )}
-            </div>
+            <PlayerSquare key={index} player={player} index={index}/>
           ))}
         </div>
 
         <div className="flex gap-3 justify-center">
           <Link
             to="/game/play"
-            className="rounded-xl border px-6 py-3 hover:bg-slate-100"
+            className={`rounded-xl border px-6 py-3 ${
+              isLobbyFull 
+                ? 'bg-green-500 text-white hover:bg-green-600' 
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+            onClick={(e) => !isLobbyFull && e.preventDefault()}
           >
-            Play Game
+            {isLobbyFull ? 'Play Game' : 'Waiting for Players...'}
           </Link>
           <Link
             to="/lobby/round"
