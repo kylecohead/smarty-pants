@@ -26,7 +26,7 @@ Admin	admin@example.com	1234	ADMIN
 make run
 ```
 
-2. Full reset (Nuke everything)
+2. Full reset (Applies database changes)
 ```bash
 make reset
 ```
@@ -75,6 +75,11 @@ make build
 ```bash
 make test-socket USER=Alice
 make test-socket USER=Bob
+```
+
+11. Nuke (removes all docker images and redownloads everything)
+```bash
+make nuke
 ```
 
 
