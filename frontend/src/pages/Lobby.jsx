@@ -8,18 +8,31 @@
  */
 import { Link, useNavigate, Outlet } from "react-router-dom";
 import { useState, useEffect } from "react";
+import catImage from '../assets/cat.jpg'; 
 
 
 export default function Lobby() {
   const navigate = useNavigate();
-  const [players, setPlayers] = useState(Array(6).fill(null));
+  // Initialize players with the host at index 0
+  const [players, setPlayers] = useState(() => {
+    const initialPlayers = Array(6).fill(null);
+    initialPlayers[0] = {
+      id: 0,
+      username: 'Host Player',
+      image: catImage,
+      joinedAt: new Date().toISOString()
+    };
+    return initialPlayers;
+  });
   const [isLobbyFull, setIsLobbyFull] = useState(false); // To track if lobby is full
 
   // Simulate players joining every 2 seconds
   useEffect(() => {
-    let playerCount = 0;
+    let currentIndex = 1;
+
     const interval = setInterval(() => {
-      if (playerCount >= 6) {
+      // Check if all 6 slots have been filled
+      if (currentIndex >= 6) {
         clearInterval(interval);
         setIsLobbyFull(true);
         return; // Stop adding players when full
@@ -27,19 +40,37 @@ export default function Lobby() {
 
       setPlayers(current => {
         const newPlayers = [...current];        
-        newPlayers[firstEmpty] = {
-          id: playerCount,
-          username: `Player ${playerCount + 1}`,
-          image: `https://api.dicebear.com/7.x/avatars/svg?seed=player${playerCount}`, // placeholder avatar
+        newPlayers[currentIndex] = {
+          id: currentIndex,
+          username: `Player ${currentIndex}`,
+          image: catImage,
           joinedAt: new Date().toISOString()
         };
         return newPlayers;
       });
-      playerCount++;
+
+      currentIndex++;
     }, 2000);
-  
-    return () => clearInterval(interval);
+ 
+    // Cleanup function
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
+
+  // Helper function for ... loading dots
+  const useLoadingDots = () => {
+    const [dots, setDots] = useState(0);
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setDots(prev => (prev + 1) % 4);
+      }, 500);
+      return () => clearInterval(interval);
+    }, []);
+
+    return '.'.repeat(dots);
+  };
 
   // Player square component
   const PlayerSquare = ({ player, index }) => (
@@ -55,7 +86,7 @@ export default function Lobby() {
             alt = {player.username}
             className="w-16 h-16 object-cover rounded-full"
           />
-          <span className="text-cs mt-1 test-gray-600">{player.username}</span>
+          <span className="text-xs mt-1 text-gray-600">{player.username}</span>
         </>
       ) : (
         <span className="text-gray-400">Waiting...</span>
@@ -76,7 +107,7 @@ export default function Lobby() {
         <h1 className="text-3xl font-bold">Game Lobby</h1>
 
         {/* Player count display */}
-        <div className="test-sm text-gray-600">
+        <div className="text-sm text-gray-600">
           Players: {players.filter(p => p !== null).length} / 6
         </div>
 
@@ -86,6 +117,13 @@ export default function Lobby() {
             <PlayerSquare key={index} player={player} index={index}/>
           ))}
         </div>
+
+        {/* Loading indicator */}
+        {!isLobbyFull && (
+          <div className="text-lg text-gray-600 font-medium h-8">
+            Waiting for players{useLoadingDots()}
+          </div>
+        )}
 
         <div className="flex gap-3 justify-center">
           <Link
@@ -97,7 +135,7 @@ export default function Lobby() {
             }`}
             onClick={(e) => !isLobbyFull && e.preventDefault()}
           >
-            {isLobbyFull ? 'Play Game' : 'Waiting for Players...'}
+            Play Game
           </Link>
           <Link
             to="/lobby/round"
