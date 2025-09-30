@@ -27,22 +27,22 @@ export default function Lobby() {
   const [isLobbyFull, setIsLobbyFull] = useState(false); // To track if lobby is full
 
   // Simulate players joining every 2 seconds
-  useEffect(() => {
-    let currentIndex = 1;
+ useEffect(() => {
+    let currentIndex = 0; // Start at 1 since host is at 0
 
     const interval = setInterval(() => {
-      // Check if all 6 slots have been filled
-      if (currentIndex >= 6) {
-        clearInterval(interval);
+      if (currentIndex >= 5) {
         setIsLobbyFull(true);
-        return; // Stop adding players when full
+        clearInterval(interval);
+        return;
       }
 
       setPlayers(current => {
-        const newPlayers = [...current];        
+        const newPlayers = [...current];
+        // Skip index 0 since host is there
         newPlayers[currentIndex] = {
           id: currentIndex,
-          username: `Player ${currentIndex}`,
+          username: `Player ${currentIndex + 1}`,
           image: catImage,
           joinedAt: new Date().toISOString()
         };
@@ -51,11 +51,8 @@ export default function Lobby() {
 
       currentIndex++;
     }, 2000);
- 
-    // Cleanup function
-    return () => {
-      clearInterval(interval);
-    };
+
+    return () => clearInterval(interval);
   }, []);
 
   // Helper function for ... loading dots
