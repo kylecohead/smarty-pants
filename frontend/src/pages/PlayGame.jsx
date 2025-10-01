@@ -1,6 +1,6 @@
 /**
  * Game Page: trivia gameplay loop with simulated multiplayer.
- * - Each question runs on a 10 second timer.
+ * - Each question runs on a configurable timer (defaults to 10 seconds).
  * - We now wait until either all players answer OR the timer expires before
  *   resolving the question. If anyone misses the timer, they earn zero.
  * - Simulated players expose timing metadata so future socket integration is easy.
@@ -11,7 +11,7 @@ import { QUESTIONS } from "../data/questions";
 import { SIMULATED_PLAYERS } from "../data/simulatedPlayers";
 import { RECAP_DELAY_SECONDS, FINAL_DELAY_SECONDS } from "../config/gameConfig";
 
-const QUESTION_DURATION_MS = 10000;
+const DEFAULT_QUESTION_DURATION_SECONDS = 10;
 const TIMER_TICK_MS = 100;
 const YOU_ID = "p1";
 const DEFAULT_YOU_NAME = "You";
@@ -60,12 +60,12 @@ function createBlankResponses(youName) {
   return base;
 }
 
-function calculateScore(isCorrect, answerTimeMs) {
+function calculateScore(isCorrect, answerTimeMs, questionDurationMs) {
   if (!isCorrect) return 0;
-  const clamped = Math.max(0, Math.min(answerTimeMs, QUESTION_DURATION_MS));
+  const clamped = Math.max(0, Math.min(answerTimeMs, questionDurationMs));
   const secondsLeft = Math.max(
     0,
-    Math.floor((QUESTION_DURATION_MS - clamped) / 1000)
+    Math.floor((questionDurationMs - clamped) / 1000)
   );
   return secondsLeft * 10;
 }
@@ -101,19 +101,52 @@ function buildFinalLeaderboard(youTotal, simTotals, youName) {
 }
 
 export default function PlayGame() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [questionDurationMs] = useState(() => {
+    const fromState = Number(location.state?.timerSeconds);
+    if (Number.isFinite(fromState) && fromState > 0) {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(
+          "questionDurationSeconds",
+          String(fromState)
+        );
+      }
+      return fromState * 1000;
+    }
+
+    if (typeof window !== "undefined") {
+      const stored = Number(
+        window.sessionStorage.getItem("questionDurationSeconds")
+      );
+      if (Number.isFinite(stored) && stored > 0) {
+        return stored * 1000;
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(
+        "questionDurationSeconds",
+        String(DEFAULT_QUESTION_DURATION_SECONDS)
+      );
+    }
+
+    return DEFAULT_QUESTION_DURATION_SECONDS * 1000;
+  });
+
+  const youName = DEFAULT_YOU_NAME;
+
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [simTotals, setSimTotals] = useState(() => createInitialSimTotals());
-  const [timeLeftMs, setTimeLeftMs] = useState(QUESTION_DURATION_MS);
+  const [timeLeftMs, setTimeLeftMs] = useState(questionDurationMs);
   const [pendingAdvance, setPendingAdvance] = useState(false);
   const [questionResolved, setQuestionResolved] = useState(false);
   const [responses, setResponses] = useState(() =>
-    createBlankResponses(DEFAULT_YOU_NAME)
+    createBlankResponses(youName)
   );
 
-  const youName = DEFAULT_YOU_NAME;
-  const navigate = useNavigate();
-  const location = useLocation();
   const isRecapOpen = location.pathname.endsWith("/pause");
   const total = QUESTIONS.length;
   const finished = index >= total;
@@ -134,6 +167,10 @@ export default function PlayGame() {
   useEffect(() => {
     responsesRef.current = responses;
   }, [responses]);
+
+  const handleQuitGame = () => {
+    navigate("/", { replace: true });
+  };
 
   function clearSimulatedTimers() {
     simTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
@@ -236,7 +273,7 @@ export default function PlayGame() {
 
       const clampedTime = Math.max(
         0,
-        Math.min(answerTimeMs, QUESTION_DURATION_MS)
+        Math.min(answerTimeMs, questionDurationMs)
       );
       const updated = {
         ...existing,
@@ -244,7 +281,7 @@ export default function PlayGame() {
         timedOut: false,
         isCorrect,
         answerTimeMs: clampedTime,
-        score: calculateScore(isCorrect, clampedTime),
+        score: calculateScore(isCorrect, clampedTime, questionDurationMs),
         selectedOptionId: selectedOptionId ?? existing.selectedOptionId,
       };
 
@@ -271,7 +308,7 @@ export default function PlayGame() {
             answered: true,
             timedOut: true,
             isCorrect: false,
-            answerTimeMs: QUESTION_DURATION_MS,
+            answerTimeMs: questionDurationMs,
             score: 0,
           };
         }
@@ -304,7 +341,7 @@ export default function PlayGame() {
     SIMULATED_PLAYERS.forEach((player) => {
       const answer = player.answers[index];
       if (!answer) return;
-      if (answer.timeToAnswerMs >= QUESTION_DURATION_MS) return;
+      if (answer.timeToAnswerMs >= questionDurationMs) return;
 
       const timeoutId = setTimeout(() => {
         storeAnswer(player.id, {
@@ -316,7 +353,7 @@ export default function PlayGame() {
     });
 
     simTimeoutsRef.current = timers;
-    setTimeLeftMs(QUESTION_DURATION_MS);
+    setTimeLeftMs(questionDurationMs);
 
     const interval = setInterval(() => {
       if (resolvedRef.current) {
@@ -341,8 +378,7 @@ export default function PlayGame() {
       clearInterval(interval);
       clearSimulatedTimers();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, finished, isRecapOpen, youName]);
+  }, [index, finished, isRecapOpen, questionDurationMs, youName]);
 
   // Called when player clicks an option button
   function handleAnswer(optionId) {
@@ -398,6 +434,13 @@ export default function PlayGame() {
                 Question {index + 1} / {total}
               </p>
             )}
+            <button
+              type="button"
+              onClick={handleQuitGame}
+              className="mt-4 w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20 sm:w-auto"
+            >
+              Quit
+            </button>
           </div>
         </header>
 
@@ -412,7 +455,11 @@ export default function PlayGame() {
                   <div
                     className="h-full bg-smart-green transition-[width] duration-100 ease-linear"
                     style={{
-                      width: `${(timeLeftMs / QUESTION_DURATION_MS) * 100}%`,
+                      width: `${
+                        questionDurationMs > 0
+                          ? (timeLeftMs / questionDurationMs) * 100
+                          : 0
+                      }%`,
                     }}
                   />
                 </div>
