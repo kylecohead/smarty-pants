@@ -1,3 +1,4 @@
 docs.txt
-.DS_Store
 
+# macOS Finder metadata
+.DS_Store
