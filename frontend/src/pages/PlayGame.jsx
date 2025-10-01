@@ -5,7 +5,7 @@
  *   resolving the question. If anyone misses the timer, they earn zero.
  * - Simulated players expose timing metadata so future socket integration is easy.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { QUESTIONS } from "../data/questions";
 import { SIMULATED_PLAYERS } from "../data/simulatedPlayers";
@@ -16,13 +16,13 @@ const TIMER_TICK_MS = 100;
 const YOU_ID = "p1";
 const DEFAULT_YOU_NAME = "You";
 
-const BACKGROUND_COLOR = "#0A2442";
-const ANSWER_GRADIENTS = [
-  "bg-gradient-to-br from-[#FF8FAB] to-[#FF5F87]",
-  "bg-gradient-to-br from-[#6EC5FF] to-[#4F8CFF]",
-  "bg-gradient-to-br from-[#FFC857] to-[#FFAE42] text-black",
-  "bg-gradient-to-br from-[#32D399] to-[#0FB57D]",
-];
+const colors = {
+  darkBlue: "#0A2442",
+  accentA: "#32D399",
+  accentB: "#6EC5FF",
+  accentC: "#FFC857",
+  accentD: "#FF8FAB",
+};
 
 function createInitialSimTotals() {
   const totals = {};
@@ -106,6 +106,7 @@ export default function PlayGame() {
   const [simTotals, setSimTotals] = useState(() => createInitialSimTotals());
   const [timeLeftMs, setTimeLeftMs] = useState(QUESTION_DURATION_MS);
   const [pendingAdvance, setPendingAdvance] = useState(false);
+  const [questionResolved, setQuestionResolved] = useState(false);
   const [responses, setResponses] = useState(() =>
     createBlankResponses(DEFAULT_YOU_NAME)
   );
@@ -117,48 +118,41 @@ export default function PlayGame() {
   const total = QUESTIONS.length;
   const finished = index >= total;
   const question = finished ? null : QUESTIONS[index];
-  const finalRows = useMemo(
-    () => buildFinalLeaderboard(score, simTotals, youName),
-    [score, simTotals, youName]
-  );
+  const finalRows = buildFinalLeaderboard(score, simTotals, youName);
   const winner = finalRows[0];
 
   const questionStartRef = useRef(Date.now());
   const resolvedRef = useRef(false);
   const simTimeoutsRef = useRef([]);
+  const simTotalsRef = useRef(simTotals);
+  const responsesRef = useRef(responses);
+
+  useEffect(() => {
+    simTotalsRef.current = simTotals;
+  }, [simTotals]);
+
+  useEffect(() => {
+    responsesRef.current = responses;
+  }, [responses]);
 
   function clearSimulatedTimers() {
     simTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
     simTimeoutsRef.current = [];
   }
 
-  function applyResponses(updater) {
-    let nextState;
-    setResponses((prev) => {
-      const result = updater(prev);
-      nextState = result;
-      return result;
-    });
-    return nextState;
-  }
-
-  function everyoneAnswered(snapshot) {
-    return Object.values(snapshot).every(
-      (entry) => entry.answered || entry.timedOut
-    );
-  }
-
-  function resolveQuestion(snapshot) {
+  function resolveQuestion(reason) {
     if (resolvedRef.current) return;
     resolvedRef.current = true;
+    setQuestionResolved(true);
     clearSimulatedTimers();
 
+    const snapshot = responsesRef.current;
     const youEntry = snapshot[YOU_ID];
     const roundScore = youEntry?.score ?? 0;
     const youTotalAfter = score + roundScore;
     setScore(youTotalAfter);
 
-    const updatedSimTotals = { ...simTotals };
+    const updatedSimTotals = { ...simTotalsRef.current };
     Object.values(snapshot).forEach((entry) => {
       if (!entry.player.isYou) {
         updatedSimTotals[entry.player.id] =
@@ -210,23 +204,31 @@ export default function PlayGame() {
         questionIndex: index,
         leaderboard,
         nextInSeconds: RECAP_DELAY_SECONDS,
+        reason,
       },
     });
 
     setPendingAdvance(true);
   }
 
-  function maybeResolve(snapshot) {
-    if (!snapshot || resolvedRef.current) return;
-    if (everyoneAnswered(snapshot)) {
-      resolveQuestion(snapshot);
+  function checkForResolution() {
+    if (resolvedRef.current) return;
+    const snapshot = Object.values(responsesRef.current);
+    const everyoneDone = snapshot.every(
+      (entry) => entry.answered || entry.timedOut
+    );
+    if (everyoneDone) {
+      resolveQuestion("all-answered");
     }
   }
 
-  function storeAnswer(playerId, { isCorrect, answerTimeMs, selectedOptionId }) {
+  function storeAnswer(
+    playerId,
+    { isCorrect, answerTimeMs, selectedOptionId }
+  ) {
     if (resolvedRef.current) return;
 
-    const snapshot = applyResponses((prev) => {
+    setResponses((prev) => {
       const existing = prev[playerId];
       if (!existing || existing.answered) {
         return prev;
@@ -246,38 +248,42 @@ export default function PlayGame() {
         selectedOptionId: selectedOptionId ?? existing.selectedOptionId,
       };
 
-      return { ...prev, [playerId]: updated };
+      const next = { ...prev, [playerId]: updated };
+      responsesRef.current = next;
+      return next;
     });
 
-    maybeResolve(snapshot);
+    setTimeout(checkForResolution, 0);
   }
 
   function handleTimeExpired() {
     if (resolvedRef.current) return;
 
-    const snapshot = applyResponses((prev) => {
+    setResponses((prev) => {
+      const next = { ...prev };
       let mutated = false;
-      const next = Object.fromEntries(
-        Object.entries(prev).map(([id, entry]) => {
-          if (entry.answered) return [id, entry];
+
+      Object.entries(prev).forEach(([id, entry]) => {
+        if (!entry.answered) {
           mutated = true;
-          return [
-            id,
-            {
-              ...entry,
-              answered: true,
-              timedOut: true,
-              isCorrect: false,
-              answerTimeMs: QUESTION_DURATION_MS,
-              score: 0,
-            },
-          ];
-        })
-      );
+          next[id] = {
+            ...entry,
+            answered: true,
+            timedOut: true,
+            isCorrect: false,
+            answerTimeMs: QUESTION_DURATION_MS,
+            score: 0,
+          };
+        }
+      });
+
+      if (mutated) {
+        responsesRef.current = next;
+      }
       return mutated ? next : prev;
     });
 
-    resolveQuestion(snapshot);
+    resolveQuestion("timer-expired");
   }
 
   // Timer + simulated player scheduling for each question
@@ -290,6 +296,7 @@ export default function PlayGame() {
 
     questionStartRef.current = Date.now();
     resolvedRef.current = false;
+    setQuestionResolved(false);
 
     clearSimulatedTimers();
 
@@ -341,7 +348,7 @@ export default function PlayGame() {
   function handleAnswer(optionId) {
     if (finished || !question || isRecapOpen || resolvedRef.current) return;
 
-    const existing = responses[YOU_ID];
+    const existing = responsesRef.current[YOU_ID];
     if (existing?.answered) return;
 
     const isCorrect = optionId === question.correctId;
@@ -364,12 +371,12 @@ export default function PlayGame() {
 
   const youResponse = responses[YOU_ID];
   const youAnswered = Boolean(youResponse?.answered);
-  const waitingOnOthers = youAnswered && !resolvedRef.current && !finished;
+  const waitingOnOthers = youAnswered && !questionResolved && !finished;
 
   return (
     <div
       className="min-h-screen text-white"
-      style={{ backgroundColor: BACKGROUND_COLOR }}
+      style={{ backgroundColor: colors.darkBlue }}
     >
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
