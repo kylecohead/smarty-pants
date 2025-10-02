@@ -7,8 +7,9 @@
  *  - Settings (top-right) opens /landing/settings modal
  * Back: back to Home "/"
  */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
+import ProfileCard from "../components/ProfileCard.jsx";
 
 // Mock data for demonstration
 const mockLeaderboard = [
@@ -18,15 +19,6 @@ const mockLeaderboard = [
   { rank: 4, name: "sara", highScore: 1950, avatar: "S" },
   { rank: 5, name: "jo", highScore: 1850, avatar: "J" },
 ];
-
-const mockUser = {
-  username: "nina",
-  memberSince: 2022,
-  avatar: "N",
-  gamesPlayed: 127,
-  highScore: 2450,
-  wins: 89,
-};
 
 const mockNotifications = [
   { id: 1, message: "alex invited you to join their game!", time: "2 min ago" },
@@ -64,6 +56,52 @@ export default function Landing() {
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch user data
+  useEffect(() => {
+    async function fetchUser() {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/users/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        if (res.ok && data.user) {
+          setUser(data.user);
+        } else {
+          setError(data.error || "Failed to fetch user");
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUser();
+  }, []);
+
+  // Handle loading and error states
+  if (loading) {
+    return <p>Loading user data...</p>;
+  }
+
+  if (error) {
+    return <p>Error: {error}</p>;
+  }
+
+  if (!user) {
+    return <p>No user data available</p>;
+  }
 
   return (
     <div className="min-h-screen bg-smart-dark-blue text-smart-white">
@@ -179,57 +217,18 @@ export default function Landing() {
           </div>
 
           {/* Right Side - User Profile */}
-          <div className="space-y-6">
-            <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-6">
-              {/* Username */}
-              <div className="text-center mb-2">
-                <h2 className="font-heading text-3xl font-bold text-smart-white">
-                  {mockUser.username.toUpperCase()}
-                </h2>
-                <p className="font-button text-smart-white/60 text-lg">
-                  EST. {mockUser.memberSince}
-                </p>
-              </div>
-
-              {/* Avatar */}
-              <div className="flex justify-center mb-6">
-                <div className="w-32 h-32 rounded-2xl bg-smart-orange border-4 border-smart-white flex items-center justify-center">
-                  <span className="font-heading text-6xl font-bold text-smart-black">
-                    {mockUser.avatar}
-                  </span>
-                </div>
-              </div>
-
-              {/* User Stats */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-                    <p className="font-button text-smart-white/60 text-sm mb-1">
-                      Games Played
-                    </p>
-                    <p className="font-heading text-2xl font-bold text-smart-green">
-                      {mockUser.gamesPlayed}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-                    <p className="font-button text-smart-white/60 text-sm mb-1">
-                      High Score
-                    </p>
-                    <p className="font-heading text-2xl font-bold text-smart-yellow">
-                      {mockUser.highScore.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-                    <p className="font-button text-smart-white/60 text-sm mb-1">
-                      Wins
-                    </p>
-                    <p className="font-heading text-2xl font-bold text-smart-light-blue">
-                      {mockUser.wins}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div>
+            {/* ProfileCard */}
+            <ProfileCard
+              user={{
+                username: user.username,
+                avatar: user.avatarUrl,
+                gamesPlayed: user.gamesPlayed,
+                highScore: user.highScore,
+                wins: user.wins,
+                memberSince: user.memberSince,
+              }}
+            />
           </div>
         </div>
       </div>

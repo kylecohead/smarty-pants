@@ -1,5 +1,5 @@
 import { NavLink, useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProfileCard from "../components/ProfileCard";
 
 const tabs = [
@@ -14,35 +14,118 @@ export default function SettingsModal() {
   const navigate = useNavigate();
   const active = tabId ?? "1";
 
-  // Profile state (for Page 1)
-  const [username, setUsername] = useState("Wikus");
-  const [password, setPassword] = useState("Secret123!");
+  const API_URL = "/api/users";
+
+  // Profile state
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [avatar, setAvatar] = useState(
-    "http://localhost:3000/uploads/conrad.jpg"
-  );
+  const [avatar, setAvatar] = useState("");
+  const [loading, setLoading] = useState(true);
+
+
+
+  //MOCK DATA======================================
+  // Dummy stats for now
   const [gamesPlayed] = useState(42);
   const [highScore] = useState(2450);
   const [wins] = useState(12);
   const [memberSince] = useState("2024-01-12T00:00:00Z");
 
-  // Mock match history (for Page 3)
+  // Match history (mock)
   const [matchHistory] = useState([
-    {
-      id: 1,
-      date: "2025-09-18T19:30:00Z",
-      category: "Science",
-      score: 1800,
-      placement: 2,
-    },
-    {
-      id: 2,
-      date: "2025-09-20T20:00:00Z",
-      category: "Geography",
-      score: 2450,
-      placement: 1,
-    },
+    { id: 1, date: "2025-09-18T19:30:00Z", category: "Science", score: 1800, placement: 2 },
+    { id: 2, date: "2025-09-20T20:00:00Z", category: "Geography", score: 2450, placement: 1 },
   ]);
+//===============================================
+
+
+
+  // Fetch current user on mount
+  useEffect(() => {
+    async function fetchUser() {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch(`${API_URL}/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (res.ok && data.user) {
+          setUsername(data.user.username || "");
+          setAvatar(data.user.avatarUrl || "");
+        } else {
+          console.error("Fetch user error:", data.error);
+        }
+      } catch (err) {
+        console.error("Fetch user failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUser();
+  }, []);
+
+  // Upload avatar
+  async function handleAvatarUpload(file) {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const res = await fetch(`/api/images/upload`, {   
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok && data.fileUrl) {
+        setAvatar(data.fileUrl);
+      } else {
+        console.error("Upload error:", data.error || data);
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+    }
+  }
+
+  // Save profile
+  async function handleSave(e) {
+    e.preventDefault();
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_URL}/me`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          username,
+          password: password || undefined, // don’t send empty string
+          avatarUrl: avatar,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Profile updated!");
+        setUsername(data.user.username);
+        setAvatar(data.user.avatarUrl);
+      } else {
+        alert(data.error || "Update failed");
+      }
+    } catch (err) {
+      console.error("Update failed", err);
+    }
+  }
+
+  if (loading) {
+    return <p className="p-6 text-slate-400">Loading profile...</p>;
+  }
 
   return (
     <div className="flex gap-4">
@@ -77,11 +160,11 @@ export default function SettingsModal() {
       <section className="flex-1 rounded-xl border border-slate-600 bg-slate-800/50 p-6 min-h-[450px]">
         {active === "1" && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+
             {/* Left: Form */}
-            <form className="flex flex-col gap-4 md:col-span-1">
-              <h3 className="text-base font-semibold text-slate-100">
-                Update Profile
-              </h3>
+            <form className="flex flex-col gap-4 md:col-span-1" onSubmit={handleSave}>
+              <h3 className="text-base font-semibold text-slate-100">Update Profile</h3>
+
               {/* Username */}
               <label className="flex flex-col text-xs text-slate-300">
                 Username
@@ -92,6 +175,7 @@ export default function SettingsModal() {
                   className="rounded-md border border-slate-500 bg-slate-800 px-2 py-1 text-slate-100"
                 />
               </label>
+
               {/* Password */}
               <label className="flex flex-col text-xs text-slate-300">
                 Password
@@ -111,16 +195,21 @@ export default function SettingsModal() {
                   </button>
                 </div>
               </label>
-              {/* Avatar */}
+
+              {/* Avatar Upload */}
               <label className="flex flex-col text-xs text-slate-300">
-                Avatar URL
+                Upload Avatar
                 <input
-                  type="text"
-                  value={avatar}
-                  onChange={(e) => setAvatar(e.target.value)}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleAvatarUpload(file);
+                  }}
                   className="rounded-md border border-slate-500 bg-slate-800 px-2 py-1 text-slate-100"
                 />
               </label>
+
               <button
                 type="submit"
                 className="mt-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
@@ -128,6 +217,7 @@ export default function SettingsModal() {
                 Save
               </button>
             </form>
+
             {/* Right: ProfileCard */}
             <div className="md:col-span-3 flex items-center">
               <ProfileCard

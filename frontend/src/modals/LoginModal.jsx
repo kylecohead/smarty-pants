@@ -15,8 +15,8 @@ export default function LoginModal({ mode = "login", onAuth }) {
 
     const url =
       mode === "login"
-        ? `${API_URL}/api/auth/login`
-        : `${API_URL}/api/auth/signup`;
+        ? `${API_URL}/auth/login`
+        : `${API_URL}/auth/signup`;
 
     const body =
       mode === "signup"

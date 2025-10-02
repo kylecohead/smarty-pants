@@ -16,7 +16,7 @@ export default function AboutModal() {
       <p className="text-sm text-slate-400">
         Contact: conrad@gmail.com 
       </p>
-      <img src="http://localhost:3000/uploads/conrad.jpg" alt="User avatar" />
+      <img src="/uploads/conrad.jpg" alt="User avatar" />
 
     </div>
   );
