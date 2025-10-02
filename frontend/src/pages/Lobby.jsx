@@ -42,7 +42,7 @@ function Heading() {
   ];
 
   return (
-    <h1 className="">
+    <h1 className="text-center font-heading text-6xl sm:text-7xl font-black leading-none tracking-wider mb-8">
       {letters.map((letter, index) => (
         <span key={index} className={letter.c}>
           {String(letter.t).toUpperCase()}
@@ -51,6 +51,20 @@ function Heading() {
     </h1>
   );
 }
+
+// Helper function for ... loading dots
+const useLoadingDots = () => {
+  const [dots, setDots] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => (prev + 1) % 4);
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return '.'.repeat(dots);
+};
 
 export default function Lobby() {
   const navigate = useNavigate();
@@ -66,9 +80,10 @@ export default function Lobby() {
     return initialPlayers;
   });
   const [isLobbyFull, setIsLobbyFull] = useState(false); // To track if lobby is full
+  const loadingDots = useLoadingDots();
 
   // Simulate players joining every 2 seconds
- useEffect(() => {
+  useEffect(() => {
     let currentIndex = 0; // Start at 1 since host is at 0
 
     const interval = setInterval(() => {
@@ -96,24 +111,11 @@ export default function Lobby() {
     return () => clearInterval(interval);
   }, []);
 
-  // Helper function for ... loading dots
-  const useLoadingDots = () => {
-    const [dots, setDots] = useState(0);
-
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setDots(prev => (prev + 1) % 4);
-      }, 500);
-      return () => clearInterval(interval);
-    }, []);
-
-    return '.'.repeat(dots);
-  };
 
   // Player square component
   const PlayerSquare = ({ player, index }) => (
     <div
-      className={`w-24 h-24 border-2 rounded-xl ${
+      className={`w-32 h-32 border-2 rounded-xl ${
         player 
           ? 'border-emerald-500 bg-white/10' 
           : 'border-white/20 bg-white/5'
@@ -124,9 +126,9 @@ export default function Lobby() {
           <img
             src={player.image}
             alt = {player.username}
-            className="w-16 h-16 object-cover rounded-full ring-2 ring-white/20"
+            className="w-24 h-24 object-cover rounded-full ring-2 ring-white/20"
           />
-          <span className="text-xs mt-1 text-white/80">{player.username}</span>
+          <span className="text-sm mt-2 text-white/80">{player.username}</span>
         </>
       ) : (
         <span className="text-white/50">Waiting...</span>
@@ -136,7 +138,7 @@ export default function Lobby() {
 
   return (
     <div className="min-h-screen" style = {{ backgroundColor: colors.darkBlue }}>
-      <div className="max-w-3xl mx-auto px-4 py-10">
+      <div className="max-w-5xl mx-auto px-6 py-16">
         <button
           onClick={() => navigate(-1)}
           className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-white font-button transition-colors"
@@ -144,7 +146,7 @@ export default function Lobby() {
           ← Back
         </button>
 
-        <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-6 sm:p-8">
+        <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-8 sm:p-12">
           {/* Header with colorful letters */}
           <div className="flex items-center justify-center">
             <Heading />
@@ -158,8 +160,8 @@ export default function Lobby() {
           </div>
 
           {/* Player squares grid */}
-          <div className="mt-6">
-            <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="mt-8">
+            <div className="grid grid-cols-3 gap-4 mb-8">
               {players.map((player, index) => (
                 <PlayerSquare key={index} player={player} index={index}/>
               ))}
@@ -169,7 +171,7 @@ export default function Lobby() {
           {/* Loading indicator */}
           {!isLobbyFull && (
             <div className="text-white/60 text-center mt-4">
-              Waiting for players{useLoadingDots()}
+              Waiting for players{loadingDots}
             </div>
           )}
 
