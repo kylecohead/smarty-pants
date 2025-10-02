@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 // "Smart" palette — tweak freely to match your design system
@@ -106,7 +106,22 @@ export default function CreateGame() {
   const [usernameQuery, setUsernameQuery] = useState(""); // Search query for finding users to invite
   const [invited, setInvited] = useState([]); // Array of invited usernames
   const [modeIndex, setModeIndex] = useState(0); // Currently selected game mode index
-  const [secPerQ, setSecPerQ] = useState(20); // Seconds per question timer
+  const [secPerQ, setSecPerQ] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = Number(
+        window.sessionStorage.getItem("questionDurationSeconds")
+      );
+      if (Number.isFinite(stored) && stored >= 5 && stored <= 60) {
+        return stored;
+      }
+    }
+    return 10;
+  }); // Seconds per question timer
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("questionDurationSeconds", String(secPerQ));
+    }
+  }, [secPerQ]);
   const [scoring, setScoring] = useState(scoringModels[0].key); // Selected scoring model
   const [requireCorrectAll, setRequireCorrectAll] = useState(false); // Whether all answers must be correct to advance
 
@@ -403,7 +418,7 @@ export default function CreateGame() {
                     max={60}
                     step={5}
                     value={secPerQ}
-                    onChange={(e) => setSecPerQ(parseInt(e.target.value))}
+                    onChange={(e) => setSecPerQ(parseInt(e.target.value, 10))}
                     className="w-full accent-white"
                   />
                   <span className="inline-block rounded-xl border border-white/20 bg-white/10 text-white text-xs px-2 py-1">
