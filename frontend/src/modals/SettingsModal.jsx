@@ -22,14 +22,16 @@ export default function SettingsModal() {
   const [showPassword, setShowPassword] = useState(false);
   const [avatar, setAvatar] = useState("");
   const [loading, setLoading] = useState(true);
-  const [gamesPlayed, setGamesPlayed] = useState(0);
-  const [highScore, setHighScore] = useState(0);
-  const [wins, setWins] = useState(0);
-  const [memberSince, setMemberSince] = useState("2024-01-12T00:00:00Z");
 
 
 
   //MOCK DATA======================================
+  // Dummy stats for now
+  const [gamesPlayed] = useState(42);
+  const [highScore] = useState(2450);
+  const [wins] = useState(12);
+  const [memberSince] = useState("2024-01-12T00:00:00Z");
+
   // Match history (mock)
   const [matchHistory] = useState([
     { id: 1, date: "2025-09-18T19:30:00Z", category: "Science", score: 1800, placement: 2 },
@@ -55,11 +57,6 @@ export default function SettingsModal() {
         if (res.ok && data.user) {
           setUsername(data.user.username || "");
           setAvatar(data.user.avatarUrl || "");
-          // setGamesPlayed(data.user.gamesPlayed || 0);
-          // setHighScore(data.user.highScore || 0);
-          // setWins(data.user.wins || 0);
-          // setMemberSince(data.user.memberSince || "2024-01-12T00:00:00Z");
-          
         } else {
           console.error("Fetch user error:", data.error);
         }
@@ -163,6 +160,7 @@ export default function SettingsModal() {
       <section className="flex-1 rounded-xl border border-slate-600 bg-slate-800/50 p-6 min-h-[450px]">
         {active === "1" && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+
             {/* Left: Form */}
             <form className="flex flex-col gap-4 md:col-span-1" onSubmit={handleSave}>
               <h3 className="text-base font-semibold text-slate-100">Update Profile</h3>
