@@ -9,6 +9,8 @@
  */
 import React, { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
+import useCurrentUser from "../components/CurrentUser.jsx";
+import ProfileCard from "../components/ProfileCard.jsx";
 
 // Mock data for demonstration
 const mockLeaderboard = [
@@ -18,6 +20,7 @@ const mockLeaderboard = [
   { rank: 4, name: "sara", highScore: 1950, avatar: "S" },
   { rank: 5, name: "jo", highScore: 1850, avatar: "J" },
 ];
+
 
 const mockUser = {
   username: "nina",
@@ -64,6 +67,8 @@ export default function Landing() {
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const { user, setUser, loading, error } = useCurrentUser();
+
 
   return (
     <div className="min-h-screen bg-smart-dark-blue text-smart-white">
@@ -179,58 +184,16 @@ export default function Landing() {
           </div>
 
           {/* Right Side - User Profile */}
-          <div className="space-y-6">
-            <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-6">
-              {/* Username */}
-              <div className="text-center mb-2">
-                <h2 className="font-heading text-3xl font-bold text-smart-white">
-                  {mockUser.username.toUpperCase()}
-                </h2>
-                <p className="font-button text-smart-white/60 text-lg">
-                  EST. {mockUser.memberSince}
-                </p>
-              </div>
-
-              {/* Avatar */}
-              <div className="flex justify-center mb-6">
-                <div className="w-32 h-32 rounded-2xl bg-smart-orange border-4 border-smart-white flex items-center justify-center">
-                  <span className="font-heading text-6xl font-bold text-smart-black">
-                    {mockUser.avatar}
-                  </span>
-                </div>
-              </div>
-
-              {/* User Stats */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-                    <p className="font-button text-smart-white/60 text-sm mb-1">
-                      Games Played
-                    </p>
-                    <p className="font-heading text-2xl font-bold text-smart-green">
-                      {mockUser.gamesPlayed}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-                    <p className="font-button text-smart-white/60 text-sm mb-1">
-                      High Score
-                    </p>
-                    <p className="font-heading text-2xl font-bold text-smart-yellow">
-                      {mockUser.highScore.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-                    <p className="font-button text-smart-white/60 text-sm mb-1">
-                      Wins
-                    </p>
-                    <p className="font-heading text-2xl font-bold text-smart-light-blue">
-                      {mockUser.wins}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ProfileCard
+            user={{
+              username: user.username,
+              avatar: user.avatar,
+              gamesPlayed: mockUser.gamesPlayed,
+              highScore: mockUser.highScore,
+              wins: mockUser.wins,
+              memberSince: mockUser.memberSince,
+            }}
+          />
         </div>
       </div>
 
