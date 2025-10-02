@@ -7,9 +7,8 @@
  *  - Settings (top-right) opens /landing/settings modal
  * Back: back to Home "/"
  */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import useCurrentUser from "../components/CurrentUser.jsx";
 import ProfileCard from "../components/ProfileCard.jsx";
 
 // Mock data for demonstration
@@ -20,7 +19,6 @@ const mockLeaderboard = [
   { rank: 4, name: "sara", highScore: 1950, avatar: "S" },
   { rank: 5, name: "jo", highScore: 1850, avatar: "J" },
 ];
-
 
 const mockNotifications = [
   { id: 1, message: "alex invited you to join their game!", time: "2 min ago" },
@@ -58,8 +56,52 @@ export default function Landing() {
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const { user, setUser, loading, error } = useCurrentUser();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fetch user data
+  useEffect(() => {
+    async function fetchUser() {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/users/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        if (res.ok && data.user) {
+          setUser(data.user);
+        } else {
+          setError(data.error || "Failed to fetch user");
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUser();
+  }, []);
+
+  // Handle loading and error states
+  if (loading) {
+    return <p>Loading user data...</p>;
+  }
+
+  if (error) {
+    return <p>Error: {error}</p>;
+  }
+
+  if (!user) {
+    return <p>No user data available</p>;
+  }
 
   return (
     <div className="min-h-screen bg-smart-dark-blue text-smart-white">
@@ -176,6 +218,7 @@ export default function Landing() {
 
           {/* Right Side - User Profile */}
           <div>
+            {/* ProfileCard */}
             <ProfileCard
               user={{
                 username: user.username,
