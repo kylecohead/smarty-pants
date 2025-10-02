@@ -277,6 +277,14 @@ export default function JoinGame() {
           <div className="mt-8 flex justify-center">
             <Link
               to="/lobby"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.sessionStorage.setItem(
+                    "questionDurationSeconds",
+                    String(gameData.secPerQ)
+                  );
+                }
+              }}
               className="rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg bg-smart-red hover:opacity-80 text-smart-white font-button transition-opacity"
             >
               Join Game

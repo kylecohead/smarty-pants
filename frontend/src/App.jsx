@@ -41,15 +41,20 @@ export default function App() {
             </Modal>
           }
         />
-       <Route
+        <Route
           path="signup"
           element={
             <Modal>
-              <LoginModal mode="signup" onAuth={() => { /* close modal, update state */ }} />
+              <LoginModal
+                mode="signup"
+                onAuth={() => {
+                  /* close modal, update state */
+                }}
+              />
             </Modal>
           }
         />
-      
+
         <Route
           path="about"
           element={
@@ -107,7 +112,7 @@ export default function App() {
           element={
             // overlay so user can't peek the next question
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-              <div className="relative w-full max-w-4xl rounded-2xl bg-white p-10 shadow-xl min-h-[28rem] border-2 border-smart-green flex items-center justify-center">
+              <div className="relative flex min-h-[28rem] w-full max-w-4xl items-center justify-center rounded-3xl border border-white/15 bg-slate-950/90 p-10 shadow-2xl backdrop-blur">
                 {/* Intentionally no close button here */}
                 <PauseModal />
               </div>
