@@ -115,7 +115,7 @@ export default function Lobby() {
   // Player square component
   const PlayerSquare = ({ player, index }) => (
     <div
-      className={`w-32 h-32 border-2 rounded-xl ${
+      className={`w-36 h-36 border-2 rounded-xl ${
         player 
           ? 'border-emerald-500 bg-white/10' 
           : 'border-white/20 bg-white/5'
@@ -126,7 +126,7 @@ export default function Lobby() {
           <img
             src={player.image}
             alt = {player.username}
-            className="w-24 h-24 object-cover rounded-full ring-2 ring-white/20"
+            className="w-28 h-28 object-cover rounded-full ring-2 ring-white/20"
           />
           <span className="text-sm mt-2 text-white/80">{player.username}</span>
         </>
@@ -138,7 +138,7 @@ export default function Lobby() {
 
   return (
     <div className="min-h-screen" style = {{ backgroundColor: colors.darkBlue }}>
-      <div className="max-w-5xl mx-auto px-6 py-16">
+      <div className="max-w-7xl mx-auto px-6 py-16">
         <button
           onClick={() => navigate(-1)}
           className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-white font-button transition-colors"
@@ -148,20 +148,20 @@ export default function Lobby() {
 
         <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-8 sm:p-12">
           {/* Header with colorful letters */}
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center mb-12">
             <Heading />
           </div>
 
           {/*Player count display*/}
-          <div className="mt-4 text-center">
+          <div className="text-center mb-8 text-lg" >
             <SectionTitle color={colors.accentA}>
               Players: {players.filter(p => p !== null).length} / 6
             </SectionTitle>
           </div>
 
           {/* Player squares grid */}
-          <div className="mt-8">
-            <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="grid grid-cols-3 gap-8 place-items-center">
               {players.map((player, index) => (
                 <PlayerSquare key={index} player={player} index={index}/>
               ))}
