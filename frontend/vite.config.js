@@ -6,13 +6,15 @@ export default defineConfig({
   server: {
     port: 5173,
     host: "0.0.0.0",
-    proxy: {
+   proxy: {
       "/api": {
-        target: "http://backend:3000", // or http://localhost:3000 in non-docker
+        target: "http://backend:3000",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""), // 👈 strip leading /api
+      },
+      "/uploads": {                     
+        target: "http://backend:3000",
+        changeOrigin: true,
       },
     },
-
   },
 });
