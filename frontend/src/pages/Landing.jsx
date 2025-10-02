@@ -184,16 +184,18 @@ export default function Landing() {
           </div>
 
           {/* Right Side - User Profile */}
-          <ProfileCard
-            user={{
-              username: user.username,
-              avatar: user.avatar,
-              gamesPlayed: mockUser.gamesPlayed,
-              highScore: mockUser.highScore,
-              wins: mockUser.wins,
-              memberSince: mockUser.memberSince,
-            }}
-          />
+          <div>
+            <ProfileCard
+              user={{
+                username: user.username,
+                avatar: user.avatarUrl,
+                gamesPlayed: mockUser.gamesPlayed,
+                highScore: mockUser.highScore,
+                wins: mockUser.wins,
+                memberSince: mockUser.memberSince,
+              }}
+            />
+          </div>
         </div>
       </div>
 
