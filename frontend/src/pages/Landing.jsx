@@ -70,7 +70,7 @@ export default function Landing() {
       {/* Top Navigation Bar */}
       <div className="flex justify-between items-center p-4">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/")}
           className="rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-smart-white font-button transition-colors"
         >
           ← Back

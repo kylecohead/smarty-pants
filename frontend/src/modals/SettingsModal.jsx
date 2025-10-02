@@ -165,7 +165,7 @@ export default function SettingsModal() {
 
               {/* Fun Bars */}
               <div>
-                <p className="mb-1 text-sm font-semibold text-slate-200">😎 Coolness</p>
+                <p className="mb-1 text-sm font-semibold text-slate-200">😎 Aura</p>
                 <div className="h-3 w-full rounded-full bg-slate-700 overflow-hidden">
                   <div
                     className="h-3 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 animate-pulse"
