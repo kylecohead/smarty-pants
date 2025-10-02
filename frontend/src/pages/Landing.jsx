@@ -22,15 +22,6 @@ const mockLeaderboard = [
 ];
 
 
-const mockUser = {
-  username: "nina",
-  memberSince: 2022,
-  avatar: "N",
-  gamesPlayed: 127,
-  highScore: 2450,
-  wins: 89,
-};
-
 const mockNotifications = [
   { id: 1, message: "alex invited you to join their game!", time: "2 min ago" },
   { id: 2, message: "mason started a new trivia game", time: "5 min ago" },
@@ -189,10 +180,10 @@ export default function Landing() {
               user={{
                 username: user.username,
                 avatar: user.avatarUrl,
-                gamesPlayed: mockUser.gamesPlayed,
-                highScore: mockUser.highScore,
-                wins: mockUser.wins,
-                memberSince: mockUser.memberSince,
+                gamesPlayed: user.gamesPlayed,
+                highScore: user.highScore,
+                wins: user.wins,
+                memberSince: user.memberSince,
               }}
             />
           </div>

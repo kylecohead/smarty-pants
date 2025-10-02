@@ -22,16 +22,14 @@ export default function SettingsModal() {
   const [showPassword, setShowPassword] = useState(false);
   const [avatar, setAvatar] = useState("");
   const [loading, setLoading] = useState(true);
+  const [gamesPlayed, setGamesPlayed] = useState(0);
+  const [highScore, setHighScore] = useState(0);
+  const [wins, setWins] = useState(0);
+  const [memberSince, setMemberSince] = useState("2024-01-12T00:00:00Z");
 
 
 
   //MOCK DATA======================================
-  // Dummy stats for now
-  const [gamesPlayed] = useState(42);
-  const [highScore] = useState(2450);
-  const [wins] = useState(12);
-  const [memberSince] = useState("2024-01-12T00:00:00Z");
-
   // Match history (mock)
   const [matchHistory] = useState([
     { id: 1, date: "2025-09-18T19:30:00Z", category: "Science", score: 1800, placement: 2 },
@@ -57,6 +55,11 @@ export default function SettingsModal() {
         if (res.ok && data.user) {
           setUsername(data.user.username || "");
           setAvatar(data.user.avatarUrl || "");
+          // setGamesPlayed(data.user.gamesPlayed || 0);
+          // setHighScore(data.user.highScore || 0);
+          // setWins(data.user.wins || 0);
+          // setMemberSince(data.user.memberSince || "2024-01-12T00:00:00Z");
+          
         } else {
           console.error("Fetch user error:", data.error);
         }

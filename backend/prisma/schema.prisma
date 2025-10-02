@@ -26,11 +26,15 @@ enum MatchStatus {
 //
 
 model User {
-  id        Int           @id @default(autoincrement())
-  username  String        @unique
-  email     String        @unique
-  password  String
-  avatarUrl String?
+  id          Int           @id @default(autoincrement())
+  username    String        @unique
+  email       String        @unique
+  password    String
+  avatarUrl   String?
+  gamesPlayed Int?
+  highScore   Int?
+  wins        Int?
+  memberSince DateTime?
   createdAt DateTime      @default(now())
   role      Role          @default(USER)
 

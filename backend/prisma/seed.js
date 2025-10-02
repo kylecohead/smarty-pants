@@ -9,14 +9,68 @@ async function main() {
 
   const password = await bcrypt.hash("1234", 10);
 
-  // Define users
+  // Define users with mock stats
   const users = [
-    { username: "Nina", email: "nina@example.com", role: "USER", avatarUrl: "/uploads/avatar1.png" },
-    { username: "Wikus", email: "wikus@example.com", role: "USER", avatarUrl: "/uploads/avatar2.png" },
-    { username: "Amy", email: "amy@example.com", role: "USER", avatarUrl: "/uploads/avatar3.png" },
-    { username: "Conrad", email: "conrad@example.com", role: "USER", avatarUrl: "/uploads/avatar4.png" },
-    { username: "Kyle", email: "kyle@example.com", role: "USER", avatarUrl: "/uploads/avatar5.png" },
-    { username: "Admin", email: "admin@example.com", role: "ADMIN", avatarUrl: "/uploads/avatar6.png" },
+    {
+      username: "Nina",
+      email: "nina@example.com",
+      role: "USER",
+      avatarUrl: "/uploads/avatar1.png",
+      gamesPlayed: 10,
+      highScore: 2450,
+      wins: 4,
+      memberSince: new Date("2023-05-01"),
+    },
+    {
+      username: "Wikus",
+      email: "wikus@example.com",
+      role: "USER",
+      avatarUrl: "/uploads/avatar2.png",
+      gamesPlayed: 15,
+      highScore: 2600,
+      wins: 6,
+      memberSince: new Date("2023-07-10"),
+    },
+    {
+      username: "Amy",
+      email: "amy@example.com",
+      role: "USER",
+      avatarUrl: "/uploads/avatar3.png",
+      gamesPlayed: 5,
+      highScore: 1800,
+      wins: 2,
+      memberSince: new Date("2024-01-20"),
+    },
+    {
+      username: "Conrad",
+      email: "conrad@example.com",
+      role: "USER",
+      avatarUrl: "/uploads/avatar4.png",
+      gamesPlayed: 20,
+      highScore: 2700,
+      wins: 10,
+      memberSince: new Date("2022-11-15"),
+    },
+    {
+      username: "Kyle",
+      email: "kyle@example.com",
+      role: "USER",
+      avatarUrl: "/uploads/avatar5.png",
+      gamesPlayed: 8,
+      highScore: 1900,
+      wins: 3,
+      memberSince: new Date("2024-03-02"),
+    },
+    {
+      username: "Admin",
+      email: "admin@example.com",
+      role: "ADMIN",
+      avatarUrl: "/uploads/avatar6.png",
+      gamesPlayed: 50,
+      highScore: 3000,
+      wins: 25,
+      memberSince: new Date("2021-01-01"),
+    },
   ];
 
   // Upsert all users
@@ -31,6 +85,10 @@ async function main() {
         password,
         role: u.role,
         avatarUrl: u.avatarUrl,
+        gamesPlayed: u.gamesPlayed,
+        highScore: u.highScore,
+        wins: u.wins,
+        memberSince: u.memberSince,
       },
     });
     createdUsers.push(user);
@@ -56,7 +114,7 @@ async function main() {
   for (const u of createdUsers) {
     await prisma.matchPlayer.upsert({
       where: {
-        matchId_userId: { matchId: match.id, userId: u.id }, // requires @@unique([matchId, userId])
+        matchId_userId: { matchId: match.id, userId: u.id },
       },
       update: {},
       create: {
@@ -92,7 +150,7 @@ async function main() {
     },
   });
 
-  // Link questions to the match (MatchQuestion table)
+  // Link questions to the match
   await prisma.matchQuestion.upsert({
     where: { id: 1 },
     update: {},
