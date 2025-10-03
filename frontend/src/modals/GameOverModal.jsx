@@ -86,7 +86,7 @@ export default function GameOverModal() {
       <div className="mt-10 text-center">
         <button
           className="inline-flex items-center justify-center rounded-lg border border-white/20 bg-white/10 px-6 py-3 text-lg font-semibold text-white transition hover:bg-white/20"
-          onClick={() => navigate("/landing")}
+          onClick={() => navigate("/", { replace: true })}
         >
           Return Home
         </button>

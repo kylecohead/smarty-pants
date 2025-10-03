@@ -61,7 +61,7 @@ export default function GameOverScreen({ winner, score, finalLeaderboard }) {
       </div>
 
       <Link
-        to="/landing"
+        to="/"
         className="mt-10 inline-block rounded-lg border border-white/20 bg-white/10 px-6 py-3 text-lg font-semibold text-white transition hover:bg-white/20"
       >
         Return Home
