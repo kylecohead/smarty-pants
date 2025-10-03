@@ -5,7 +5,7 @@ import ProfileCard from "../components/ProfileCard";
 const tabs = [
   { id: "1", label: "Account" },
   { id: "2", label: "Stats" },
-  { id: "3", label: "Match History" },
+  { id: "3", label: "History" },
   { id: "4", label: "Other" },
 ];
 
@@ -130,17 +130,19 @@ export default function SettingsModal() {
   return (
     <div className="flex gap-4">
       {/* Sidebar */}
-      <aside className="w-32 shrink-0">
-        <nav className="flex flex-col gap-2">
+      <aside className="w-24 shrink-0 rounded-xl border border-smart-light-blue bg-smart-black/60 backdrop-blur-md shadow-lg shadow-smart-light-blue/30 p-3">
+        <nav className="flex flex-col gap-3">
           {tabs.map((t) => (
             <NavLink
               key={t.id}
               to={`/landing/settings/${t.id}`}
               className={({ isActive }) =>
-                `rounded-lg border px-2 py-1.5 text-xs transition ${
+                `rounded-lg px-3 py-2 text-xs font-semibold tracking-wide transition 
+                border-2 
+                ${
                   isActive
-                    ? "bg-slate-700 text-slate-100 font-semibold"
-                    : "text-slate-300 hover:bg-slate-700 hover:text-slate-100"
+                    ? "bg-gradient-to-r from-smart-purple via-smart-pink to-smart-orange text-smart-white border-smart-pink shadow-lg shadow-smart-pink/40"
+                    : "text-smart-light-blue border-transparent hover:border-smart-purple hover:text-smart-yellow hover:bg-smart-dark-blue/40"
                 }`
               }
             >
@@ -148,48 +150,56 @@ export default function SettingsModal() {
             </NavLink>
           ))}
         </nav>
+
         <button
           onClick={() => navigate("/landing")}
-          className="mt-3 w-full rounded-lg border border-slate-500 px-2 py-1.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-slate-100"
+          className="mt-4 w-full rounded-lg border-2 border-smart-red px-3 py-2 text-xs font-semibold text-smart-red transition hover:bg-smart-red hover:text-smart-white hover:shadow-lg hover:shadow-smart-red/40"
         >
           ✕ Close
         </button>
       </aside>
 
+
       {/* Content */}
-      <section className="flex-1 rounded-xl border border-slate-600 bg-slate-800/50 p-6 min-h-[450px]">
+      <section className="flex-1 rounded-xl border border-smart-light-blue 
+        bg-smart-black/40 backdrop-blur-md shadow-lg shadow-smart-light-blue/30 
+        p-6 min-h-[450px]">
+
+
         {active === "1" && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-
             {/* Left: Form */}
-            <form className="flex flex-col gap-4 md:col-span-1" onSubmit={handleSave}>
-              <h3 className="text-base font-semibold text-slate-100">Update Profile</h3>
+            <form
+              className="flex flex-col gap-4 md:col-span-1 p-4 rounded-xl border-2 border-smart-purple bg-smart-black/60 backdrop-blur-md shadow-lg shadow-smart-purple/30"
+              onSubmit={handleSave}
+            >
+              <h3 className="text-base font-semibold text-smart-light-blue">⚙️ Update Profile</h3>
 
               {/* Username */}
-              <label className="flex flex-col text-xs text-slate-300">
+              <label className="flex flex-col text-xs text-smart-light-blue">
                 Username
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="rounded-md border border-slate-500 bg-slate-800 px-2 py-1 text-slate-100"
+                  className="rounded-md border border-smart-light-blue bg-smart-black/60 px-2 py-1 text-smart-white focus:ring-2 focus:ring-smart-purple"
                 />
               </label>
 
               {/* Password */}
-              <label className="flex flex-col text-xs text-slate-300">
+              <label className="flex flex-col text-xs text-smart-light-blue">
                 Password
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-md border border-slate-500 bg-slate-800 px-2 py-1 pr-10 text-slate-100"
+                    className="w-full rounded-md border border-smart-light-blue bg-smart-black/60 px-2 py-1 pr-10 text-smart-white focus:ring-2 focus:ring-smart-pink"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((p) => !p)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-200"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-smart-light-pink hover:text-smart-pink"
                   >
                     {showPassword ? "Hide" : "Show"}
                   </button>
@@ -197,29 +207,52 @@ export default function SettingsModal() {
               </label>
 
               {/* Avatar Upload */}
-              <label className="flex flex-col text-xs text-slate-300">
+              <label className="flex flex-col text-xs text-smart-light-blue">
                 Upload Avatar
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleAvatarUpload(file);
-                  }}
-                  className="rounded-md border border-slate-500 bg-slate-800 px-2 py-1 text-slate-100"
-                />
+                <div className="mt-2 flex items-center gap-4">
+                  {/* Hidden input */}
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        // Show preview instantly
+                        const previewUrl = URL.createObjectURL(file);
+                        setAvatar(previewUrl); // show preview
+                        handleAvatarUpload(file); // still upload to backend
+                      }
+                    }}
+                  />
+
+                  {/* Custom neon button */}
+                  <label
+                    htmlFor="avatar-upload"
+                    className="cursor-pointer rounded-lg border-2 border-smart-light-blue 
+                              bg-gradient-to-r from-smart-purple via-smart-pink to-smart-orange 
+                              px-3 py-2 text-xs font-bold text-smart-white shadow-md 
+                              hover:shadow-lg hover:shadow-smart-pink/40 transition"
+                  >
+                    📷 
+                  </label>
+
+        
+                </div>
               </label>
+
 
               <button
                 type="submit"
-                className="mt-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="mt-2 rounded-lg bg-gradient-to-r from-smart-purple via-smart-pink to-smart-orange px-3 py-2 text-sm font-bold text-smart-white shadow-md hover:shadow-lg hover:shadow-smart-pink/40"
               >
                 Save
               </button>
             </form>
 
             {/* Right: ProfileCard */}
-            <div className="md:col-span-3 flex items-center">
+            <div className="md:col-span-3 flex items-center justify-center">
               <ProfileCard
                 user={{
                   username,
@@ -235,50 +268,52 @@ export default function SettingsModal() {
         )}
 
         {active === "2" && (
-          <div>
-            <h3 className="mb-6 text-xl font-bold text-slate-100">Your Epic Stats 🚀</h3>
+          <div className="p-6 rounded-xl border-2 border-smart-light-blue bg-smart-black/60 shadow-lg shadow-smart-light-blue/30">
+            <h3 className="mb-6 text-xl font-bold text-smart-yellow">🚀 Your Epic Stats</h3>
 
             <div className="space-y-4">
               {/* Core Stats */}
-              <div className="flex items-center justify-between text-sm text-slate-300">
+              <div className="flex items-center justify-between text-sm text-smart-white">
                 <span>Games Played</span>
-                <span className="font-semibold">{gamesPlayed}</span>
+                <span className="font-bold text-smart-green">{gamesPlayed}</span>
               </div>
-              <div className="flex items-center justify-between text-sm text-slate-300">
+              <div className="flex items-center justify-between text-sm text-smart-white">
                 <span>High Score</span>
-                <span className="font-semibold">{highScore}</span>
+                <span className="font-bold text-smart-pink">{highScore}</span>
               </div>
-              <div className="flex items-center justify-between text-sm text-slate-300">
+              <div className="flex items-center justify-between text-sm text-smart-white">
                 <span>Win Rate</span>
-                <span className="font-semibold">{((wins / gamesPlayed) * 100).toFixed(1)}%</span>
+                <span className="font-bold text-smart-light-blue">
+                  {((wins / gamesPlayed) * 100).toFixed(1)}%
+                </span>
               </div>
 
               {/* Fun Bars */}
               <div>
-                <p className="mb-1 text-sm font-semibold text-slate-200">😎 Aura</p>
-                <div className="h-3 w-full rounded-full bg-slate-700 overflow-hidden">
+                <p className="mb-1 text-sm font-semibold text-smart-light-pink">😎 Aura</p>
+                <div className="h-3 w-full rounded-full bg-smart-black/40 overflow-hidden">
                   <div
-                    className="h-3 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 animate-pulse"
+                    className="h-3 rounded-full bg-gradient-to-r from-smart-pink via-smart-purple to-smart-orange animate-pulse"
                     style={{ width: `${Math.min(100, wins * 8)}%` }}
                   ></div>
                 </div>
               </div>
 
               <div>
-                <p className="mb-1 text-sm font-semibold text-slate-200">🧠 Brain Power</p>
-                <div className="h-3 w-full rounded-full bg-slate-700 overflow-hidden">
+                <p className="mb-1 text-sm font-semibold text-smart-green">🧠 Brain Power</p>
+                <div className="h-3 w-full rounded-full bg-smart-black/40 overflow-hidden">
                   <div
-                    className="h-3 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-green-400 animate-pulse"
+                    className="h-3 rounded-full bg-gradient-to-r from-smart-light-blue via-smart-dark-blue to-smart-green animate-pulse"
                     style={{ width: `${Math.min(100, (highScore / 3000) * 100)}%` }}
                   ></div>
                 </div>
               </div>
 
               <div>
-                <p className="mb-1 text-sm font-semibold text-slate-200">🔥 Dedication</p>
-                <div className="h-3 w-full rounded-full bg-slate-700 overflow-hidden">
+                <p className="mb-1 text-sm font-semibold text-smart-orange">🔥 Dedication</p>
+                <div className="h-3 w-full rounded-full bg-smart-black/40 overflow-hidden">
                   <div
-                    className="h-3 rounded-full bg-gradient-to-r from-orange-400 to-red-600 animate-pulse"
+                    className="h-3 rounded-full bg-gradient-to-r from-smart-orange to-smart-red animate-pulse"
                     style={{ width: `${Math.min(100, gamesPlayed * 2)}%` }}
                   ></div>
                 </div>
@@ -287,32 +322,29 @@ export default function SettingsModal() {
           </div>
         )}
 
-
         {active === "3" && (
           <div>
-            <h3 className="mb-6 text-xl font-bold text-slate-100">Match History 🎯</h3>
+            <h3 className="mb-6 text-xl font-bold text-smart-purple">🎯 Match History</h3>
             <div className="grid gap-4 md:grid-cols-2">
               {matchHistory.map((m) => (
                 <div
                   key={m.id}
-                  className="rounded-xl border border-slate-600 bg-slate-700/40 p-4 shadow-md hover:shadow-lg transition"
+                  className="rounded-xl border-2 border-smart-light-blue bg-smart-black/50 p-4 shadow-lg hover:shadow-smart-light-blue/40 transition"
                 >
-                  <div className="flex items-center justify-between text-xs text-slate-400">
+                  <div className="flex items-center justify-between text-xs text-smart-light-blue">
                     <span>{new Date(m.date).toLocaleDateString()}</span>
-                    <span className="uppercase text-slate-300">{m.category}</span>
+                    <span className="uppercase text-smart-yellow">{m.category}</span>
                   </div>
 
-                  <p className="mt-2 text-lg font-bold text-slate-100">
-                    Score: {m.score}
-                  </p>
-                  <p className="text-sm text-slate-300">Placement: #{m.placement}</p>
+                  <p className="mt-2 text-lg font-bold text-smart-white">Score: {m.score}</p>
+                  <p className="text-sm text-smart-light-pink">Placement: #{m.placement}</p>
 
-                  <div className="mt-3 h-2 w-full rounded-full bg-slate-600 overflow-hidden">
+                  <div className="mt-3 h-2 w-full rounded-full bg-smart-black/30 overflow-hidden">
                     <div
                       className={`h-2 rounded-full ${
                         m.placement === 1
-                          ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
-                          : "bg-gradient-to-r from-slate-400 to-slate-500"
+                          ? "bg-gradient-to-r from-smart-yellow to-smart-green"
+                          : "bg-gradient-to-r from-smart-purple to-smart-pink"
                       }`}
                       style={{ width: `${Math.min(100, (m.score / highScore) * 100)}%` }}
                     ></div>
@@ -323,17 +355,15 @@ export default function SettingsModal() {
           </div>
         )}
 
-
         {active === "4" && (
-          <div>
-            <h3 className="mb-2 text-lg font-semibold text-slate-100">
-              Other Settings
-            </h3>
-            <p className="text-sm text-slate-400">
-              Placeholder for extra settings.
+          <div className="p-6 rounded-xl border-2 border-smart-orange bg-smart-black/60 shadow-lg shadow-smart-orange/30">
+            <h3 className="mb-2 text-lg font-bold text-smart-orange">⚡ Other Settings</h3>
+            <p className="text-sm text-smart-white/70">
+              Placeholder for extra settings. Add more neon toggles here!
             </p>
           </div>
         )}
+
       </section>
     </div>
   );
