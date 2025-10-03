@@ -1,164 +1,80 @@
 /**
- * Game Page: trivia gameplay loop with simulated multiplayer.
- * - Each question runs on a configurable timer (defaults to 10 seconds).
- * - We now wait until either all players answer OR the timer expires before
- *   resolving the question. If anyone misses the timer, they earn zero.
- * - Simulated players expose timing metadata so future socket integration is easy.
+ * PlayGame Page: Trivia gameplay with simulated multiplayer.
+ *
+ * Responsibilities:
+ * - Orchestrate game flow (questions, answers, scoring)
+ * - Manage player responses (human + simulated)
+ * - Navigate to recap/final modals
+ * - Render game UI via extracted components
  */
 import { useEffect, useRef, useState } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { QUESTIONS } from "../data/questions";
 import { SIMULATED_PLAYERS } from "../data/simulatedPlayers";
 import { RECAP_DELAY_SECONDS, FINAL_DELAY_SECONDS } from "../config/gameConfig";
+import {
+  calculateScore,
+  createInitialSimTotals,
+  createBlankResponses,
+  buildPerQuestionLeaderboard,
+  buildFinalLeaderboard,
+  checkAllPlayersDone,
+  markUnansweredAsTimedOut,
+  getQuestionDuration,
+} from "../utils/gameUtils";
+import { useGameTimer } from "../hooks/useGameTimer";
+import { useSimulatedPlayers } from "../hooks/useSimulatedPlayers";
+import GameHeader from "../components/GameHeader";
+import QuestionCard from "../components/QuestionCard";
+import GameOverScreen from "../components/GameOverScreen";
 
-const DEFAULT_QUESTION_DURATION_SECONDS = 10;
-const TIMER_TICK_MS = 100;
 const YOU_ID = "p1";
 const DEFAULT_YOU_NAME = "You";
 
 const colors = {
   darkBlue: "#0A2442",
-  accentA: "#32D399",
-  accentB: "#6EC5FF",
-  accentC: "#FFC857",
-  accentD: "#FF8FAB",
 };
-
-function createInitialSimTotals() {
-  const totals = {};
-  SIMULATED_PLAYERS.forEach((player) => {
-    totals[player.id] = 0;
-  });
-  return totals;
-}
-
-function createBlankResponses(youName) {
-  const base = {
-    [YOU_ID]: {
-      player: { id: YOU_ID, name: youName, isYou: true },
-      answered: false,
-      timedOut: false,
-      isCorrect: false,
-      answerTimeMs: null,
-      score: 0,
-      selectedOptionId: null,
-    },
-  };
-
-  SIMULATED_PLAYERS.forEach((player) => {
-    base[player.id] = {
-      player: { id: player.id, name: player.name, isYou: false },
-      answered: false,
-      timedOut: false,
-      isCorrect: false,
-      answerTimeMs: null,
-      score: 0,
-      selectedOptionId: null,
-    };
-  });
-
-  return base;
-}
-
-function calculateScore(isCorrect, answerTimeMs, questionDurationMs) {
-  if (!isCorrect) return 0;
-  const clamped = Math.max(0, Math.min(answerTimeMs, questionDurationMs));
-  const secondsLeft = Math.max(
-    0,
-    Math.floor((questionDurationMs - clamped) / 1000)
-  );
-  return secondsLeft * 10;
-}
-
-function buildPerQuestionLeaderboard(responses, youTotalAfter, simTotalsAfter) {
-  const rows = Object.values(responses).map((entry) => ({
-    id: entry.player.id,
-    name: entry.player.name,
-    round: entry.score,
-    total: entry.player.isYou
-      ? youTotalAfter
-      : simTotalsAfter[entry.player.id] ?? 0,
-    isYou: entry.player.isYou,
-  }));
-
-  rows.sort((a, b) => b.total - a.total || b.round - a.round);
-  return rows;
-}
-
-function buildFinalLeaderboard(youTotal, simTotals, youName) {
-  const rows = [
-    { id: YOU_ID, name: youName, total: youTotal, isYou: true },
-    ...SIMULATED_PLAYERS.map((player) => ({
-      id: player.id,
-      name: player.name,
-      total: simTotals[player.id] ?? 0,
-      isYou: false,
-    })),
-  ];
-
-  rows.sort((a, b) => b.total - a.total);
-  return rows;
-}
 
 export default function PlayGame() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [questionDurationMs] = useState(() => {
-    const fromState = Number(location.state?.timerSeconds);
-    if (Number.isFinite(fromState) && fromState > 0) {
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem(
-          "questionDurationSeconds",
-          String(fromState)
-        );
-      }
-      return fromState * 1000;
-    }
-
-    if (typeof window !== "undefined") {
-      const stored = Number(
-        window.sessionStorage.getItem("questionDurationSeconds")
-      );
-      if (Number.isFinite(stored) && stored > 0) {
-        return stored * 1000;
-      }
-    }
-
-    if (typeof window !== "undefined") {
-      window.sessionStorage.setItem(
-        "questionDurationSeconds",
-        String(DEFAULT_QUESTION_DURATION_SECONDS)
-      );
-    }
-
-    return DEFAULT_QUESTION_DURATION_SECONDS * 1000;
-  });
-
+  // Game configuration
+  const [questionDurationMs] = useState(() =>
+    getQuestionDuration(location.state, 10)
+  );
   const youName = DEFAULT_YOU_NAME;
 
+  // Game state
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
-  const [simTotals, setSimTotals] = useState(() => createInitialSimTotals());
-  const [timeLeftMs, setTimeLeftMs] = useState(questionDurationMs);
+  const [simTotals, setSimTotals] = useState(() =>
+    createInitialSimTotals(SIMULATED_PLAYERS)
+  );
   const [pendingAdvance, setPendingAdvance] = useState(false);
   const [questionResolved, setQuestionResolved] = useState(false);
   const [responses, setResponses] = useState(() =>
-    createBlankResponses(youName)
+    createBlankResponses(YOU_ID, youName, SIMULATED_PLAYERS)
   );
 
+  // Derived state
   const isRecapOpen = location.pathname.endsWith("/pause");
   const total = QUESTIONS.length;
   const finished = index >= total;
   const question = finished ? null : QUESTIONS[index];
-  const finalRows = buildFinalLeaderboard(score, simTotals, youName);
+  const finalRows = buildFinalLeaderboard(
+    YOU_ID,
+    score,
+    simTotals,
+    youName,
+    SIMULATED_PLAYERS
+  );
   const winner = finalRows[0];
 
-  const questionStartRef = useRef(Date.now());
-  const resolvedRef = useRef(false);
-  const simTimeoutsRef = useRef([]);
+  // Refs for managing state across async operations
   const simTotalsRef = useRef(simTotals);
   const responsesRef = useRef(responses);
+  const resolvedRef = useRef(false);
 
   useEffect(() => {
     simTotalsRef.current = simTotals;
@@ -168,97 +84,40 @@ export default function PlayGame() {
     responsesRef.current = responses;
   }, [responses]);
 
+  // Reset resolved state when question changes
+  useEffect(() => {
+    resolvedRef.current = false;
+  }, [index]);
+
+  // Navigation handlers
   const handleQuitGame = () => {
     navigate("/", { replace: true });
   };
 
-  function clearSimulatedTimers() {
-    simTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
-    simTimeoutsRef.current = [];
-  }
+  // Custom hooks
+  const { timeLeftMs, questionStartRef } = useGameTimer(
+    questionDurationMs,
+    index,
+    isRecapOpen,
+    finished
+  );
 
-  function resolveQuestion(reason) {
-    if (resolvedRef.current) return;
-    resolvedRef.current = true;
-    setQuestionResolved(true);
-    clearSimulatedTimers();
+  const handleSimulatedAnswer = (playerId, answerData) => {
+    storeAnswer(playerId, answerData);
+  };
 
-    const snapshot = responsesRef.current;
-    const youEntry = snapshot[YOU_ID];
-    const roundScore = youEntry?.score ?? 0;
-    const youTotalAfter = score + roundScore;
-    setScore(youTotalAfter);
+  const { clearSimulatedTimers } = useSimulatedPlayers(
+    SIMULATED_PLAYERS,
+    index,
+    questionDurationMs,
+    isRecapOpen,
+    finished,
+    handleSimulatedAnswer
+  );
 
-    const updatedSimTotals = { ...simTotalsRef.current };
-    Object.values(snapshot).forEach((entry) => {
-      if (!entry.player.isYou) {
-        updatedSimTotals[entry.player.id] =
-          (updatedSimTotals[entry.player.id] ?? 0) + entry.score;
-      }
-    });
-    setSimTotals(updatedSimTotals);
-
-    const leaderboard = buildPerQuestionLeaderboard(
-      snapshot,
-      youTotalAfter,
-      updatedSimTotals
-    );
-
-    const correctOption = question?.options.find(
-      (o) => o.id === question?.correctId
-    );
-    const isCorrect = Boolean(youEntry?.isCorrect && !youEntry?.timedOut);
-
-    if (index === total - 1) {
-      const finalLeaderboard = buildFinalLeaderboard(
-        youTotalAfter,
-        updatedSimTotals,
-        youName
-      );
-
-      navigate("pause", {
-        state: {
-          mode: "final",
-          questionIndex: index,
-          leaderboard: finalLeaderboard,
-          yourScore: youTotalAfter,
-          nextInSeconds: FINAL_DELAY_SECONDS,
-        },
-      });
-
-      setPendingAdvance(false);
-      setIndex(total);
-      return;
-    }
-
-    navigate("pause", {
-      state: {
-        mode: "recap",
-        correct: isCorrect,
-        points: roundScore,
-        questionText: question?.text,
-        correctAnswer: correctOption?.label,
-        questionIndex: index,
-        leaderboard,
-        nextInSeconds: RECAP_DELAY_SECONDS,
-        reason,
-      },
-    });
-
-    setPendingAdvance(true);
-  }
-
-  function checkForResolution() {
-    if (resolvedRef.current) return;
-    const snapshot = Object.values(responsesRef.current);
-    const everyoneDone = snapshot.every(
-      (entry) => entry.answered || entry.timedOut
-    );
-    if (everyoneDone) {
-      resolveQuestion("all-answered");
-    }
-  }
-
+  /**
+   * Store a player's answer and check if question should resolve.
+   */
   function storeAnswer(
     playerId,
     { isCorrect, answerTimeMs, selectedOptionId }
@@ -293,94 +152,96 @@ export default function PlayGame() {
     setTimeout(checkForResolution, 0);
   }
 
-  function handleTimeExpired() {
+  /**
+   * Check if all players have answered or timed out.
+   */
+  function checkForResolution() {
     if (resolvedRef.current) return;
-
-    setResponses((prev) => {
-      const next = { ...prev };
-      let mutated = false;
-
-      Object.entries(prev).forEach(([id, entry]) => {
-        if (!entry.answered) {
-          mutated = true;
-          next[id] = {
-            ...entry,
-            answered: true,
-            timedOut: true,
-            isCorrect: false,
-            answerTimeMs: questionDurationMs,
-            score: 0,
-          };
-        }
-      });
-
-      if (mutated) {
-        responsesRef.current = next;
-      }
-      return mutated ? next : prev;
-    });
-
-    resolveQuestion("timer-expired");
+    if (checkAllPlayersDone(responsesRef.current)) {
+      resolveQuestion("all-answered");
+    }
   }
 
-  // Timer + simulated player scheduling for each question
-  useEffect(() => {
-    if (finished || isRecapOpen) return undefined;
-
-    const baseResponses = createBlankResponses(youName);
-    responsesRef.current = baseResponses;
-    setResponses(baseResponses);
-
-    questionStartRef.current = Date.now();
-    resolvedRef.current = false;
-    setQuestionResolved(false);
-
+  /**
+   * Resolve the current question and navigate to recap or final screen.
+   */
+  function resolveQuestion(reason) {
+    if (resolvedRef.current) return;
+    resolvedRef.current = true;
+    setQuestionResolved(true);
     clearSimulatedTimers();
 
-    const timers = [];
-    SIMULATED_PLAYERS.forEach((player) => {
-      const answer = player.answers[index];
-      if (!answer) return;
-      if (answer.timeToAnswerMs >= questionDurationMs) return;
+    const snapshot = responsesRef.current;
+    const youEntry = snapshot[YOU_ID];
+    const roundScore = youEntry?.score ?? 0;
+    const youTotalAfter = score + roundScore;
+    setScore(youTotalAfter);
 
-      const timeoutId = setTimeout(() => {
-        storeAnswer(player.id, {
-          isCorrect: answer.isCorrect,
-          answerTimeMs: answer.timeToAnswerMs,
-        });
-      }, Math.max(0, answer.timeToAnswerMs));
-      timers.push(timeoutId);
+    const updatedSimTotals = { ...simTotalsRef.current };
+    Object.values(snapshot).forEach((entry) => {
+      if (!entry.player.isYou) {
+        updatedSimTotals[entry.player.id] =
+          (updatedSimTotals[entry.player.id] ?? 0) + entry.score;
+      }
+    });
+    setSimTotals(updatedSimTotals);
+
+    const leaderboard = buildPerQuestionLeaderboard(
+      snapshot,
+      youTotalAfter,
+      updatedSimTotals
+    );
+
+    const correctOption = question?.options.find(
+      (o) => o.id === question?.correctId
+    );
+    const isCorrect = Boolean(youEntry?.isCorrect && !youEntry?.timedOut);
+
+    // Navigate to final screen or recap
+    if (index === total - 1) {
+      const finalLeaderboard = buildFinalLeaderboard(
+        YOU_ID,
+        youTotalAfter,
+        updatedSimTotals,
+        youName,
+        SIMULATED_PLAYERS
+      );
+
+      navigate("pause", {
+        state: {
+          mode: "final",
+          questionIndex: index,
+          leaderboard: finalLeaderboard,
+          yourScore: youTotalAfter,
+          nextInSeconds: FINAL_DELAY_SECONDS,
+        },
+      });
+
+      setPendingAdvance(false);
+      setIndex(total);
+      return;
+    }
+
+    navigate("pause", {
+      state: {
+        mode: "recap",
+        correct: isCorrect,
+        points: roundScore,
+        questionText: question?.text,
+        correctAnswer: correctOption?.label,
+        questionIndex: index,
+        leaderboard,
+        nextInSeconds: RECAP_DELAY_SECONDS,
+        reason,
+      },
     });
 
-    simTimeoutsRef.current = timers;
-    setTimeLeftMs(questionDurationMs);
+    setPendingAdvance(true);
+  }
 
-    const interval = setInterval(() => {
-      if (resolvedRef.current) {
-        clearInterval(interval);
-        return;
-      }
-
-      setTimeLeftMs((prev) => {
-        const next = prev - TIMER_TICK_MS;
-        if (next <= 0) {
-          clearInterval(interval);
-          if (!resolvedRef.current) {
-            handleTimeExpired();
-          }
-          return 0;
-        }
-        return next;
-      });
-    }, TIMER_TICK_MS);
-
-    return () => {
-      clearInterval(interval);
-      clearSimulatedTimers();
-    };
-  }, [index, finished, isRecapOpen, questionDurationMs, youName]);
-
-  // Called when player clicks an option button
+  /**
+   * Handle player clicking an answer option.
+   */
   function handleAnswer(optionId) {
     if (finished || !question || isRecapOpen || resolvedRef.current) return;
 
@@ -397,13 +258,45 @@ export default function PlayGame() {
     });
   }
 
-  // When recap modal closes and we have a pending advance, go to next question
+  /**
+   * Handle timer expiration
+   */
+  useEffect(() => {
+    if (timeLeftMs <= 0 && !resolvedRef.current && !finished && !isRecapOpen) {
+      const updated = markUnansweredAsTimedOut(
+        responsesRef.current,
+        questionDurationMs
+      );
+      if (updated !== responsesRef.current) {
+        setResponses(updated);
+        responsesRef.current = updated;
+      }
+      resolveQuestion("timer-expired");
+    }
+  }, [timeLeftMs, finished, isRecapOpen, questionDurationMs]);
+
+  /**
+   * Advance to next question when recap modal closes.
+   */
   useEffect(() => {
     if (!isRecapOpen && pendingAdvance) {
       setPendingAdvance(false);
       setIndex((i) => i + 1);
     }
   }, [isRecapOpen, pendingAdvance]);
+
+  // Reset responses when new question starts
+  useEffect(() => {
+    if (finished || isRecapOpen) return;
+    const baseResponses = createBlankResponses(
+      YOU_ID,
+      youName,
+      SIMULATED_PLAYERS
+    );
+    responsesRef.current = baseResponses;
+    setResponses(baseResponses);
+    setQuestionResolved(false);
+  }, [index, finished, isRecapOpen, youName]);
 
   const youResponse = responses[YOU_ID];
   const youAnswered = Boolean(youResponse?.answered);
@@ -415,158 +308,30 @@ export default function PlayGame() {
       style={{ backgroundColor: colors.darkBlue }}
     >
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            to="/lobby"
-            className="w-fit rounded-lg border border-white/20 bg-white/10 px-4 py-2 font-semibold tracking-wide text-white transition hover:bg-white/20"
-          >
-            ← Back to Lobby
-          </Link>
-          <div className="flex flex-col items-start sm:items-end">
-            <p className="text-xs uppercase tracking-[0.35em] text-white/50">
-              Score
-            </p>
-            <span className="font-heading text-3xl font-black text-smart-green">
-              {score}
-            </span>
-            {!finished && (
-              <p className="mt-1 text-xs uppercase tracking-[0.35em] text-white/40">
-                Question {index + 1} / {total}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={handleQuitGame}
-              className="mt-4 w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20 sm:w-auto"
-            >
-              Quit
-            </button>
-          </div>
-        </header>
+        <GameHeader
+          score={score}
+          currentQuestion={index}
+          totalQuestions={total}
+          onQuit={handleQuitGame}
+        />
 
         <main className="mt-8 flex flex-1 items-center justify-center">
           {!finished ? (
-            <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 text-center shadow-2xl backdrop-blur-sm sm:p-10">
-              <div className="mb-10 flex flex-col gap-2">
-                <p className="text-xs uppercase tracking-[0.4em] text-white/60">
-                  Time Remaining
-                </p>
-                <div className="h-3 w-full overflow-hidden rounded-full border border-white/20 bg-white/10">
-                  <div
-                    className="h-full bg-smart-green transition-[width] duration-100 ease-linear"
-                    style={{
-                      width: `${
-                        questionDurationMs > 0
-                          ? (timeLeftMs / questionDurationMs) * 100
-                          : 0
-                      }%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <p className="font-heading text-3xl font-black leading-tight text-white drop-shadow sm:text-4xl lg:text-5xl">
-                {question?.text}
-              </p>
-
-              <div className="mt-10 grid gap-4 sm:grid-cols-2">
-                {question?.options.map((opt, i) => {
-                  const colorClasses = [
-                    "bg-gradient-to-br from-[#FF8FAB] to-[#FF5F87]",
-                    "bg-gradient-to-br from-[#6EC5FF] to-[#4F8CFF]",
-                    "bg-gradient-to-br from-[#FFC857] to-[#FFAE42] text-black",
-                    "bg-gradient-to-br from-[#32D399] to-[#0FB57D]",
-                  ];
-                  const baseClass = colorClasses[i % colorClasses.length];
-                  const disabledClass =
-                    youAnswered || questionResolved
-                      ? "opacity-60 cursor-not-allowed"
-                      : "";
-
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => handleAnswer(opt.id)}
-                      disabled={youAnswered || questionResolved}
-                      className={`group relative overflow-hidden rounded-2xl border border-white/10 px-6 py-8 text-xl font-bold text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${baseClass} ${disabledClass}`}
-                    >
-                      <span className="relative z-10 block drop-shadow-sm">
-                        {opt.label}
-                      </span>
-                      <span className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-20 group-focus-visible:opacity-20" />
-                    </button>
-                  );
-                })}
-              </div>
-
-              {waitingOnOthers && (
-                <p className="mt-6 text-sm font-medium text-white/70">
-                  Waiting for other players to finish…
-                </p>
-              )}
-            </div>
+            <QuestionCard
+              question={question}
+              timeLeftMs={timeLeftMs}
+              questionDurationMs={questionDurationMs}
+              youAnswered={youAnswered}
+              questionResolved={questionResolved}
+              waitingOnOthers={waitingOnOthers}
+              onAnswer={handleAnswer}
+            />
           ) : (
-            <div className="w-full max-w-4xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-2xl backdrop-blur-sm sm:p-12">
-              <h2 className="font-heading text-4xl font-black text-smart-light-blue">
-                Smartie Pants Champion
-              </h2>
-              <p className="mt-2 text-lg uppercase tracking-[0.3em] text-white/60">
-                {winner?.isYou
-                  ? "You did it!"
-                  : `${winner?.name} takes the crown`}
-              </p>
-              <div className="mx-auto mt-8 flex h-32 w-32 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-2xl font-extrabold text-white shadow-lg">
-                {winner?.isYou ? "You" : winner?.name}
-              </div>
-              <p className="mt-6 text-lg text-white/80">
-                Your Score:{" "}
-                <span className="font-heading text-3xl text-smart-green">
-                  {score}
-                </span>
-              </p>
-              <div className="mt-10 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                <table className="w-full border-collapse text-left text-sm sm:text-base">
-                  <thead className="bg-white/10 uppercase tracking-[0.25em] text-white/60">
-                    <tr>
-                      <th className="px-4 py-3">Rank</th>
-                      <th className="px-4 py-3">Player</th>
-                      <th className="px-4 py-3 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {finalRows.map((row, i) => (
-                      <tr
-                        key={row.id}
-                        className={`border-t border-white/10 ${
-                          row.isYou ? "bg-white/15" : "bg-transparent"
-                        }`}
-                      >
-                        <td className="px-4 py-3 font-semibold text-white/90">
-                          {i + 1}
-                        </td>
-                        <td className="px-4 py-3 font-medium text-white">
-                          {row.name}
-                          {row.isYou && (
-                            <span className="ml-2 rounded-full bg-smart-green/20 px-2 py-0.5 text-xs font-semibold text-smart-green">
-                              You
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right font-bold text-white">
-                          {row.total}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <Link
-                to="/landing"
-                className="mt-10 inline-block rounded-lg border border-white/20 bg-white/10 px-6 py-3 text-lg font-semibold text-white transition hover:bg-white/20"
-              >
-                Return Home
-              </Link>
-            </div>
+            <GameOverScreen
+              winner={winner}
+              score={score}
+              finalLeaderboard={finalRows}
+            />
           )}
         </main>
 
