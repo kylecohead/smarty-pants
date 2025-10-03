@@ -93,7 +93,7 @@ prod-logs:
 
 # -------- DEPLOY WITH CLOUDFLARE --------
 tunnel:
-	cloudflared tunnel --url http://localhost:80
+	cloudflared tunnel --url http://localhost:5173/
 
 # -------- CLEAN UP --------
 free-ports:

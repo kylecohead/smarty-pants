@@ -6,7 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     host: "0.0.0.0",
-   proxy: {
+    allowedHosts: [
+      ".trycloudflare.com"
+      ],
+    proxy: {
       "/api": {
         target: "http://backend:3000",
         changeOrigin: true,
@@ -18,3 +21,4 @@ export default defineConfig({
     },
   },
 });
+
