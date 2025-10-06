@@ -2,6 +2,7 @@ import express from "express";
 import { PrismaClient } from "@prisma/client";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { QUESTIONS_PER_GAME } from "./questions.js";
+import { shuffle } from "../utils/opentdb.js";
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -34,11 +35,8 @@ router.post("/", authMiddleware, async (req, res) => {
     });
 
     // Shuffle and take first QUESTIONS_PER_GAME questions
-    const selectedQuestions = allCategoryQuestions
-      .map((q) => ({ sort: Math.random(), value: q }))
-      .sort((a, b) => a.sort - b.sort)
-      .slice(0, QUESTIONS_PER_GAME)
-      .map((item) => item.value);
+    const shuffledQuestions = shuffle(allCategoryQuestions);
+    const selectedQuestions = shuffledQuestions.slice(0, QUESTIONS_PER_GAME);
 
     // Step 3: Create match with questions assigned
     const match = await prisma.match.create({

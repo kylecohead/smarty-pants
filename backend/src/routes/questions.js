@@ -7,127 +7,23 @@
 
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
+import { CATEGORY_MAP, QUESTIONS_PER_GAME } from "../config/categories.js";
+import {
+  decodeText,
+  shuffle,
+  sleep,
+  fetchCategoryQuestions,
+} from "../utils/opentdb.js";
 
 const router = Router();
 const prisma = new PrismaClient();
 
+// Re-export QUESTIONS_PER_GAME for use in matches.js
+export { QUESTIONS_PER_GAME };
+
 // ===========================
-// Game Configuration Constants
+// API Routes
 // ===========================
-
-/**
- * Default number of questions per game
- * This can be changed if we want to add user selection in CreateGame later
- */
-export const QUESTIONS_PER_GAME = 5;
-
-// Categories matched to OpenTDB API IDs
-// MUST match CATEGORY_MAP in prisma/seed.js for consistency
-const CATEGORY_MAP = [
-  { id: 9, name: "General Knowledge" },
-  { id: 17, name: "Science & Nature" },
-  { id: 18, name: "Science: Computers" },
-  { id: 23, name: "History" },
-  { id: 21, name: "Sports" }
-];
-
-/**
- * Decode HTML entities from OpenTDB responses
- * (See seed.js for detailed explanation)
- */
-const decodeText = (value = "") =>
-  value
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&amp;/g, "&")
-    .replace(/&rsquo;/g, "'")
-    .replace(/&ldquo;/g, '"')
-    .replace(/&rdquo;/g, '"')
-    .replace(/&shy;/g, "")
-    .replace(/&eacute;/g, "é")
-    .replace(/&ouml;/g, "ö")
-    .replace(/&uuml;/g, "ü")
-    .replace(/&auml;/g, "ä");
-
-/**
- * Randomize array order (Fisher-Yates shuffle)
- * (See seed.js for detailed explanation)
- */
-const shuffle = (items) => {
-  return items
-    .map((item) => ({ sort: Math.random(), value: item }))
-    .sort((a, b) => a.sort - b.sort)
-    .map(({ value }) => value);
-};
-
-/**
- * Promisified setTimeout for rate limiting pauses
- */
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/**
- * Fetch questions from OpenTDB with retry logic and rate limit handling
- * 
- * Identical to seed.js implementation but exposed here for import/reset endpoints.
- * 
- * @param {number} categoryId - OpenTDB category ID
- * @param {string} displayName - Database-friendly category name
- * @param {number} amount - Target number of unique questions
- * @returns {Promise<Array>} - Deduplicated question objects
- * 
- * Key features:
- * - Up to 12 retry attempts
- * - Exponential backoff for rate limit (code 5)
- * - Duplicate detection via Map keyed on question text
- */
-async function fetchCategoryQuestions(categoryId, displayName, amount) {
-  const collected = new Map(); // Deduplicate by question text
-  let attempts = 0;
-
-  while (collected.size < amount && attempts < 12) {
-    attempts += 1;
-
-    const response = await fetch(
-      `https://opentdb.com/api.php?amount=${amount}&type=multiple&category=${categoryId}`
-    );
-    const payload = await response.json();
-
-    // Rate limit detection: response_code 5 = "too many requests"
-    if (payload.response_code === 5) {
-      // Exponential backoff: 300ms base + 150ms per attempt, max 1500ms
-      const backoff = Math.min(1500, 300 + attempts * 150);
-      await sleep(backoff);
-      continue;
-    }
-
-    // Empty results: pause and retry
-    if (!payload.results?.length) {
-      await sleep(150);
-      continue;
-    }
-
-    // Process batch, deduplicating and shuffling options
-    for (const item of payload.results) {
-      const questionText = decodeText(item.question);
-      if (collected.has(questionText)) continue; // Skip duplicates
-
-      const correct = decodeText(item.correct_answer);
-      const incorrect = item.incorrect_answers.map((ans) => decodeText(ans));
-
-      collected.set(questionText, {
-        category: displayName,
-        difficulty: item.difficulty,
-        question: questionText,
-        correct,
-        options: shuffle([correct, ...incorrect])
-      });
-
-      if (collected.size >= amount) break;
-    }
-  }
-
-  return Array.from(collected.values());
-}
 
 router.get("/all", async (_req, res) => {
   try {
