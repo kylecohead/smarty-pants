@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { SIMULATED_PLAYERS } from "../data/simulatedPlayers";
 import { RECAP_DELAY_SECONDS, FINAL_DELAY_SECONDS } from "../config/gameConfig";
+import { api } from "../services/api";
 import {
   calculateScore,
   createInitialSimTotals,
@@ -59,16 +60,8 @@ export default function PlayGame() {
         const token = localStorage.getItem("accessToken");
         if (!token) return;
 
-        const response = await fetch("http://localhost:3000/api/users/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setYouName(data.user.username);
-        }
+        const data = await api.getCurrentUser();
+        setYouName(data.user.username);
       } catch (error) {
         console.error("Error fetching current user:", error);
         // Keep default "You" if fetch fails
@@ -89,21 +82,7 @@ export default function PlayGame() {
 
     const fetchMatch = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
-        const response = await fetch(
-          `http://localhost:3000/api/matches/${matchId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch match: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = await api.getMatch(matchId);
 
         // Transform database questions to game format
         const dbQuestions = data.questions.map((mq) => ({

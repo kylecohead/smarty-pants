@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../services/api";
 
 // "Smart" palette — tweak freely to match your design system
 const colors = {
@@ -143,13 +144,7 @@ export default function CreateGame() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:3000/api/questions/categories"
-        );
-        if (!response.ok) {
-          throw new Error(`Failed to fetch categories: ${response.status}`);
-        }
-        const data = await response.json();
+        const data = await api.getCategories();
 
         // Check if we got any categories back
         if (!data || data.length === 0) {
@@ -580,7 +575,7 @@ export default function CreateGame() {
             <button
               onClick={async () => {
                 try {
-                  // Get access token from localStorage
+                  // Check if user is logged in
                   const token = localStorage.getItem("accessToken");
                   if (!token) {
                     alert("Please log in to create a game");
@@ -588,32 +583,15 @@ export default function CreateGame() {
                     return;
                   }
 
-                  // Create match via POST /api/matches
+                  // Create match via API service
                   // Backend automatically assigns 5 random questions from the selected category
-                  const response = await fetch(
-                    "http://localhost:3000/api/matches",
-                    {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                      },
-                      body: JSON.stringify({
-                        title: title || `${mode.label} Match`,
-                        category: mode.label, // This must match a category name in the database
-                        difficulty: "medium",
-                        maxPlayers: maxPlayers,
-                        isPublic: isPublic,
-                      }),
-                    }
-                  );
-
-                  if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.message || "Failed to create match");
-                  }
-
-                  const match = await response.json();
+                  const match = await api.createMatch({
+                    title: title || `${mode.label} Match`,
+                    category: mode.label, // This must match a category name in the database
+                    difficulty: "medium",
+                    maxPlayers: maxPlayers,
+                    isPublic: isPublic,
+                  });
 
                   // Navigate to lobby with match ID in state
                   // Lobby will show players joining, then navigate to game when "Play Game" clicked

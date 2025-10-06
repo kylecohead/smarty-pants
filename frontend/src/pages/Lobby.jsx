@@ -9,6 +9,7 @@
 import { Link, useNavigate, Outlet, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import catImage from "../assets/cat.jpg";
+import { api } from "../services/api";
 
 const colors = {
   darkBlue: "#0A2442", // smart-darkblue background
@@ -97,29 +98,21 @@ export default function Lobby() {
         const token = localStorage.getItem("accessToken");
         if (!token) return;
 
-        const response = await fetch("http://localhost:3000/api/users/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const data = await api.getCurrentUser();
+        setCurrentUser(data.user);
+
+        // Update the host player with actual username
+        setPlayers((prev) => {
+          const updated = [...prev];
+          if (updated[0]) {
+            updated[0] = {
+              ...updated[0],
+              username: data.user.username,
+              image: data.user.avatarUrl || catImage,
+            };
+          }
+          return updated;
         });
-
-        if (response.ok) {
-          const data = await response.json();
-          setCurrentUser(data.user);
-
-          // Update the host player with actual username
-          setPlayers((prev) => {
-            const updated = [...prev];
-            if (updated[0]) {
-              updated[0] = {
-                ...updated[0],
-                username: data.user.username,
-                image: data.user.avatarUrl || catImage,
-              };
-            }
-            return updated;
-          });
-        }
       } catch (error) {
         console.error("Error fetching current user:", error);
       }
