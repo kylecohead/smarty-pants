@@ -95,11 +95,7 @@ export default function QuestionRecapModal() {
               const topPerformer = top3ThisQuestion[0];
               return (
                 <div className="flex h-36 w-36 items-center justify-center rounded-2xl border border-white/20 bg-gradient-to-br from-[#1A335A] to-[#0F2747] text-xl font-extrabold text-smart-green shadow-lg">
-                  {topPerformer
-                    ? topPerformer.isYou
-                      ? "You"
-                      : topPerformer.name
-                    : "—"}
+                  {topPerformer ? topPerformer.name : "—"}
                 </div>
               );
             })()}

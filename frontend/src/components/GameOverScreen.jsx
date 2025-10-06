@@ -15,7 +15,7 @@ export default function GameOverScreen({ winner, score, finalLeaderboard }) {
       </p>
 
       <div className="mx-auto mt-8 flex h-32 w-32 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-2xl font-extrabold text-white shadow-lg">
-        {winner?.isYou ? "You" : winner?.name}
+        {winner?.name}
       </div>
 
       <p className="mt-6 text-lg text-white/80">

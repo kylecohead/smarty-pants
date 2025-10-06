@@ -106,7 +106,7 @@ export default function App() {
       </Route>
 
       {/* 7) Play + Recap (uses custom non-dismissible overlay) */}
-      <Route path="/game/play" element={<PlayGame />}>
+      <Route path="/game/play/:matchId" element={<PlayGame />}>
         <Route
           path="pause"
           element={

@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth.js";
 import matchesRouter from "./routes/matches.js";
 import imageRoutes from "./routes/images.js";
 import userRoutes from "./routes/user.js";
+import questionRoutes from "./routes/questions.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import { PrismaClient } from "@prisma/client";
 import http from "http";               
@@ -38,6 +39,9 @@ app.use("/api/matches", authMiddleware, matchesRouter);
 // Get/Set the current user info ================================
 app.use("/api/users", userRoutes);
 
+// Questions (scraper + admin tools) ==========================
+app.use("/api/questions", questionRoutes);
+
 // Socket.IO =================================================
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -61,7 +65,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
+    console.log("User disconnected:", socket.id);
     delete socketUsers[socket.id];
   });
 });

@@ -19,17 +19,25 @@ import backSports from "../assets/backSports.jpg";
 import backCulture from "../assets/backCulture.jpg";
 
 /**
- * Available game modes with their display labels and background images
- * Each mode represents a different trivia category
- * @type {Array<{key: string, label: string, backgroundImage: string}>}
+ * Map database category names to background images
+ * This allows dynamic categories from the database while maintaining visual design
+ * @param {string} category - Category name from database
+ * @returns {string} - Background image path
  */
-const MODES = [
-  { key: "general", label: "General Knowledge", backgroundImage: backGeneral },
-  { key: "science", label: "Science", backgroundImage: backScience },
-  { key: "history", label: "History", backgroundImage: backHistory },
-  { key: "sports", label: "Sports", backgroundImage: backSports },
-  { key: "culture", label: "Pop Culture", backgroundImage: backCulture },
-];
+const getCategoryBackground = (category) => {
+  const lowerCategory = category.toLowerCase();
+
+  if (lowerCategory.includes("general")) return backGeneral;
+  if (lowerCategory.includes("science") || lowerCategory.includes("computer"))
+    return backScience;
+  if (lowerCategory.includes("history")) return backHistory;
+  if (lowerCategory.includes("sport")) return backSports;
+  if (lowerCategory.includes("culture") || lowerCategory.includes("pop"))
+    return backCulture;
+
+  // Default fallback
+  return backGeneral;
+};
 
 /**
  * Available scoring models for the trivia game
@@ -106,6 +114,10 @@ export default function CreateGame() {
   const [usernameQuery, setUsernameQuery] = useState(""); // Search query for finding users to invite
   const [invited, setInvited] = useState([]); // Array of invited usernames
   const [modeIndex, setModeIndex] = useState(0); // Currently selected game mode index
+
+  // Dynamic categories from database
+  const [categories, setCategories] = useState([]); // Available categories from database
+  const [loadingCategories, setLoadingCategories] = useState(true); // Loading state for categories
   const [secPerQ, setSecPerQ] = useState(() => {
     if (typeof window !== "undefined") {
       const stored = Number(
@@ -125,9 +137,84 @@ export default function CreateGame() {
   const [scoring, setScoring] = useState(scoringModels[0].key); // Selected scoring model
   const [requireCorrectAll, setRequireCorrectAll] = useState(false); // Whether all answers must be correct to advance
 
-  // Current selected game mode object
-  const mode = MODES[modeIndex];
   const navigate = useNavigate();
+
+  // Fetch categories from database on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/questions/categories"
+        );
+        if (!response.ok) {
+          throw new Error(`Failed to fetch categories: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // Check if we got any categories back
+        if (!data || data.length === 0) {
+          console.warn(
+            "No categories found in database. Using fallback categories."
+          );
+          // Fallback to default categories if database is empty
+          const fallbackCategories = [
+            {
+              key: "general-knowledge",
+              label: "General Knowledge",
+              backgroundImage: backGeneral,
+            },
+            {
+              key: "science-nature",
+              label: "Science & Nature",
+              backgroundImage: backScience,
+            },
+            { key: "history", label: "History", backgroundImage: backHistory },
+            { key: "sports", label: "Sports", backgroundImage: backSports },
+          ];
+          setCategories(fallbackCategories);
+        } else {
+          // Transform categories into mode objects with background images
+          const modes = data.map((categoryName) => ({
+            key: categoryName.toLowerCase().replace(/\s+/g, "-"),
+            label: categoryName,
+            backgroundImage: getCategoryBackground(categoryName),
+          }));
+
+          setCategories(modes);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        console.warn("Using fallback categories due to fetch error");
+        // Fallback to default categories if fetch fails (backend not running, etc.)
+        const fallbackCategories = [
+          {
+            key: "general-knowledge",
+            label: "General Knowledge",
+            backgroundImage: backGeneral,
+          },
+          {
+            key: "science-nature",
+            label: "Science & Nature",
+            backgroundImage: backScience,
+          },
+          { key: "history", label: "History", backgroundImage: backHistory },
+          { key: "sports", label: "Sports", backgroundImage: backSports },
+        ];
+        setCategories(fallbackCategories);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Current selected game mode object
+  const mode = categories[modeIndex] || {
+    key: "",
+    label: "Loading...",
+    backgroundImage: backGeneral,
+  };
 
   // Mock user directory for demonstration (in production, this would come from an API)
   const fakeDirectory = useMemo(
@@ -186,14 +273,19 @@ export default function CreateGame() {
    * Navigate to previous game mode in carousel
    * Uses modulo to wrap around to end when at beginning
    */
-  const goPrev = () =>
-    setModeIndex((i) => (i - 1 + MODES.length) % MODES.length);
+  const goPrev = () => {
+    if (categories.length === 0) return;
+    setModeIndex((i) => (i - 1 + categories.length) % categories.length);
+  };
 
   /**
    * Navigate to next game mode in carousel
    * Uses modulo to wrap around to beginning when at end
    */
-  const goNext = () => setModeIndex((i) => (i + 1) % MODES.length);
+  const goNext = () => {
+    if (categories.length === 0) return;
+    setModeIndex((i) => (i + 1) % categories.length);
+  };
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
@@ -368,7 +460,8 @@ export default function CreateGame() {
               <div className="relative z-10 flex items-center justify-between h-full">
                 <button
                   onClick={goPrev}
-                  className="rounded-lg bg-white/10 hover:bg-white/20 text-white w-12 h-12 flex items-center justify-center font-bold text-lg"
+                  disabled={loadingCategories || categories.length === 0}
+                  className="rounded-lg bg-white/10 hover:bg-white/20 text-white w-12 h-12 flex items-center justify-center font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Previous mode"
                 >
                   ←
@@ -376,12 +469,13 @@ export default function CreateGame() {
                 <div className="text-center px-4 flex-1">
                   <p className="text-sm text-white/60 mb-1">Mode</p>
                   <p className="text-3xl font-bold text-white drop-shadow-lg">
-                    {mode.label}
+                    {loadingCategories ? "Loading categories..." : mode.label}
                   </p>
                 </div>
                 <button
                   onClick={goNext}
-                  className="rounded-lg bg-white/10 hover:bg-white/20 text-white w-12 h-12 flex items-center justify-center font-bold text-lg"
+                  disabled={loadingCategories || categories.length === 0}
+                  className="rounded-lg bg-white/10 hover:bg-white/20 text-white w-12 h-12 flex items-center justify-center font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Next mode"
                 >
                   →
@@ -389,14 +483,18 @@ export default function CreateGame() {
               </div>
 
               <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex justify-center gap-1">
-                {MODES.map((m, i) => (
-                  <span
-                    key={m.key}
-                    className={`h-2 w-8 rounded-full ${
-                      i === modeIndex ? "bg-white" : "bg-white/30"
-                    }`}
-                  />
-                ))}
+                {loadingCategories ? (
+                  <span className="text-white/60 text-xs">Loading...</span>
+                ) : (
+                  categories.map((m, i) => (
+                    <span
+                      key={m.key}
+                      className={`h-2 w-8 rounded-full ${
+                        i === modeIndex ? "bg-white" : "bg-white/30"
+                      }`}
+                    />
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -480,10 +578,55 @@ export default function CreateGame() {
           {/* Send Invite */}
           <div className="mt-8 flex justify-center">
             <button
-              onClick={() => navigate("/lobby")}
-              className="rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg bg-smart-red hover:opacity-80 text-smart-white font-button transition-opacity"
+              onClick={async () => {
+                try {
+                  // Get access token from localStorage
+                  const token = localStorage.getItem("accessToken");
+                  if (!token) {
+                    alert("Please log in to create a game");
+                    navigate("/");
+                    return;
+                  }
+
+                  // Create match via POST /api/matches
+                  // Backend automatically assigns 5 random questions from the selected category
+                  const response = await fetch(
+                    "http://localhost:3000/api/matches",
+                    {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({
+                        title: title || `${mode.label} Match`,
+                        category: mode.label, // This must match a category name in the database
+                        difficulty: "medium",
+                        maxPlayers: maxPlayers,
+                        isPublic: isPublic,
+                      }),
+                    }
+                  );
+
+                  if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || "Failed to create match");
+                  }
+
+                  const match = await response.json();
+
+                  // Navigate to lobby with match ID in state
+                  // Lobby will show players joining, then navigate to game when "Play Game" clicked
+                  navigate("/lobby", { state: { matchId: match.id } });
+                } catch (error) {
+                  console.error("Error creating match:", error);
+                  alert(`Failed to create game: ${error.message}`);
+                }
+              }}
+              disabled={loadingCategories || categories.length === 0}
+              className="rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg bg-smart-red hover:opacity-80 text-smart-white font-button transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Send Invite
+              {loadingCategories ? "Loading..." : "Send Invite"}
             </button>
           </div>
         </div>

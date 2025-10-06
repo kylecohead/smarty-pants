@@ -1,383 +1,460 @@
-/**
- * CONRAD
- * PAGE: Admin - Question Management
- * Features:
- *  - View questions by subject (Science, History, Culture, Sports, General)
- *  - Add, Edit, Delete questions
- *  - Tabbed interface for different subjects
- * Back: to previous page
- * Logout: to Home "/"
- */
+// ===========================
+// Admin Panel: Question Management
+// ===========================
+// Features:
+// - View all questions with category filtering
+// - Import new questions from OpenTDB (5 per category or filtered by category)
+// - Reset all questions (clears DB and fetches fresh set of 10 per category)
+// - Delete individual questions
+// - UI locking during async operations (prevents race conditions)
+// ===========================
+
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { QUESTIONS, SUBJECTS, getQuestionsBySubject } from "../data/questions.js";
-import backgroundImg from "../assets/home-background.jpg";
+
+const API_ROOT = "http://localhost:3000/api/questions";
+
+const initialStats = { total: 0, byCategory: [] };
 
 export default function Admin() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("Science");
-  const [questions, setQuestions] = useState(QUESTIONS);
-  const [editingQuestion, setEditingQuestion] = useState(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newQuestion, setNewQuestion] = useState({
-    text: "",
-    options: [
-      { id: "a", label: "" },
-      { id: "b", label: "" },
-      { id: "c", label: "" },
-      { id: "d", label: "" },
-    ],
-    correctId: "a",
-    subject: "Science"
-  });
 
-  // Get questions for the active tab
-  const currentQuestions = questions.filter(q => q.subject === activeTab);
+  // ===========================
+  // State Management
+  // ===========================
+  const [questions, setQuestions] = useState([]); // All questions from DB
+  const [categories, setCategories] = useState(["All"]); // Available categories + "All" option
+  const [selectedCategory, setSelectedCategory] = useState("All"); // Filter selection
+  const [stats, setStats] = useState(initialStats); // Total count & per-category breakdown
+  const [loading, setLoading] = useState(false); // Initial data load
+  const [importing, setImporting] = useState(false); // Import operation in progress
+  const [resetting, setResetting] = useState(false); // Reset operation in progress
+  const [error, setError] = useState(null); // Error message display
 
-  // Handle adding a new question
-  const handleAddQuestion = () => {
-    if (!newQuestion.text.trim() || newQuestion.options.some(opt => !opt.label.trim())) {
-      alert("Please fill in all fields");
-      return;
-    }
+  // Derived state
+  const categoryCount = Math.max(categories.length - 1, 0); // Exclude "All" from count
+  const estimatedImportTotal = categoryCount * 5;
 
-    const question = {
-      ...newQuestion,
-      id: `${activeTab.toLowerCase().charAt(0)}${Date.now()}`,
-      subject: activeTab
-    };
+  // UI lock: Disable all controls while async operation in progress
+  const isBusy = importing || resetting;
 
-    setQuestions([...questions, question]);
-    setNewQuestion({
-      text: "",
-      options: [
-        { id: "a", label: "" },
-        { id: "b", label: "" },
-        { id: "c", label: "" },
-        { id: "d", label: "" },
-      ],
-      correctId: "a",
-      subject: activeTab
-    });
-    setShowAddForm(false);
-  };
+  // ===========================
+  // Effects
+  // ===========================
 
-  // Handle editing a question
-  const handleEditQuestion = (updatedQuestion) => {
-    setQuestions(questions.map(q => 
-      q.id === updatedQuestion.id ? updatedQuestion : q
-    ));
-    setEditingQuestion(null);
-  };
-
-  // Handle deleting a question
-  const handleDeleteQuestion = (questionId) => {
-    if (window.confirm("Are you sure you want to delete this question?")) {
-      setQuestions(questions.filter(q => q.id !== questionId));
-    }
-  };
-
-  return (
-    <div 
-      className="min-h-screen bg-cover bg-center bg-no-repeat font-body text-smart-white relative"
-      style={{
-        color: 'white',
-      }}
-    >
-      {/* Background overlay */}
-      <div className="absolute inset-0 bg-black/40"></div>
-
-      {/* Header with navigation */}
-      <div className="relative z-10 border-b-4 border-smart-purple bg-smart-dark-blue/90 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <button
-              onClick={() => navigate(-1)}
-              className="rounded-2xl border-4 border-smart-white bg-smart-light-blue px-6 py-3 font-button text-lg font-bold text-smart-black hover:bg-smart-green hover:scale-105 transition-all duration-200 shadow-2xl"
-            >
-              ← Back
-            </button>
-            <h1 className="text-3xl lg:text-4xl font-heading font-black drop-shadow-2xl">
-              <span className="text-smart-yellow">Q</span>
-              <span className="text-smart-pink">U</span>
-              <span className="text-smart-green">E</span>
-              <span className="text-smart-orange">S</span>
-              <span className="text-smart-light-blue">T</span>
-              <span className="text-smart-purple">I</span>
-              <span className="text-smart-red">O</span>
-              <span className="text-smart-light-pink">N</span>
-              <span className="text-smart-white"> </span>
-              <span className="text-smart-green">A</span>
-              <span className="text-smart-yellow">D</span>
-              <span className="text-smart-orange">M</span>
-              <span className="text-smart-light-blue">I</span>
-              <span className="text-smart-pink">N</span>
-            </h1>
-            <button
-              onClick={() => navigate("/")}
-              className="rounded-2xl border-4 border-smart-white bg-smart-red px-6 py-3 font-button text-lg font-bold text-smart-white hover:bg-smart-orange hover:scale-105 transition-all duration-200 shadow-2xl"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Subject Tabs */}
-      <div className="relative z-10 bg-smart-purple/90 backdrop-blur-sm border-b-4 border-smart-yellow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-4 overflow-x-auto py-4">
-            {Object.keys(SUBJECTS).map((subject, index) => {
-              const colors = ['smart-blue', 'smart-blue', 'smart-blue', 'smart-blue', 'smart-blue'];
-              const bgColor = colors[index % colors.length];
-              return (
-                <button
-                  key={subject}
-                  onClick={() => setActiveTab(subject)}
-                  className={`rounded-2xl border-4 border-smart-white px-6 py-3 font-button text-lg font-bold whitespace-nowrap hover:scale-105 transition-all duration-200 shadow-2xl ${
-                    activeTab === subject
-                      ? `bg-${bgColor} text-smart-black`
-                      : `bg-smart-black/70 text-smart-white hover:bg-${bgColor} hover:text-smart-black`
-                  }`}
-                >
-                  {subject} ({questions.filter(q => q.subject === subject).length})
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Add Question Button */}
-        <div className="mb-8">
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="rounded-2xl border-4 border-smart-white bg-smart-green px-8 py-4 font-button text-xl font-bold text-smart-black hover:bg-smart-yellow hover:scale-105 transition-all duration-200 shadow-2xl"
-          >
-            + Add New {activeTab} Question
-          </button>
-        </div>
-
-        {/* Add Question Form */}
-        {showAddForm && (
-          <div className="bg-smart-dark-blue/90 backdrop-blur-sm p-8 rounded-3xl shadow-2xl mb-8 border-4 border-smart-purple">
-            <h3 className="text-2xl font-heading font-bold mb-6 text-smart-yellow drop-shadow-lg">Add New {activeTab} Question</h3>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-lg font-button font-bold text-smart-white mb-3">
-                  Question Text
-                </label>
-                <textarea
-                  value={newQuestion.text}
-                  onChange={(e) => setNewQuestion({...newQuestion, text: e.target.value})}
-                  className="w-full border-4 border-smart-light-blue rounded-2xl px-4 py-3 focus:ring-4 focus:ring-smart-green focus:border-smart-green bg-smart-white text-smart-black font-body text-lg"
-                  rows="3"
-                  placeholder="Enter your question..."
-                />
-              </div>
-              
-              {newQuestion.options.map((option, index) => {
-                const optionColors = ['smart-red', 'smart-red', 'smart-red', 'smart-red'];
-                const optionColor = optionColors[index];
-                return (
-                  <div key={option.id} className="flex items-center space-x-4">
-                    <label className={`text-lg font-button font-bold text-${optionColor} w-12`}>
-                      {option.id.toUpperCase()}:
-                    </label>
-                    <input
-                      type="text"
-                      value={option.label}
-                      onChange={(e) => {
-                        const updatedOptions = [...newQuestion.options];
-                        updatedOptions[index].label = e.target.value;
-                        setNewQuestion({...newQuestion, options: updatedOptions});
-                      }}
-                      className="flex-1 border-4 border-smart-light-blue rounded-2xl px-4 py-3 focus:ring-4 focus:ring-smart-green focus:border-smart-green bg-smart-white text-smart-black font-body text-lg"
-                      placeholder={`Option ${option.id.toUpperCase()}`}
-                    />
-                    <input
-                      type="radio"
-                      name="correctAnswer"
-                      checked={newQuestion.correctId === option.id}
-                      onChange={() => setNewQuestion({...newQuestion, correctId: option.id})}
-                      className="w-6 h-6 text-smart-green accent-smart-green"
-                    />
-                    <label className="text-lg font-button font-bold text-smart-green">Correct</label>
-                  </div>
-                );
-              })}
-              
-              <div className="flex space-x-4">
-                <button
-                  onClick={handleAddQuestion}
-                  className="rounded-2xl border-4 border-smart-white bg-smart-green px-8 py-4 font-button text-lg font-bold text-smart-black hover:bg-smart-yellow hover:scale-105 transition-all duration-200 shadow-2xl"
-                >
-                  Add Question
-                </button>
-                <button
-                  onClick={() => setShowAddForm(false)}
-                  className="rounded-2xl border-4 border-smart-white bg-smart-red px-8 py-4 font-button text-lg font-bold text-smart-white hover:bg-smart-orange hover:scale-105 transition-all duration-200 shadow-2xl"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Questions List */}
-        <div className="space-y-6">
-          {currentQuestions.length === 0 ? (
-            <div className="text-center py-16 bg-smart-dark-blue/90 backdrop-blur-sm rounded-3xl shadow-2xl border-4 border-smart-purple">
-              <p className="text-smart-yellow text-2xl font-button font-bold mb-2 drop-shadow-lg">No {activeTab} questions found.</p>
-              <p className="text-smart-white text-lg font-body">Click "Add New {activeTab} Question" to get started.</p>
-            </div>
-          ) : (
-            currentQuestions.map((question) => (
-              <QuestionCard
-                key={question.id}
-                question={question}
-                isEditing={editingQuestion?.id === question.id}
-                onEdit={(q) => setEditingQuestion(q)}
-                onSave={handleEditQuestion}
-                onCancel={() => setEditingQuestion(null)}
-                onDelete={() => handleDeleteQuestion(question.id)}
-              />
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Question Card Component
-function QuestionCard({ question, isEditing, onEdit, onSave, onCancel, onDelete }) {
-  const [editData, setEditData] = useState(question);
-
+  // Initial load on mount
   useEffect(() => {
-    setEditData(question);
-  }, [question]);
+    loadEverything();
+  }, []);
 
-  const handleSave = () => {
-    if (!editData.text.trim() || editData.options.some(opt => !opt.label.trim())) {
-      alert("Please fill in all fields");
-      return;
+  // ===========================
+  // Memoized Computed Values
+  // ===========================
+
+  /**
+   * Filter questions based on selected category.
+   * "All" shows everything, otherwise filter by exact category match.
+   */
+  const filteredQuestions = useMemo(() => {
+    if (selectedCategory === "All") {
+      return questions;
     }
-    onSave(editData);
-  };
+    return questions.filter((q) => q.category === selectedCategory);
+  }, [questions, selectedCategory]);
 
-  if (isEditing) {
-    return (
-      <div className="bg-smart-dark-blue/90 backdrop-blur-sm p-8 rounded-3xl shadow-2xl border-4 border-smart-light-blue">
-        <h3 className="text-2xl font-heading font-bold mb-6 text-smart-light-blue drop-shadow-lg">Editing Question</h3>
-        <div className="space-y-6">
-          <div>
-            <label className="block text-lg font-button font-bold text-smart-white mb-3">
-              Question Text
-            </label>
-            <textarea
-              value={editData.text}
-              onChange={(e) => setEditData({...editData, text: e.target.value})}
-              className="w-full border-4 border-smart-light-blue rounded-2xl px-4 py-3 focus:ring-4 focus:ring-smart-green focus:border-smart-green bg-smart-white text-smart-black font-body text-lg"
-              rows="3"
-            />
-          </div>
-          
-          {editData.options.map((option, index) => {
-            const optionColors = ['smart-red', 'smart-red', 'smart-red', 'smart-red'];
-            const optionColor = optionColors[index];
-            return (
-              <div key={option.id} className="flex items-center space-x-4">
-                <label className={`text-lg font-button font-bold text-${optionColor} w-12`}>
-                  {option.id.toUpperCase()}:
-                </label>
-                <input
-                  type="text"
-                  value={option.label}
-                  onChange={(e) => {
-                    const updatedOptions = [...editData.options];
-                    updatedOptions[index].label = e.target.value;
-                    setEditData({...editData, options: updatedOptions});
-                  }}
-                  className="flex-1 border-4 border-smart-light-blue rounded-2xl px-4 py-3 focus:ring-4 focus:ring-smart-green focus:border-smart-green bg-smart-white text-smart-black font-body text-lg"
-                />
-                <input
-                  type="radio"
-                  name={`correctAnswer-${question.id}`}
-                  checked={editData.correctId === option.id}
-                  onChange={() => setEditData({...editData, correctId: option.id})}
-                  className="w-6 h-6 text-smart-green accent-smart-green"
-                />
-                <label className="text-lg font-button font-bold text-smart-green">Correct</label>
-              </div>
-            );
-          })}
-          
-          <div className="flex space-x-4">
-            <button
-              onClick={handleSave}
-              className="rounded-2xl border-4 border-smart-white bg-smart-green px-8 py-4 font-button text-lg font-bold text-smart-black hover:bg-smart-yellow hover:scale-105 transition-all duration-200 shadow-2xl"
-            >
-              Save Changes
-            </button>
-            <button
-              onClick={onCancel}
-              className="rounded-2xl border-4 border-smart-white bg-smart-red px-8 py-4 font-button text-lg font-bold text-smart-white hover:bg-smart-orange hover:scale-105 transition-all duration-200 shadow-2xl"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
+  // ===========================
+  // Data Loading
+  // ===========================
+
+  /**
+   * Fetch all data needed for admin panel:
+   * - Statistics (total count, per-category breakdown)
+   * - Available categories (for filter dropdown)
+   * - All questions (for display/management)
+   */
+  async function loadEverything() {
+    setError(null);
+    setLoading(true);
+
+    try {
+      // Parallel fetch for faster load time
+      const [statsRes, catRes, questionsRes] = await Promise.all([
+        fetch(`${API_ROOT}/stats`),
+        fetch(`${API_ROOT}/categories`),
+        fetch(`${API_ROOT}/all`),
+      ]);
+
+      if (!statsRes.ok || !catRes.ok || !questionsRes.ok) {
+        throw new Error("Failed to load admin data");
+      }
+
+      const statsData = await statsRes.json();
+      const categoryData = await catRes.json();
+      const questionData = await questionsRes.json();
+
+      setStats(statsData);
+      setCategories(["All", ...categoryData]); // Prepend "All" option
+      setQuestions(questionData);
+    } catch (err) {
+      console.error(err);
+      setError("Unable to load questions. Try again later.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ===========================
+  // Action Handlers
+  // ===========================
+
+  /**
+   * Import questions from OpenTDB.
+   *
+   * Behavior:
+   * - If "All" selected: Import {amount} questions for EACH category
+   * - If specific category selected: Import {amount} questions for THAT category only
+   * - Guard clause: Block if another operation is in progress (isBusy)
+   * - Confirmation prompt: Shows estimate of how many questions will be imported
+   * - Detailed result: Shows per-category breakdown (inserted, skipped)
+   *
+   * @param {number} amount - Number of questions per category (default: 5)
+   */
+  async function handleImport(amount = 5) {
+    // Guard: Prevent overlapping operations
+    if (importing || resetting) return;
+
+    // Build confirmation message based on filter selection
+    const isAll = selectedCategory === "All";
+    const categoryCount = Math.max(categories.length - 1, 0);
+    const totalEstimate = isAll ? categoryCount * amount : amount;
+    const promptMessage = isAll
+      ? categoryCount
+        ? `Import ${amount} questions for each of the ${categoryCount} categories? (≈${totalEstimate} total)`
+        : `Import ${amount} questions per category?`
+      : `Import ${amount} ${selectedCategory} question${
+          amount === 1 ? "" : "s"
+        }?`;
+
+    const confirmed = window.confirm(promptMessage);
+    if (!confirmed) return;
+
+    // Lock UI during operation
+    setImporting(true);
+    setError(null);
+
+    try {
+      // Call backend import endpoint with category filter
+      const response = await fetch(`${API_ROOT}/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount,
+          category: isAll ? "All" : selectedCategory, // Backend handles "All" vs specific category
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Import failed");
+      }
+
+      // Parse result and build user-friendly summary
+      const result = await response.json();
+      const lines = [
+        `Imported ${result.totalImported} new question${
+          result.totalImported === 1 ? "" : "s"
+        }. Skipped ${result.totalSkipped}.`,
+      ];
+
+      // Add per-category breakdown if available
+      if (Array.isArray(result.details) && result.details.length > 0) {
+        lines.push(
+          "",
+          ...result.details.map((detail) => {
+            const inserted = detail.inserted ?? 0;
+            const skipped = detail.skipped ?? 0;
+            return `${detail.category}: +${inserted} / ${
+              detail.requested
+            } requested${skipped ? ` (skipped ${skipped})` : ""}`;
+          })
+        );
+      }
+
+      alert(lines.join("\n"));
+
+      // Reload all data to reflect new questions
+      await loadEverything();
+    } catch (err) {
+      console.error(err);
+      setError("Import failed. Please check the server logs.");
+    } finally {
+      // Unlock UI
+      setImporting(false);
+    }
+  }
+
+  /**
+   * Reset all questions: Nuclear option that clears DB and reseeds.
+   *
+   * Behavior:
+   * - Deletes ALL questions (and related answers/match_questions)
+   * - Fetches fresh set of 10 questions per category from OpenTDB
+   * - Guard clause: Block if another operation is in progress
+   * - Confirmation prompt: Warns user about destructive action
+   * - Detailed result: Shows per-category breakdown
+   */
+  async function handleReset() {
+    // Guard: Prevent overlapping operations
+    if (resetting || importing) return;
+
+    // Confirm destructive action
+    const confirmed = window.confirm(
+      "This will remove all trivia questions and fetch a fresh set (10 per category). Continue?"
     );
+    if (!confirmed) return;
+
+    // Lock UI during operation
+    setResetting(true);
+    setError(null);
+
+    try {
+      // Call backend reset endpoint (no body needed)
+      const response = await fetch(`${API_ROOT}/reset`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Reset failed");
+      }
+
+      // Parse result and build summary
+      const result = await response.json();
+      const lines = [
+        `Database refreshed with ${result.totalSeeded ?? 0} question${
+          result.totalSeeded === 1 ? "" : "s"
+        }.`,
+      ];
+
+      // Add per-category breakdown
+      if (Array.isArray(result.details) && result.details.length > 0) {
+        lines.push(
+          "",
+          ...result.details.map((detail) => {
+            const inserted = detail.inserted ?? 0;
+            const skipped = detail.skipped ?? 0;
+            return `${detail.category}: +${inserted} / ${
+              detail.requested
+            } requested${skipped ? ` (skipped ${skipped})` : ""}`;
+          })
+        );
+      }
+
+      alert(lines.join("\n"));
+
+      // Reload all data to reflect fresh questions
+      await loadEverything();
+    } catch (err) {
+      console.error(err);
+      setError("Reset failed. Please check the server logs.");
+    } finally {
+      // Unlock UI
+      setResetting(false);
+    }
+  }
+
+  /**
+   * Delete a single question by ID.
+   *
+   * Guard clause: Block if another operation is in progress.
+   * Optimistic update: Removes from local state immediately (no reload needed).
+   */
+  async function handleDelete(id) {
+    // Guard: Prevent deletion during import/reset
+    if (isBusy) return;
+
+    const confirmed = window.confirm("Delete this question?");
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API_ROOT}/${id}`, { method: "DELETE" });
+      if (!response.ok) {
+        throw new Error("Delete failed");
+      }
+
+      // Optimistic update: Remove from local state immediately
+      setQuestions((current) => current.filter((q) => q.id !== id));
+      setStats((current) => ({ ...current, total: current.total - 1 }));
+    } catch (err) {
+      console.error(err);
+      alert("Could not delete this question. Try again.");
+    }
+  }
+
+  /**
+   * Manually refresh all data from server.
+   * Guard clause: Block if another operation is in progress.
+   */
+  async function handleRefresh() {
+    if (isBusy) return;
+    await loadEverything();
   }
 
   return (
-    <div className="bg-smart-dark-blue/90 backdrop-blur-sm p-8 rounded-3xl shadow-2xl border-4 border-smart-purple hover:border-smart-yellow transition-all duration-200 hover:scale-[1.02]">
-      <div className="flex justify-between items-start mb-6">
-        <h3 className="text-xl font-button font-bold text-smart-white flex-1 pr-4 drop-shadow-lg">{question.text}</h3>
-        <div className="flex space-x-3">
+    <div className="min-h-screen bg-gradient-to-b from-[#0b1d3c] via-[#132852] to-[#0b1d3c] text-white">
+      <header className="border-b border-white/20 bg-black/30 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
           <button
-            onClick={() => onEdit(question)}
-            className="rounded-2xl border-4 border-smart-white bg-smart-light-blue px-6 py-3 font-button text-lg font-bold text-smart-black hover:bg-smart-green hover:scale-105 transition-all duration-200 shadow-2xl"
+            onClick={() => navigate(-1)}
+            disabled={isBusy}
+            className="rounded-lg border border-white/50 px-4 py-2 text-sm font-semibold uppercase tracking-wide transition hover:border-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Edit
+            ← Back
           </button>
+          <h1 className="text-2xl font-black uppercase tracking-widest text-yellow-300">
+            Question Admin
+          </h1>
           <button
-            onClick={onDelete}
-            className="rounded-2xl border-4 border-smart-white bg-smart-red px-6 py-3 font-button text-lg font-bold text-smart-white hover:bg-smart-orange hover:scale-105 transition-all duration-200 shadow-2xl"
+            onClick={() => navigate("/")}
+            disabled={isBusy}
+            className="rounded-lg border border-red-400 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Delete
+            Logout
           </button>
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {question.options.map((option, index) => {
-          const optionColors = ['smart-red', 'smart-red', 'smart-red', 'smart-red'];
-          const optionColor = optionColors[index];
-          const isCorrect = question.correctId === option.id;
-          return (
-            <div
-              key={option.id}
-              className={`p-4 rounded-2xl border-4 ${
-                isCorrect
-                  ? `bg-smart-green/20 border-smart-green text-smart-green`
-                  : `bg-smart-black/30 border-${optionColor} text-${optionColor}`
-              } backdrop-blur-sm`}
-            >
-              <span className="font-button font-bold text-lg">{option.id.toUpperCase()}:</span>{" "}
-              <span className="font-body text-lg">{option.label}</span>
-              {isCorrect && (
-                <span className="ml-3 text-smart-green font-button font-bold text-lg drop-shadow-lg">✓ CORRECT</span>
+      </header>
+
+      <main className="mx-auto max-w-5xl px-6 py-8">
+        <section className="mb-6 grid gap-4 md:grid-cols-3">
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 shadow">
+            <p className="text-sm uppercase text-white/60">Total questions</p>
+            <p className="text-3xl font-bold">{stats.total}</p>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 shadow md:col-span-2">
+            <p className="mb-3 text-sm uppercase text-white/60">By category</p>
+            <div className="flex flex-wrap gap-2">
+              {stats.byCategory.length === 0 && (
+                <span className="text-white/50">None yet</span>
               )}
+              {stats.byCategory.map((row) => (
+                <span
+                  key={row.category}
+                  className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold"
+                >
+                  {row.category}: {row.count}
+                </span>
+              ))}
             </div>
-          );
-        })}
-      </div>
+          </div>
+        </section>
+
+        <section className="mb-6 flex flex-wrap gap-3">
+          <button
+            onClick={() => handleImport(5)}
+            disabled={isBusy}
+            className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-black transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {importing
+              ? "Importing…"
+              : selectedCategory === "All"
+              ? categoryCount > 0
+                ? "Import 5 questions per category"
+                : "Import questions"
+              : `Import 5 ${selectedCategory} questions`}
+          </button>
+          <button
+            onClick={handleReset}
+            disabled={isBusy}
+            className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-black transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {resetting ? "Resetting…" : "Reset questions"}
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={loading || isBusy}
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-black transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? "Refreshing…" : "Refresh"}
+          </button>
+          <select
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+            disabled={isBusy}
+            className="rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
+          >
+            {categories.map((category) => (
+              <option key={category}>{category}</option>
+            ))}
+          </select>
+          <span className="self-center text-sm text-white/70">
+            Showing {filteredQuestions.length} question
+            {filteredQuestions.length === 1 ? "" : "s"}
+          </span>
+        </section>
+
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-400 bg-red-500/10 p-4 text-sm text-red-200">
+            {error}
+          </div>
+        )}
+
+        <section className="space-y-4">
+          {loading && questions.length === 0 ? (
+            <div className="rounded-xl border border-white/10 bg-white/5 p-8 text-center text-white/70">
+              Loading questions…
+            </div>
+          ) : filteredQuestions.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-white/20 bg-white/5 p-8 text-center text-white/50">
+              No questions yet. Use the import button to fetch trivia.
+            </div>
+          ) : (
+            filteredQuestions.map((question) => (
+              <article
+                key={question.id}
+                className="rounded-xl border border-white/10 bg-white/5 p-5 shadow"
+              >
+                <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-sm uppercase tracking-wide text-white/60">
+                      {question.category} · {question.difficulty ?? "unknown"}
+                    </p>
+                    <h2 className="text-lg font-semibold text-white">
+                      {question.question}
+                    </h2>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(question.id)}
+                    disabled={isBusy}
+                    className="rounded-md border border-red-400 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Delete
+                  </button>
+                </header>
+                <ul className="grid gap-2 md:grid-cols-2">
+                  {question.options.map((option) => {
+                    const isCorrect = option === question.correct;
+                    return (
+                      <li
+                        key={option}
+                        className={`rounded-md border px-3 py-2 text-sm ${
+                          isCorrect
+                            ? "border-green-400 bg-green-500/10 text-green-200"
+                            : "border-white/10 bg-black/20 text-white/80"
+                        }`}
+                      >
+                        {option}
+                        {isCorrect && (
+                          <span className="ml-2 text-xs uppercase">
+                            (correct)
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </article>
+            ))
+          )}
+        </section>
+      </main>
     </div>
   );
 }

@@ -6,9 +6,9 @@
  *  - Show Round Number -> /lobby/round (modal)
  * Back: to previous (Create/Join)
  */
-import { Link, useNavigate, Outlet } from "react-router-dom";
+import { Link, useNavigate, Outlet, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import catImage from '../assets/cat.jpg'; 
+import catImage from "../assets/cat.jpg";
 
 const colors = {
   darkBlue: "#0A2442", // smart-darkblue background
@@ -19,7 +19,7 @@ const colors = {
   muted: "#94A3B8", // helpers
 };
 
-function SectionTitle( { children, color }) {
+function SectionTitle({ children, color }) {
   return (
     <h3 className="text-lg font-semibold tracking-wide mb-2" style={{ color }}>
       {children}
@@ -58,29 +58,75 @@ const useLoadingDots = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setDots(prev => (prev + 1) % 4);
+      setDots((prev) => (prev + 1) % 4);
     }, 500);
     return () => clearInterval(interval);
   }, []);
 
-  return '.'.repeat(dots);
+  return ".".repeat(dots);
 };
 
 export default function Lobby() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get matchId from navigation state (passed from CreateGame)
+  const matchId = location.state?.matchId;
+
+  // State for current user
+  const [currentUser, setCurrentUser] = useState(null);
+
   // Initialize players with the host at index 0
   const [players, setPlayers] = useState(() => {
     const initialPlayers = Array(6).fill(null);
     initialPlayers[0] = {
       id: 0,
-      username: 'Host Player',
+      username: "Loading...", // Will be replaced with actual username
       image: catImage,
-      joinedAt: new Date().toISOString()
+      joinedAt: new Date().toISOString(),
     };
     return initialPlayers;
   });
   const [isLobbyFull, setIsLobbyFull] = useState(false); // To track if lobby is full
   const loadingDots = useLoadingDots();
+
+  // Fetch current user's profile on mount
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (!token) return;
+
+        const response = await fetch("http://localhost:3000/api/users/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentUser(data.user);
+
+          // Update the host player with actual username
+          setPlayers((prev) => {
+            const updated = [...prev];
+            if (updated[0]) {
+              updated[0] = {
+                ...updated[0],
+                username: data.user.username,
+                image: data.user.avatarUrl || catImage,
+              };
+            }
+            return updated;
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching current user:", error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   // Simulate players joining every 2 seconds
   useEffect(() => {
@@ -93,14 +139,14 @@ export default function Lobby() {
         return;
       }
 
-      setPlayers(current => {
+      setPlayers((current) => {
         const newPlayers = [...current];
         // Skip index 0 since host is there
         newPlayers[currentIndex] = {
           id: currentIndex,
           username: `Player ${currentIndex + 1}`,
           image: catImage,
-          joinedAt: new Date().toISOString()
+          joinedAt: new Date().toISOString(),
         };
         return newPlayers;
       });
@@ -111,21 +157,18 @@ export default function Lobby() {
     return () => clearInterval(interval);
   }, []);
 
-
   // Player square component
   const PlayerSquare = ({ player, index }) => (
     <div
       className={`w-36 h-36 border-2 rounded-xl ${
-        player 
-          ? 'border-emerald-500 bg-white/10' 
-          : 'border-white/20 bg-white/5'
+        player ? "border-emerald-500 bg-white/10" : "border-white/20 bg-white/5"
       } flex flex-col items-center justify-center transition-all duration-300`}
     >
       {player ? (
         <>
           <img
             src={player.image}
-            alt = {player.username}
+            alt={player.username}
             className="w-28 h-28 object-cover rounded-full ring-2 ring-white/20"
           />
           <span className="text-sm mt-2 text-white/80">{player.username}</span>
@@ -137,7 +180,7 @@ export default function Lobby() {
   );
 
   return (
-    <div className="min-h-screen" style = {{ backgroundColor: colors.darkBlue }}>
+    <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
       <div className="max-w-7xl mx-auto px-6 py-16">
         <button
           onClick={() => navigate(-1)}
@@ -153,9 +196,9 @@ export default function Lobby() {
           </div>
 
           {/*Player count display*/}
-          <div className="text-center mb-8 text-lg" >
+          <div className="text-center mb-8 text-lg">
             <SectionTitle color={colors.accentA}>
-              Players: {players.filter(p => p !== null).length} / 6
+              Players: {players.filter((p) => p !== null).length} / 6
             </SectionTitle>
           </div>
 
@@ -163,7 +206,7 @@ export default function Lobby() {
           <div className="max-w-4xl mx-auto px-4">
             <div className="grid grid-cols-3 gap-8 place-items-center">
               {players.map((player, index) => (
-                <PlayerSquare key={index} player={player} index={index}/>
+                <PlayerSquare key={index} player={player} index={index} />
               ))}
             </div>
           </div>
@@ -178,13 +221,20 @@ export default function Lobby() {
           {/* Action buttons */}
           <div className="mt-8 flex justify-center gap-4">
             <Link
-              to="/game/play"
+              to={matchId ? `/game/play/${matchId}` : "/"}
               className={`rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg transition-opacity ${
-                isLobbyFull 
-                  ? 'bg-smart-red hover:opacity-80 text-white' 
-                  : 'bg-white/10 text-white/50 cursor-not-allowed'
+                isLobbyFull
+                  ? "bg-smart-red hover:opacity-80 text-white"
+                  : "bg-white/10 text-white/50 cursor-not-allowed"
               }`}
-              onClick={(e) => !isLobbyFull && e.preventDefault()}
+              onClick={(e) => {
+                if (!isLobbyFull) {
+                  e.preventDefault();
+                } else if (!matchId) {
+                  e.preventDefault();
+                  alert("No game found. Please create a game first.");
+                }
+              }}
             >
               Play Game
             </Link>
@@ -199,11 +249,12 @@ export default function Lobby() {
 
         {/* Helper text */}
         <p className="mt-4 text-center text-xs" style={{ color: colors.muted }}>
-          Note: The "Play Game" button is enabled when the lobby is full (6 players).
+          Note: The "Play Game" button is enabled when the lobby is full (6
+          players).
         </p>
       </div>
 
-    {/* round modal outlet */}
+      {/* round modal outlet */}
       <Outlet />
     </div>
   );

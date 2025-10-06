@@ -1,18 +1,46 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import authMiddleware from "../middleware/authMiddleware.js";
+import { QUESTIONS_PER_GAME } from "./questions.js";
 
 const prisma = new PrismaClient();
 const router = express.Router();
 
 /**
  * Create a new match
+ * 
+ * Automatically assigns random questions from the selected category.
+ * Uses QUESTIONS_PER_GAME constant (default: 5) for number of questions.
  */
 router.post("/", authMiddleware, async (req, res) => {
   const { title, category, difficulty } = req.body;
   const userId = req.user.id;
 
   try {
+    // Step 1: Check if category has enough questions
+    const availableQuestions = await prisma.question.count({
+      where: { category }
+    });
+
+    if (availableQuestions < QUESTIONS_PER_GAME) {
+      return res.status(400).json({ 
+        error: `Not enough questions in category "${category}". Available: ${availableQuestions}, Required: ${QUESTIONS_PER_GAME}` 
+      });
+    }
+
+    // Step 2: Fetch random questions from the selected category
+    const allCategoryQuestions = await prisma.question.findMany({
+      where: { category }
+    });
+
+    // Shuffle and take first QUESTIONS_PER_GAME questions
+    const selectedQuestions = allCategoryQuestions
+      .map((q) => ({ sort: Math.random(), value: q }))
+      .sort((a, b) => a.sort - b.sort)
+      .slice(0, QUESTIONS_PER_GAME)
+      .map((item) => item.value);
+
+    // Step 3: Create match with questions assigned
     const match = await prisma.match.create({
       data: {
         title,
@@ -21,11 +49,21 @@ router.post("/", authMiddleware, async (req, res) => {
         hostId: userId,
         players: {
           create: { userId } // host auto-joins
+        },
+        questions: {
+          create: selectedQuestions.map((q, index) => ({
+            questionId: q.id,
+            order: index + 1 // 1-based ordering
+          }))
         }
       },
       include: {
         players: { include: { user: true } },
-        host: true
+        host: true,
+        questions: {
+          include: { question: true },
+          orderBy: { order: "asc" }
+        }
       }
     });
 

@@ -8,8 +8,7 @@
  * - Render game UI via extracted components
  */
 import { useEffect, useRef, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { QUESTIONS } from "../data/questions";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { SIMULATED_PLAYERS } from "../data/simulatedPlayers";
 import { RECAP_DELAY_SECONDS, FINAL_DELAY_SECONDS } from "../config/gameConfig";
 import {
@@ -38,12 +37,100 @@ const colors = {
 export default function PlayGame() {
   const navigate = useNavigate();
   const location = useLocation();
+  const params = useParams();
+  const matchId = params.matchId;
 
   // Game configuration
   const [questionDurationMs] = useState(() =>
     getQuestionDuration(location.state, 10)
   );
-  const youName = DEFAULT_YOU_NAME;
+
+  // Fetch current user's username
+  const [youName, setYouName] = useState(DEFAULT_YOU_NAME);
+
+  // Questions state - fetches from database using matchId
+  const [gameQuestions, setGameQuestions] = useState([]);
+  const [loadingMatch, setLoadingMatch] = useState(true);
+
+  // Fetch current user's profile to get their actual username
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (!token) return;
+
+        const response = await fetch("http://localhost:3000/api/users/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setYouName(data.user.username);
+        }
+      } catch (error) {
+        console.error("Error fetching current user:", error);
+        // Keep default "You" if fetch fails
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+  // Fetch match data with questions from database
+  useEffect(() => {
+    if (!matchId) {
+      // No matchId provided - redirect to home
+      alert("No game found. Please create or join a game first.");
+      navigate("/");
+      return;
+    }
+
+    const fetchMatch = async () => {
+      try {
+        const token = localStorage.getItem("accessToken");
+        const response = await fetch(
+          `http://localhost:3000/api/matches/${matchId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch match: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Transform database questions to game format
+        const dbQuestions = data.questions.map((mq) => ({
+          id: `q${mq.question.id}`,
+          text: mq.question.question,
+          options: mq.question.options.map((opt, idx) => ({
+            id: String.fromCharCode(97 + idx), // 'a', 'b', 'c', 'd'
+            label: opt,
+          })),
+          correctId: String.fromCharCode(
+            97 + mq.question.options.indexOf(mq.question.correct)
+          ),
+          subject: mq.question.category,
+        }));
+
+        setGameQuestions(dbQuestions);
+      } catch (error) {
+        console.error("Error fetching match:", error);
+        alert(`Failed to load match: ${error.message}`);
+        navigate("/");
+      } finally {
+        setLoadingMatch(false);
+      }
+    };
+
+    fetchMatch();
+  }, [matchId, navigate]);
 
   // Game state
   const [index, setIndex] = useState(0);
@@ -59,9 +146,9 @@ export default function PlayGame() {
 
   // Derived state
   const isRecapOpen = location.pathname.endsWith("/pause");
-  const total = QUESTIONS.length;
+  const total = gameQuestions.length;
   const finished = index >= total;
-  const question = finished ? null : QUESTIONS[index];
+  const question = finished ? null : gameQuestions[index];
   const finalRows = buildFinalLeaderboard(
     YOU_ID,
     score,
@@ -301,6 +388,21 @@ export default function PlayGame() {
   const youResponse = responses[YOU_ID];
   const youAnswered = Boolean(youResponse?.answered);
   const waitingOnOthers = youAnswered && !questionResolved && !finished;
+
+  // Show loading screen while fetching match data
+  if (loadingMatch) {
+    return (
+      <div
+        className="min-h-screen text-white flex items-center justify-center"
+        style={{ backgroundColor: colors.darkBlue }}
+      >
+        <div className="text-center">
+          <div className="text-2xl font-heading mb-4">Loading Match...</div>
+          <div className="text-smart-light-blue animate-pulse">Please wait</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
