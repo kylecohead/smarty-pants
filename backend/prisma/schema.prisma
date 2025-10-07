@@ -49,6 +49,8 @@ model Match {
   title       String
   category    String
   difficulty  String?
+  isPublic    Boolean       @default(true)
+  maxPlayers  Int           @default(5)
   status      MatchStatus   @default(LOBBY)
   createdAt   DateTime      @default(now())
   startedAt   DateTime?
@@ -68,6 +70,7 @@ model MatchPlayer {
   matchId   Int
   userId    Int
   joinedAt  DateTime @default(now())
+  connected Boolean  @default(true)
   score     Int      @default(0)
   isReady   Boolean  @default(false)
 
