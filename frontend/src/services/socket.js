@@ -11,8 +11,17 @@ export function getSocket(token) {
       transports: ["websocket"],
       autoConnect: false,
       auth: { token },
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnection: true, // Enable automatic reconnection
+      reconnectionAttempts: 10, // Retry up to 10 times
+      reconnectionDelay: 1000, // Wait 1 second between attempts
+    });
+
+    // Handle reconnection
+    socket.on("reconnect", () => {
+      console.log("🔄 Reconnected to the server");
+      if (socket.auth.token) {
+        socket.emit("joinMatch", { matchId: socket.matchId, token: socket.auth.token });
+      }
     });
   }
 

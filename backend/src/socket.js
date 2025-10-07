@@ -21,15 +21,16 @@ const QUESTIONS = [
 function emitPlayers(io, matchId) {
   const match = activeMatches.get(matchId);
   if (!match) return;
+
   const players = [...match.players.values()].map((p) => ({
     userId: p.userId,
     username: p.username,
     avatarUrl: p.avatarUrl,
     score: match.scores[p.username] || 0,
   }));
+
   io.to(`match-${matchId}`).emit("playersUpdate", { matchId, players });
 }
-
 
 // Send next question or end
 function sendQuestion(io, matchId) {
@@ -69,36 +70,55 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
     const match = activeMatches.get(matchId);
     if (!match) return;
 
-    // Remove from in-memory list
-    match.players.delete(socket.id);
-
-    // Update DB
-    await prisma.matchPlayer.updateMany({
-      where: { matchId: Number(matchId), userId },
-      data: { connected: false },
-    });
-
-    // Notify everyone still connected
-    emitPlayers(io, matchId);
-
-    // Handle host leaving
-    if (match.hostId === userId) {
-      await prisma.match.update({
-        where: { id: Number(matchId) },
-        data: { status: "PAUSED" },
-      });
-      io.to(`match-${matchId}`).emit("matchPaused");
+    // Mark the user as temporarily disconnected
+    const player = match.players.get(socket.id);
+    if (player) {
+      player.disconnected = true;
     }
 
-    // Clean up if empty
-    if (match.players.size === 0) {
-      activeMatches.delete(matchId);
-      await prisma.match.update({
-        where: { id: Number(matchId) },
-        data: { status: "FINISHED" },
+    // Wait for a grace period before cleaning up
+    setTimeout(async () => {
+      const match = activeMatches.get(matchId);
+      if (!match) return;
+
+      // Check if the user has reconnected
+      const player = [...match.players.values()].find((p) => p.userId === userId);
+      if (player && !player.disconnected) {
+        console.log(`🔄 ${username} reconnected to match ${matchId}`);
+        return;
+      }
+
+      // Remove from in-memory list
+      match.players.delete(socket.id);
+
+      // Update DB
+      await prisma.matchPlayer.updateMany({
+        where: { matchId: Number(matchId), userId },
+        data: { connected: false },
       });
-      console.log(`🧹 Cleared empty match ${matchId}`);
-    }
+
+      // Notify everyone still connected
+      emitPlayers(io, matchId); // Ensure this is called to update other players
+
+      // Handle host leaving
+      if (match.hostId === userId) {
+        await prisma.match.update({
+          where: { id: Number(matchId) },
+          data: { status: "PAUSED" },
+        });
+        io.to(`match-${matchId}`).emit("matchPaused");
+      }
+
+      // Clean up if empty
+      if (match.players.size === 0) {
+        activeMatches.delete(matchId);
+        await prisma.match.update({
+          where: { id: Number(matchId) },
+          data: { status: "FINISHED" },
+        });
+        console.log(`🧹 Cleared empty match ${matchId}`);
+      }
+    }, 10000); // 10-second grace period
   } catch (err) {
     console.error("❌ Error during player leave:", err.message);
   }
@@ -269,7 +289,8 @@ export default function setupSocket(server) {
 
     // ---------------- DISCONNECT ----------------
     socket.on("disconnect", async () => {
-      await handlePlayerLeave(io, socket, socket.matchId, false);
+      const { matchId } = socket;
+      await handlePlayerLeave(io, socket, matchId, false);
     });
 
   });

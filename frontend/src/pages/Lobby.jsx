@@ -111,20 +111,39 @@ export default function Lobby() {
     };
   }, [matchId, navigate]);
 
+  // Listen for playersUpdate
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    const socket = getSocket(token);
+
+    socket.on("playersUpdate", ({ matchId, players }) => {
+      console.log("👥 Players updated:", players);
+      setPlayers(players); // Update the player list in state
+    });
+
+    return () => {
+      socket.off("playersUpdate");
+    };
+  }, []);
+
   // Host check
   useEffect(() => {
-    if (!currentUser || !matchId) return;
+    if (!matchId || !currentUser) return;
+
     (async () => {
       try {
         const res = await api.getMatch(matchId);
-        setIsHost(res.match?.hostId === currentUser.id);
+        if (res.match?.hostId && currentUser?.id) {
+          setIsHost(res.hostId === currentUser.id);
+
+        }
       } catch (err) {
         console.error("Error checking host:", err);
       }
     })();
-  }, [currentUser, matchId]);
+  }, [matchId, currentUser]);
 
-  const isLobbyFull = players.length >= 6;
+  const isLobbyFull = players.length >= 2;
 
   const handleStartGame = () => {
     if (socketRef.current) {
