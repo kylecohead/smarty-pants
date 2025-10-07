@@ -133,9 +133,8 @@ export default function Lobby() {
     (async () => {
       try {
         const res = await api.getMatch(matchId);
-        if (res.match?.hostId && currentUser?.id) {
+        if (res.hostId && currentUser?.id) {
           setIsHost(res.hostId === currentUser.id);
-
         }
       } catch (err) {
         console.error("Error checking host:", err);
