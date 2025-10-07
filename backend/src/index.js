@@ -8,45 +8,42 @@ import userRoutes from "./routes/user.js";
 import questionRoutes from "./routes/questions.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import { PrismaClient } from "@prisma/client";
-import http from "http";               
+import http from "http";
 import setupSocket from "./socket.js";
+
 const prisma = new PrismaClient();
 const app = express();
 
-app.use(cors());
+// === GLOBAL MIDDLEWARE ===
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      process.env.FRONTEND_ORIGIN || "*",
+    ],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
-// Health check
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
-});
+// === HEALTH CHECK ===
+app.get("/health", (req, res) => res.json({ status: "ok" }));
 
-// Authentication ================
-// Mount auth under /api/auth (consistent with the rest of API)
+// === ROUTES ===
 app.use("/api/auth", authRoutes);
-
-// Images ========================
-// Mount image upload routes under /api/images
 app.use("/api/images", imageRoutes);
-
-// Static serve (so /uploads/<file> works)
 app.use("/uploads", express.static("uploads"));
-
-// Matches =======================
 app.use("/api/matches", authMiddleware, matchesRouter);
-
-// Get/Set the current user info ================================
 app.use("/api/users", userRoutes);
-
-// Questions (scraper + admin tools) ==========================
 app.use("/api/questions", questionRoutes);
 
-// Socket.IO =================================================
+// === SOCKET.IO SETUP ===
 const server = http.createServer(app);
 setupSocket(server);
-//  ===========================================================
 
-// start the *server*, not the app
-server.listen(3000, () => {
-  console.log("🚀 Backend + Socket.IO running on http://localhost:3000");
+// === START SERVER ===
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Backend + Socket.IO running on http://0.0.0.0:${PORT}`);
 });

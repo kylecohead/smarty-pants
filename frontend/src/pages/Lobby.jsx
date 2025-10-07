@@ -52,13 +52,11 @@ export default function Lobby() {
       return;
     }
 
-    // Single global socket instance (getSocket handles reuse)
+    // Create a new socket instance
     const socket = getSocket(token);
     socketRef.current = socket;
 
-    // Always attach listeners before connect
-    socket.removeAllListeners();
-
+    // Attach listeners
     socket.on("connect", () => {
       console.log("✅ Connected:", socket.id);
       setSocketConnected(true);
@@ -84,38 +82,34 @@ export default function Lobby() {
     });
 
     socket.on("disconnect", () => {
-      console.warn("⚠️ Disconnected");
+      console.warn("⚠️ Disconnected from server");
       setSocketConnected(false);
     });
 
-    // Force clean, then connect
+    // Connect the socket
     socket.connect();
 
-    // Handle leaving gracefully
+    // Handle browser unload
     const handleBeforeUnload = () => {
-      console.log("🚪 Leaving match:", matchId);
+      console.log("🚪 Leaving match (browser unload):", matchId);
       socket.emit("leaveMatch", { matchId });
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
 
+    // Cleanup when component unmounts
     return () => {
-      console.log("🧹 Leaving match gracefully:", matchId);
+      console.log("🧹 Unmounting Lobby component");
 
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+
+      // Emit leaveMatch and disconnect the socket
       if (socket.connected) {
+        console.log("🚪 Leaving match route:", matchId);
         socket.emit("leaveMatch", { matchId });
+        socket.disconnect(); // Properly disconnect the socket
       }
-
-      // Allow emit to finish before disconnecting
-      setTimeout(() => {
-        socket.disconnect();
-        socket.removeAllListeners();
-      }, 100);
     };
-
   }, [matchId, navigate]);
-
-
-
 
   // Host check
   useEffect(() => {
@@ -154,7 +148,7 @@ export default function Lobby() {
             GAME LOBBY
           </h1>
 
-          {/* ✅ Join Code Display */}
+          {/* Join Code Display */}
           <div className="text-center mb-8">
             <span className="text-white/60 text-sm block mb-1">
               Share this join code:

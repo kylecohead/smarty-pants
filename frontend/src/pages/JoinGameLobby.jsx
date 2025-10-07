@@ -39,7 +39,7 @@ const colors = {
   muted: "#94A3B8",
 };
 
-// 🧠 Mock public games (will later come from backend)
+// 🧠 Mock public games (temporary)
 const mockPublicGames = [
   {
     matchId: "1",
@@ -72,16 +72,14 @@ export default function JoinGameLobby() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
 
-  // ✅ API URL from .env or fallback
+  // ✅ Correct API base (notice the /api suffix)
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
   // 🔍 Validate + clean join code
   const extractJoinCode = (input) => {
     const trimmed = input.trim();
     if (!trimmed) return null;
-    // numeric only for now (since match.id is numeric)
-    if (/^\d+$/.test(trimmed)) return trimmed;
-    return null;
+    return /^\d+$/.test(trimmed) ? trimmed : null;
   };
 
   // ✅ Join game handler
@@ -100,6 +98,7 @@ export default function JoinGameLobby() {
         return;
       }
 
+      // ✅ FIXED ENDPOINT: /api/matches/:id
       const res = await fetch(`${API_URL}/matches/${code}`, {
         headers: {
           "Content-Type": "application/json",
@@ -111,12 +110,13 @@ export default function JoinGameLobby() {
         const match = await res.json();
         console.log("✅ Joined match:", match);
         navigate(`/game/join/${match.id || code}`);
-
       } else if (res.status === 404) {
         setInputError("No game found with that code.");
       } else if (res.status === 401) {
         setInputError("Unauthorized. Please log in again.");
       } else {
+        const errText = await res.text();
+        console.error("❌ Backend error:", errText);
         setInputError("Failed to find the game. Try again.");
       }
     } catch (err) {
