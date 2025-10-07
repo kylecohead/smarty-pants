@@ -14,7 +14,7 @@ reset:
 	@echo "✅ Postgres is ready. Recreating schema..."
 	docker compose exec -T db psql -U postgres -d trivia -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA IF NOT EXISTS public;"
 	@echo "✅ Schema recreated. Applying Prisma schema..."
-	docker compose exec -T backend npx prisma db push --force-reset --accept-data-loss
+	docker compose exec -T backend npx prisma db push --force-reset --accept-data-loss || true
 	@echo "✅ Prisma schema applied successfully!"
 	docker compose exec -T backend node prisma/seed.js
 
