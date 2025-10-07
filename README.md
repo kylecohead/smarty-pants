@@ -89,6 +89,7 @@ make nuke
 Smartie-Pants
 ├── backend
 │   ├── Dockerfile
+│   ├── entrypoint.sh
 │   ├── generated
 │   │   └── prisma
 │   ├── node_modules
@@ -97,14 +98,40 @@ Smartie-Pants
 │   ├── prisma
 │   │   ├── schema.prisma
 │   │   └── seed.js
-│   └── src
-│       └── index.js
+│   ├── scripts
+│   │   ├── checkCounts.mjs
+│   │   └── testFetch.mjs
+│   ├── src
+│   │   ├── config
+│   │   ├── index.js
+│   │   ├── middleware
+│   │   ├── routes
+│   │   ├── socket.js
+│   │   ├── test.js
+│   │   └── utils
+│   └── uploads
+│       ├── 1759494377720-Screenshot from 2025-09-12 13-16-31.png
+│       ├── avatar1.png
+│       ├── avatar2.png
+│       ├── avatar3.png
+│       ├── avatar4.png
+│       ├── avatar5.png
+│       ├── avatar6.png
+│       ├── conrad.jpg
+│       └── imposter.png
+├── docker-compose.prod.yml
 ├── docker-compose.yml
+├── docs.txt
 ├── frontend
 │   ├── design-tokens.md
+│   ├── dist
+│   │   ├── assets
+│   │   ├── index.html
+│   │   └── vite.svg
 │   ├── Dockerfile
 │   ├── eslint.config.js
 │   ├── index.html
+│   ├── nginx.conf
 │   ├── node_modules
 │   ├── package.json
 │   ├── package-lock.json
@@ -115,12 +142,18 @@ Smartie-Pants
 │   │   ├── App.jsx
 │   │   ├── assets
 │   │   ├── components
+│   │   ├── config
+│   │   ├── data
+│   │   ├── hooks
 │   │   ├── index.css
 │   │   ├── main.jsx
 │   │   ├── modals
-│   │   └── pages
+│   │   ├── pages
+│   │   ├── services
+│   │   └── utils
 │   ├── tailwind.config.js
 │   └── vite.config.js
 ├── Makefile
+├── nginx.conf
 └── README.md
 ```
