@@ -106,6 +106,7 @@ export default function CreateGame() {
   const [usernameQuery, setUsernameQuery] = useState(""); // Search query for finding users to invite
   const [invited, setInvited] = useState([]); // Array of invited usernames
   const [modeIndex, setModeIndex] = useState(0); // Currently selected game mode index
+  const [username, setUsername] = useState(""); // Current user's username
 
   const [secPerQ, setSecPerQ] = useState(() => {
     if (typeof window !== "undefined") {
@@ -247,11 +248,7 @@ export default function CreateGame() {
 
       console.log("✅ Created match:", match.id, match);
 
-      setCreating(true);
       navigate(`/lobby/${match.id}`);
-
-
-
     } catch (err) {
       console.error("❌ Error creating match:", err);
       alert(err.message);

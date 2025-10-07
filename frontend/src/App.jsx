@@ -90,11 +90,12 @@ export default function App() {
 
       {/* 5) Create / 6) Join */}
       <Route path="/game/create" element={<CreateGame />} />
-      <Route path="/game/join" element={<JoinGame />} />
+      <Route path="/game/join/:matchId" element={<JoinGame />} />
       <Route path="/join-lobby" element={<JoinGameLobby />} />
 
       {/* 6) Lobby + "Round number" modal */}
-      <Route path="/lobby" element={<Lobby />}>
+      <Route path="/lobby/:matchId" element={<Lobby />}>
+         
         <Route
           path="round"
           element={

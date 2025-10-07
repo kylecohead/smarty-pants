@@ -6,171 +6,137 @@
  *  - Show Round Number -> /lobby/round (modal)
  * Back: to previous (Create/Join)
  */
-import { Link, useNavigate, Outlet, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useNavigate, useParams, Outlet } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import catImage from "../assets/cat.jpg";
+import { getSocket, closeSocket } from "../services/socket";
 import { api } from "../services/api";
 
 const colors = {
-  darkBlue: "#0A2442", // smart-darkblue background
-  ink: "#E8F1FF", // body copy on dark
-  accentA: "#32D399", // section A
-  accentB: "#6EC5FF", // section B
-  accentC: "#FFC857", // section C
-  muted: "#94A3B8", // helpers
-};
-
-function SectionTitle({ children, color }) {
-  return (
-    <h3 className="text-lg font-semibold tracking-wide mb-2" style={{ color }}>
-      {children}
-    </h3>
-  );
-}
-
-function Heading() {
-  const letters = [
-    { t: "G", c: "text-smart-green" },
-    { t: "a", c: "text-smart-orange" },
-    { t: "m", c: "text-smart-light-blue" },
-    { t: "e", c: "text-smart-light-pink" },
-    { t: " ", c: "" },
-    { t: "L", c: "text-smart-red" },
-    { t: "o", c: "text-smart-purple" },
-    { t: "b", c: "text-smart-light-blue" },
-    { t: "b", c: "text-smart-yellow" },
-    { t: "y", c: "text-smart-green" },
-  ];
-
-  return (
-    <h1 className="text-center font-heading text-6xl sm:text-7xl font-black leading-none tracking-wider mb-8">
-      {letters.map((letter, index) => (
-        <span key={index} className={letter.c}>
-          {String(letter.t).toUpperCase()}
-        </span>
-      ))}
-    </h1>
-  );
-}
-
-// Helper function for ... loading dots
-const useLoadingDots = () => {
-  const [dots, setDots] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDots((prev) => (prev + 1) % 4);
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
-  return ".".repeat(dots);
+  darkBlue: "#0A2442",
+  accentA: "#32D399",
+  accentB: "#6EC5FF",
+  accentC: "#FFC857",
+  muted: "#94A3B8",
 };
 
 export default function Lobby() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const { matchId } = useParams();
 
-  // Get matchId from navigation state (passed from CreateGame)
-  const matchId = location.state?.matchId;
-
-  // State for current user
   const [currentUser, setCurrentUser] = useState(null);
+  const [players, setPlayers] = useState([]);
+  const [isHost, setIsHost] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
 
-  // Initialize players with the host at index 0
-  const [players, setPlayers] = useState(() => {
-    const initialPlayers = Array(6).fill(null);
-    initialPlayers[0] = {
-      id: 0,
-      username: "Loading...", // Will be replaced with actual username
-      image: catImage,
-      joinedAt: new Date().toISOString(),
-    };
-    return initialPlayers;
-  });
-  const [isLobbyFull, setIsLobbyFull] = useState(false); // To track if lobby is full
-  const loadingDots = useLoadingDots();
+  const socketRef = useRef(null);
 
-  // Fetch current user's profile on mount
+  // Fetch current user
   useEffect(() => {
-    const fetchCurrentUser = async () => {
+    (async () => {
       try {
-        const token = localStorage.getItem("accessToken");
-        if (!token) return;
-
         const data = await api.getCurrentUser();
         setCurrentUser(data.user);
-
-        // Update the host player with actual username
-        setPlayers((prev) => {
-          const updated = [...prev];
-          if (updated[0]) {
-            updated[0] = {
-              ...updated[0],
-              username: data.user.username,
-              image: data.user.avatarUrl || catImage,
-            };
-          }
-          return updated;
-        });
-      } catch (error) {
-        console.error("Error fetching current user:", error);
+      } catch (err) {
+        console.error("❌ Failed to fetch user:", err);
       }
+    })();
+  }, []);
+
+  // Socket setup + join match
+  useEffect(() => {
+    if (!matchId) return;
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      alert("You must be logged in to join a match.");
+      return;
+    }
+
+    // Single global socket instance (getSocket handles reuse)
+    const socket = getSocket(token);
+    socketRef.current = socket;
+
+    // Always attach listeners before connect
+    socket.removeAllListeners();
+
+    socket.on("connect", () => {
+      console.log("✅ Connected:", socket.id);
+      setSocketConnected(true);
+      socket.emit("joinMatch", { matchId, token });
+    });
+
+    socket.on("playersUpdate", ({ players }) => {
+      console.log("👥 playersUpdate:", players);
+      setPlayers(players);
+    });
+
+    socket.on("matchStarted", () => {
+      console.log("🏁 Match started!");
+      navigate(`/game/play/${matchId}`);
+    });
+
+    socket.on("matchEnded", ({ scores }) => {
+      console.log("🎯 Match ended:", scores);
+    });
+
+    socket.on("matchPaused", () => {
+      console.warn("⏸️ Match paused (host left)");
+    });
+
+    socket.on("disconnect", () => {
+      console.warn("⚠️ Disconnected");
+      setSocketConnected(false);
+    });
+
+    // Force clean, then connect
+    socket.connect();
+
+    // Handle leaving gracefully
+    const handleBeforeUnload = () => {
+      console.log("🚪 Leaving match:", matchId);
+      socket.emit("leaveMatch", { matchId });
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      console.log("🧹 Leaving match gracefully:", matchId);
+
+      if (socket.connected) {
+        socket.emit("leaveMatch", { matchId });
+      }
+
+      // Allow emit to finish before disconnecting
+      setTimeout(() => {
+        socket.disconnect();
+        socket.removeAllListeners();
+      }, 100);
     };
 
-    fetchCurrentUser();
-  }, []);
+  }, [matchId, navigate]);
 
-  // Simulate players joining every 2 seconds
+
+
+
+  // Host check
   useEffect(() => {
-    let currentIndex = 0; // Start at 1 since host is at 0
-
-    const interval = setInterval(() => {
-      if (currentIndex >= 5) {
-        setIsLobbyFull(true);
-        clearInterval(interval);
-        return;
+    if (!currentUser || !matchId) return;
+    (async () => {
+      try {
+        const res = await api.getMatch(matchId);
+        setIsHost(res.match?.hostId === currentUser.id);
+      } catch (err) {
+        console.error("Error checking host:", err);
       }
+    })();
+  }, [currentUser, matchId]);
 
-      setPlayers((current) => {
-        const newPlayers = [...current];
-        // Skip index 0 since host is there
-        newPlayers[currentIndex] = {
-          id: currentIndex,
-          username: `Player ${currentIndex + 1}`,
-          image: catImage,
-          joinedAt: new Date().toISOString(),
-        };
-        return newPlayers;
-      });
+  const isLobbyFull = players.length >= 6;
 
-      currentIndex++;
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Player square component
-  const PlayerSquare = ({ player, index }) => (
-    <div
-      className={`w-36 h-36 border-2 rounded-xl ${
-        player ? "border-emerald-500 bg-white/10" : "border-white/20 bg-white/5"
-      } flex flex-col items-center justify-center transition-all duration-300`}
-    >
-      {player ? (
-        <>
-          <img
-            src={player.image}
-            alt={player.username}
-            className="w-28 h-28 object-cover rounded-full ring-2 ring-white/20"
-          />
-          <span className="text-sm mt-2 text-white/80">{player.username}</span>
-        </>
-      ) : (
-        <span className="text-white/50">Waiting...</span>
-      )}
-    </div>
-  );
+  const handleStartGame = () => {
+    if (socketRef.current) {
+      socketRef.current.emit("startMatch", { matchId });
+    }
+  };
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
@@ -183,71 +149,85 @@ export default function Lobby() {
         </button>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-8 sm:p-12">
-          {/* Header with colorful letters */}
-          <div className="flex items-center justify-center mb-12">
-            <Heading />
-          </div>
+          {/* Heading */}
+          <h1 className="text-center font-heading text-6xl font-black mb-4 text-white">
+            GAME LOBBY
+          </h1>
 
-          {/*Player count display*/}
-          <div className="text-center mb-8 text-lg">
-            <SectionTitle color={colors.accentA}>
-              Players: {players.filter((p) => p !== null).length} / 6
-            </SectionTitle>
-          </div>
-
-          {/* Player squares grid */}
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="grid grid-cols-3 gap-8 place-items-center">
-              {players.map((player, index) => (
-                <PlayerSquare key={index} player={player} index={index} />
-              ))}
+          {/* ✅ Join Code Display */}
+          <div className="text-center mb-8">
+            <span className="text-white/60 text-sm block mb-1">
+              Share this join code:
+            </span>
+            <div className="inline-block bg-white/10 border border-white/20 rounded-xl px-6 py-2 text-white text-xl font-semibold tracking-wider select-all">
+              {matchId}
             </div>
           </div>
 
-          {/* Loading indicator */}
-          {!isLobbyFull && (
-            <div className="text-white/60 text-center mt-4">
-              Waiting for players{loadingDots}
+          {/* Player count */}
+          <div className="text-center mb-6 text-lg text-white/80">
+            {socketConnected
+              ? `Players: ${players.length} / 6`
+              : "Connecting to server..."}
+          </div>
+
+          {/* Player grid */}
+          <div className="grid grid-cols-3 gap-8 place-items-center max-w-4xl mx-auto">
+            {Array.from({ length: 6 }).map((_, i) => {
+              const p = players[i];
+              return (
+                <div
+                  key={i}
+                  className={`w-36 h-36 border-2 rounded-xl flex flex-col items-center justify-center ${
+                    p
+                      ? "border-emerald-500 bg-white/10"
+                      : "border-white/20 bg-white/5"
+                  }`}
+                >
+                  {p ? (
+                    <>
+                      <img
+                        src={p.avatarUrl || catImage}
+                        alt={p.username}
+                        className="w-24 h-24 object-cover rounded-full ring-2 ring-white/20"
+                      />
+                      <span className="text-sm mt-2 text-white/80">
+                        {p.username}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-white/40">Waiting...</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Host start button */}
+          {isHost && (
+            <div className="mt-8 flex justify-center gap-4">
+              <button
+                onClick={handleStartGame}
+                disabled={!isLobbyFull}
+                className={`rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg transition-opacity ${
+                  isLobbyFull
+                    ? "bg-smart-red hover:opacity-80 text-white"
+                    : "bg-white/10 text-white/50 cursor-not-allowed"
+                }`}
+              >
+                Start Game
+              </button>
             </div>
           )}
-
-          {/* Action buttons */}
-          <div className="mt-8 flex justify-center gap-4">
-            <Link
-              to={matchId ? `/game/play/${matchId}` : "/"}
-              className={`rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg transition-opacity ${
-                isLobbyFull
-                  ? "bg-smart-red hover:opacity-80 text-white"
-                  : "bg-white/10 text-white/50 cursor-not-allowed"
-              }`}
-              onClick={(e) => {
-                if (!isLobbyFull) {
-                  e.preventDefault();
-                } else if (!matchId) {
-                  e.preventDefault();
-                  alert("No game found. Please create a game first.");
-                }
-              }}
-            >
-              Play Game
-            </Link>
-            <Link
-              to="/lobby/round"
-              className="rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-            >
-              Show Round Number
-            </Link>
-          </div>
         </div>
 
-        {/* Helper text */}
         <p className="mt-4 text-center text-xs" style={{ color: colors.muted }}>
-          Note: The "Play Game" button is enabled when the lobby is full (6
-          players).
+          Anyone entering{" "}
+          <span className="text-white/70">/lobby/{matchId}</span> will
+          auto-join the room.
         </p>
       </div>
 
-      {/* round modal outlet */}
       <Outlet />
     </div>
   );

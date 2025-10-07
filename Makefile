@@ -11,9 +11,11 @@ reset:
 	@until docker compose exec -T db pg_isready -U postgres -d trivia; do \
 		sleep 2; \
 	done
-	@echo "✅ DB is ready. Reapplying schema..."
-	docker compose exec backend npx prisma db push --force-reset
+	@echo "✅ DB is ready. Dropping and recreating schema..."
+	docker compose exec db psql -U postgres -d trivia -c 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;'
+	docker compose exec backend npx prisma db push --force-reset --accept-data-loss
 	docker compose exec backend node prisma/seed.js
+
 # nuke containers/images/volumes, rebuild, start, push schema, seed DB
 nuke:
 	# Stop and remove all containers, networks, volumes, and images

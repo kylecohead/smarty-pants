@@ -1,5 +1,7 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+
 }
 
 datasource db {
@@ -18,8 +20,11 @@ enum Role {
 enum MatchStatus {
   LOBBY
   ACTIVE
+  PAUSED
   FINISHED
 }
+
+
 
 //
 // Models

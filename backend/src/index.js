@@ -9,8 +9,7 @@ import questionRoutes from "./routes/questions.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import { PrismaClient } from "@prisma/client";
 import http from "http";               
-import { Server } from "socket.io";    
-
+import setupSocket from "./socket.js";
 const prisma = new PrismaClient();
 const app = express();
 
@@ -44,31 +43,7 @@ app.use("/api/questions", questionRoutes);
 
 // Socket.IO =================================================
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" }, // allow frontend dev server
-});
-
-const socketUsers = {};
-
-io.on("connection", (socket) => {
-  console.log("⚡ User connected:", socket.id);
-
-  socket.on("joinMatch", ({ matchId, username }) => {
-    socket.join(`match-${matchId}`);
-    socketUsers[socket.id] = username;  // save username
-
-    // Get all players in this room, map to usernames
-    const socketIds = Array.from(io.sockets.adapter.rooms.get(`match-${matchId}`) || []);
-    const players = socketIds.map((id) => socketUsers[id] || id);
-
-    io.to(`match-${matchId}`).emit("playersUpdate", { matchId, players });
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-    delete socketUsers[socket.id];
-  });
-});
+setupSocket(server);
 //  ===========================================================
 
 // start the *server*, not the app
