@@ -5,6 +5,7 @@
 import { Link, Outlet,useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import backgroundImg from "../assets/home-background.jpg";
+import { checkAuth, logout } from "../utils/auth.js";
 
 export default function Home() {
 
@@ -15,31 +16,39 @@ export default function Home() {
 
   
 
-  //This is for when the user refreshes the page, it checks if there is a token in localStorage
+  //This checks if the user is logged in via session cookies
   useEffect(() => {
-    // check localStorage on mount
-    const token = localStorage.getItem("accessToken");
-    setIsLoggedIn(!!token);
-
-    //Get the actual user data if logged in
-    if (token) {
-    fetch("/api/me", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => setUser(data.user))
-      .catch(() => setUser(null));
-  }
+    // Check if user is authenticated via session
+    checkAuth()
+      .then((user) => {
+        if (user) {
+          setUser(user);
+          setIsLoggedIn(true);
+        } else {
+          setUser(null);
+          setIsLoggedIn(false);
+        }
+      })
+      .catch(() => {
+        setUser(null);
+        setIsLoggedIn(false);
+      });
   }, []);
 
-  //Signs the user out by removing the tokens from localStorage and redirecting to home page
-  function handleSignOut() {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    setIsLoggedIn(false);
-    navigate("/"); // back to home
+  //Signs the user out by calling the logout endpoint and clearing session
+  async function handleSignOut() {
+    try {
+      await logout();
+      setIsLoggedIn(false);
+      setUser(null);
+      navigate("/"); // back to home
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if logout fails, clear local state
+      setIsLoggedIn(false);
+      setUser(null);
+      navigate("/");
+    }
   }
 
 

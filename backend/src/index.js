@@ -1,6 +1,8 @@
 // backend/src/index.js
 import express from "express";
 import cors from "cors";
+import session from "express-session";
+import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.js";
 import matchesRouter from "./routes/matches.js";
 import imageRoutes from "./routes/images.js";
@@ -26,6 +28,23 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(cookieParser());
+
+// === SESSION MIDDLEWARE ===
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "smartie-pants-secret-key-change-in-production",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // HTTPS only in production
+      httpOnly: true, // Prevent XSS attacks
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site cookies in production
+    },
+    name: "smartie.sid", // Custom session cookie name
+  })
+);
 
 // === HEALTH CHECK ===
 app.get("/health", (req, res) => res.json({ status: "ok" }));

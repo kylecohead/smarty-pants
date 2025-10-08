@@ -10,6 +10,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import ProfileCard from "../components/ProfileCard.jsx";
+import { checkAuth, authenticatedFetch } from "../utils/auth.js";
 
 // Mock data for demonstration
 const mockLeaderboard = [
@@ -63,25 +64,23 @@ export default function Landing() {
   // Fetch user data
   useEffect(() => {
     async function fetchUser() {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
       try {
-        const res = await fetch("/api/users/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const data = await res.json();
-        if (res.ok && data.user) {
-          setUser(data.user);
+        // First check if user is authenticated
+        const authUser = await checkAuth();
+        if (authUser) {
+          // Then fetch complete user profile
+          const response = await authenticatedFetch("/api/users/me");
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data.user);
+          } else {
+            setError("Failed to fetch user profile");
+          }
         } else {
-          setError(data.error || "Failed to fetch user");
+          setError("Failed to fetch user - not authenticated");
         }
       } catch (err) {
-        setError(err.message);
+        setError(err.message || "Authentication error");
       } finally {
         setLoading(false);
       }

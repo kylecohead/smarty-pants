@@ -5,25 +5,25 @@ export default function ProfileCard({ user }) {
         {/* Username + Member Since */}
         <div className="text-center mb-4">
           <h2 className="font-heading text-3xl font-bold text-smart-white">
-            {user.username.toUpperCase()}
+            {user.username?.toUpperCase() || "USER"}
           </h2>
           <p className="font-button text-smart-white/60 text-lg">
-            EST. {new Date(user.memberSince).toLocaleDateString()}
+            EST. {user.memberSince ? new Date(user.memberSince).toLocaleDateString() : new Date().toLocaleDateString()}
           </p>
         </div>
 
         {/* Avatar */}
         <div className="flex justify-center mb-6">
           <div className="w-32 h-32 rounded-2xl bg-smart-orange border-4 border-smart-white flex items-center justify-center overflow-hidden">
-            {user.avatar ? (
+            {user.avatar || user.avatarUrl ? (
               <img
-                src={user.avatar}
+                src={user.avatar || user.avatarUrl}
                 alt="avatar"
                 className="w-full h-full object-cover rounded-2xl"
               />
             ) : (
               <span className="font-heading text-6xl font-bold text-smart-black">
-                {user.username[0]}
+                {user.username?.[0]?.toUpperCase() || "U"}
               </span>
             )}
           </div>
@@ -36,7 +36,7 @@ export default function ProfileCard({ user }) {
               Games Played
             </p>
             <p className="font-heading text-2xl font-bold text-smart-green">
-              {user.gamesPlayed}
+              {user.gamesPlayed || 0}
             </p>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
@@ -44,13 +44,13 @@ export default function ProfileCard({ user }) {
               High Score
             </p>
             <p className="font-heading text-2xl font-bold text-smart-yellow">
-              {user.highScore.toLocaleString()}
+              {(user.highScore || 0).toLocaleString()}
             </p>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
             <p className="font-button text-smart-white/60 text-sm mb-1">Wins</p>
             <p className="font-heading text-2xl font-bold text-smart-light-blue">
-              {user.wins}
+              {user.wins || 0}
             </p>
           </div>
         </div>
