@@ -89,25 +89,80 @@ function sendQuestion(io, matchId) {
   const match = activeMatches.get(matchId);
   if (!match) return;
 
-  const QUESTION_LIMIT = 5; // Add this limit
-  
-  if (match.questionIndex >= QUESTION_LIMIT || !match.questions[match.questionIndex]) {
-    // End game after 10 questions
+  // Check if game is over
+  if (match.questionIndex >= match.questions.length) {
+    console.log(`🏁 Match ${matchId} ended - all questions answered`);
     io.to(`match-${matchId}`).emit("matchEnded", { scores: match.scores });
-    // ... rest of cleanup
+    activeMatches.delete(matchId);
+    
+    // Update match status in database
+    prisma.match
+      .update({
+        where: { id: Number(matchId) },
+        data: { status: "FINISHED" },
+      })
+      .catch(console.error);
     return;
   }
 
   // Clear any pending "advance to next" timer before sending a fresh Q
   clearAdvanceTimeout(match);
 
-  console.log(`🧠 Sending question ${match.questionIndex + 1} for match ${matchId}`);
+  // Clear answered players for new question
+  if (match.answeredPlayers) match.answeredPlayers.clear();
+
+  console.log(`🧠 Sending question ${match.questionIndex + 1}/${match.questions.length} for match ${matchId}`);
   io.to(`match-${matchId}`).emit("newQuestion", {
-    index: match.questionIndex,
+    index: match.questionIndex, // Send 0-based index, frontend will add 1 for display
+    total: match.questions.length,
     q: match.questions[match.questionIndex].q,
     options: match.questions[match.questionIndex].options,
-    timeLimit: 10000, // ms
+    timeLimit: (match.timeLimit || 10) * 1000, // Convert seconds to ms
   });
+
+  // Set up auto-advance timer (advances when time runs out)
+  const timeLimit = (match.timeLimit || 10) * 1000;
+  console.log(`⏱️  Setting ${timeLimit}ms timer for question ${match.questionIndex + 1}`);
+  match.advanceTimeout = setTimeout(() => {
+    const stillThere = activeMatches.get(matchId);
+    if (!stillThere) return;
+    
+    console.log(`⏰ Time's up for question ${stillThere.questionIndex + 1} after ${timeLimit}ms - emitting timeUp`);
+    
+    const currentQuestion = stillThere.questions[stillThere.questionIndex];
+    
+    // Give 0 points to players who didn't answer and emit answerResult
+    for (const [socketId, player] of stillThere.players) {
+      if (!stillThere.answeredPlayers || !stillThere.answeredPlayers.has(player.username)) {
+        console.log(`⏰ ${player.username} didn't answer in time - giving 0 points`);
+        
+        // Emit answerResult to the player who didn't answer
+        const playerSocket = io.sockets.sockets.get(socketId);
+        if (playerSocket) {
+          playerSocket.emit("answerResult", {
+            username: player.username,
+            correct: false,
+            points: 0,
+            correctAnswer: currentQuestion.answer,
+          });
+        }
+      }
+    }
+    
+    // Emit timeUp event to show recap on frontend
+    io.to(`match-${matchId}`).emit("timeUp", {});
+    
+    // Wait 3 seconds to show recap, then advance
+    setTimeout(() => {
+      const match = activeMatches.get(matchId);
+      if (!match) return;
+      
+      match.answeredPlayers.clear();
+      match.questionIndex++;
+      match.advanceTimeout = null;
+      sendQuestion(io, matchId);
+    }, 3000);
+  }, timeLimit); // No buffer - timer is exact
 }
 
 async function handlePlayerLeave(io, socket, matchId, manual = false) {
@@ -203,7 +258,7 @@ export default function setupSocket(server) {
 
         const dbMatch = await prisma.match.findUnique({
           where: { id: Number(matchId) },
-          select: { id: true, status: true, hostId: true },
+          select: { id: true, status: true, hostId: true, timeLimit: true },
         });
         if (!dbMatch) throw new Error("Match not found");
         if (dbMatch.status === "FINISHED") throw new Error("Match already ended");
@@ -211,6 +266,7 @@ export default function setupSocket(server) {
         if (!activeMatches.has(matchId)) {
           activeMatches.set(matchId, {
             hostId: dbMatch.hostId,
+            timeLimit: dbMatch.timeLimit || 10, // Load timer from database (in seconds)
             questionIndex: 0,
             questions: [],
             scores: {},
@@ -237,6 +293,11 @@ export default function setupSocket(server) {
           username: user.username,
           avatarUrl: user.avatarUrl,
         });
+
+        // Initialize score to 0 for new players
+        if (!(user.username in session.scores)) {
+          session.scores[user.username] = 0;
+        }
 
         prisma.matchPlayer
           .upsert({
@@ -283,14 +344,24 @@ export default function setupSocket(server) {
 
       console.log(`🎮 Host started match ${matchId}`);
 
-      // Fetch questions
-      const dbQuestions = await getQuestionsFromDB();
-      if (dbQuestions.length === 0) {
-        socket.emit("error", { message: "No questions available" });
+      // Fetch the 5 questions assigned to this match from the database
+      const matchQuestions = await prisma.matchQuestion.findMany({
+        where: { matchId: Number(matchId) },
+        include: { question: true },
+        orderBy: { order: 'asc' } // Maintain the order (1-5)
+      });
+
+      if (matchQuestions.length === 0) {
+        socket.emit("error", { message: "No questions assigned to this match" });
         return;
       }
 
-      match.questions = dbQuestions.sort(() => Math.random() - 0.5);
+      // Map to the format expected by the game
+      match.questions = matchQuestions.map(mq => ({
+        q: mq.question.question,
+        options: mq.question.options,
+        answer: mq.question.correct,
+      }));
       match.questionIndex = 0;
 
       console.log(`📚 Loaded ${match.questions.length} questions for match ${matchId}`);
@@ -315,10 +386,11 @@ export default function setupSocket(server) {
 
       console.log(`📤 [RESEND] Current question for match ${matchId}`);
       socket.emit("newQuestion", {
-        index: match.questionIndex,
+        index: match.questionIndex, // Send 0-based index, frontend will add 1 for display
+        total: match.questions.length,
         q: current.q,
         options: current.options,
-        timeLimit: 10000, // keep in sync with sendQuestion
+        timeLimit: (match.timeLimit || 10) * 1000, // Convert seconds to ms
       });
     });
 
@@ -330,20 +402,28 @@ export default function setupSocket(server) {
       const question = match.questions?.[match.questionIndex];
       if (!question) return;
 
+      // Check if this player already answered this question
+      if (!match.answeredPlayers) match.answeredPlayers = new Set();
+      if (match.answeredPlayers.has(socket.username)) {
+        console.log(`⚠️ ${socket.username} already answered this question`);
+        return;
+      }
+      match.answeredPlayers.add(socket.username);
+
       const correct =
         (answer ?? "").trim().toLowerCase() === question.answer.toLowerCase();
 
-    //   console.log("🔍 Received answer:", answer);
-    //   console.log("🔍 Current question:", question);
-    //   console.log("🔍 Correct answer:", question.answer); // ← Fixed: was question.correct
-
-      // Time-based scoring formula
-      const timeFactor = Math.max(0, 1 - (elapsedTimeMs || 0) / 10000);
+      // Time-based scoring formula (using match's timeLimit)
+      const maxTimeMs = (match.timeLimit || 10) * 1000;
+      const timeFactor = Math.max(0, 1 - (elapsedTimeMs || 0) / maxTimeMs);
       const points = correct ? Math.round(1 + 4 * timeFactor) : 0;
 
       match.scores[socket.username] =
         (match.scores[socket.username] || 0) + points;
 
+      console.log(`📊 ${socket.username}: ${correct ? 'Correct' : 'Wrong'} (+${points} pts) - Total: ${match.scores[socket.username]}`);
+
+      // Emit answer result to the specific player
       io.to(`match-${matchId}`).emit("answerResult", {
         username: socket.username,
         correct,
@@ -351,16 +431,16 @@ export default function setupSocket(server) {
         correctAnswer: question.answer,
       });
 
-      // Schedule next question ONCE per round (guard with advanceTimeout)
-      if (!match.advanceTimeout) {
-        match.advanceTimeout = setTimeout(() => {
-          const stillThere = activeMatches.get(matchId);
-          if (!stillThere) return; // match ended/cleaned
-          stillThere.questionIndex++;
-          stillThere.advanceTimeout = null;
-          sendQuestion(io, matchId);
-        }, 3000);
-      }
+      // Emit updated scores to ALL players
+      emitPlayers(io, matchId);
+
+      // Log progress but let timer run to show leaderboard
+      const totalPlayers = match.players.size;
+      const answeredCount = match.answeredPlayers.size;
+      console.log(`📝 Answered: ${answeredCount}/${totalPlayers} for question ${match.questionIndex + 1}`);
+
+      // Let the timer run out to show the between-question leaderboard
+      // Don't advance immediately even if all players answered
     });
 
     // ---------------- LEAVE MATCH ----------------
