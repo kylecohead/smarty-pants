@@ -68,10 +68,18 @@ export default function Lobby() {
       setPlayers(players);
     });
 
+
+    // socket.on("matchStarted", ({ firstQuestion }) => {
+    //   console.log("🏁 Match started!");
+    //   navigate(`/game/play/${matchId}`, { state: { firstQuestion } });
+    // });
     socket.on("matchStarted", () => {
       console.log("🏁 Match started!");
       navigate(`/game/play/${matchId}`);
     });
+
+
+
 
     socket.on("matchEnded", ({ scores }) => {
       console.log("🎯 Match ended:", scores);
@@ -102,13 +110,19 @@ export default function Lobby() {
 
       window.removeEventListener("beforeunload", handleBeforeUnload);
 
-      // Emit leaveMatch and disconnect the socket
-      if (socket.connected) {
-        console.log("🚪 Leaving match route:", matchId);
+      // Only emit leaveMatch if truly leaving the game (not going to /game/play)
+      const nextUrl = window.location.pathname;
+      const leavingCompletely = !nextUrl.includes("/game/play");
+
+      if (socket.connected && leavingCompletely) {
+        console.log("🚪 Leaving match completely:", matchId);
         socket.emit("leaveMatch", { matchId });
-        socket.disconnect(); // Properly disconnect the socket
+        socket.disconnect();
+      } else {
+        console.log("🔄 Transitioning to gameplay — keeping socket alive");
       }
     };
+
   }, [matchId, navigate]);
 
   // Listen for playersUpdate
@@ -145,10 +159,18 @@ export default function Lobby() {
   const isLobbyFull = players.length >= 2;
 
   const handleStartGame = () => {
-    if (socketRef.current) {
-      socketRef.current.emit("startMatch", { matchId });
+    const socket = socketRef.current;
+    if (!socket) return console.warn("⚠️ No socket instance found");
+
+    if (!socket.connected) {
+      console.warn("⚠️ Socket not connected yet");
+      return;
     }
+
+    console.log("🚀 Starting match:", matchId);
+    socket.emit("startMatch", { matchId });
   };
+
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>

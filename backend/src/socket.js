@@ -6,18 +6,50 @@ const prisma = new PrismaClient();
 
 /**
  * In-memory runtime session store
- * key: matchId → { hostId, questionIndex, scores: {}, started, players: Map<socketId, { userId, username, avatarUrl }> }
+ * key: matchId → {
+ *   hostId,
+ *   questionIndex,
+ *   questions,        // ← now fetched from DB
+ *   scores: {},
+ *   started,
+ *   players: Map<socketId, { userId, username, avatarUrl }>
+ * }
  */
 const activeMatches = new Map();
 
-// Example fallback questions (replace with DB fetch)
-const QUESTIONS = [
-  { q: "2 + 2?", options: ["3", "4"], answer: "4" },
-  { q: "Capital of France?", options: ["Rome", "Paris"], answer: "Paris" },
-  { q: "Water freezes at?", options: ["0°C", "100°C"], answer: "0°C" },
-];
+// =============================================================
+//  Fetch questions from database
+// =============================================================
+// =============================================================
+//  Fetch questions from database (mapped for frontend)
+// =============================================================
+async function getQuestionsFromDB() {
+  try {
+    const questions = await prisma.question.findMany({
+      select: {
+        id: true,
+        question: true,   // actual DB column
+        correct: true,    // actual DB column
+        options: true,    // String[]
+      },
+    });
 
-// Broadcast current match state to all sockets in room
+    // Map DB structure → game structure
+    return questions.map((q) => ({
+      q: q.question,
+      options: q.options,
+      answer: q.correct,
+    }));
+  } catch (err) {
+    console.error("❌ Failed to fetch questions from DB:", err);
+    return [];
+  }
+}
+
+
+// =============================================================
+//  Utility helpers
+// =============================================================
 function emitPlayers(io, matchId) {
   const match = activeMatches.get(matchId);
   if (!match) return;
@@ -32,23 +64,25 @@ function emitPlayers(io, matchId) {
   io.to(`match-${matchId}`).emit("playersUpdate", { matchId, players });
 }
 
-// Send next question or end
 function sendQuestion(io, matchId) {
   const match = activeMatches.get(matchId);
   if (!match) return;
 
-  const question = QUESTIONS[match.questionIndex];
+  const question = match.questions?.[match.questionIndex];
   if (!question) {
     io.to(`match-${matchId}`).emit("matchEnded", { scores: match.scores });
     console.log(`🏁 Match ${matchId} ended`);
     activeMatches.delete(matchId);
-    prisma.match.update({
-      where: { id: Number(matchId) },
-      data: { status: "FINISHED" },
-    }).catch(console.error);
+    prisma.match
+      .update({
+        where: { id: Number(matchId) },
+        data: { status: "FINISHED" },
+      })
+      .catch(console.error);
     return;
   }
 
+  console.log(`🧠 Sending question ${match.questionIndex + 1} for match ${matchId}`);
   io.to(`match-${matchId}`).emit("newQuestion", {
     index: match.questionIndex,
     q: question.q,
@@ -70,37 +104,29 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
     const match = activeMatches.get(matchId);
     if (!match) return;
 
-    // Mark the user as temporarily disconnected
     const player = match.players.get(socket.id);
     if (player) {
       player.disconnected = true;
     }
 
-    // Wait for a grace period before cleaning up
     setTimeout(async () => {
       const match = activeMatches.get(matchId);
       if (!match) return;
 
-      // Check if the user has reconnected
       const player = [...match.players.values()].find((p) => p.userId === userId);
       if (player && !player.disconnected) {
         console.log(`🔄 ${username} reconnected to match ${matchId}`);
         return;
       }
 
-      // Remove from in-memory list
       match.players.delete(socket.id);
-
-      // Update DB
       await prisma.matchPlayer.updateMany({
         where: { matchId: Number(matchId), userId },
         data: { connected: false },
       });
 
-      // Notify everyone still connected
-      emitPlayers(io, matchId); // Ensure this is called to update other players
+      emitPlayers(io, matchId);
 
-      // Handle host leaving
       if (match.hostId === userId) {
         await prisma.match.update({
           where: { id: Number(matchId) },
@@ -109,7 +135,6 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
         io.to(`match-${matchId}`).emit("matchPaused");
       }
 
-      // Clean up if empty
       if (match.players.size === 0) {
         activeMatches.delete(matchId);
         await prisma.match.update({
@@ -118,13 +143,15 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
         });
         console.log(`🧹 Cleared empty match ${matchId}`);
       }
-    }, 10000); // 10-second grace period
+    }, 10000);
   } catch (err) {
     console.error("❌ Error during player leave:", err.message);
   }
 }
 
+// =============================================================
 //  MAIN INITIALIZER
+// =============================================================
 export default function setupSocket(server) {
   const io = new Server(server, {
     cors: { origin: process.env.FRONTEND_ORIGIN || "*", credentials: true },
@@ -136,92 +163,72 @@ export default function setupSocket(server) {
 
     // ---------------- JOIN MATCH ----------------
     socket.on("joinMatch", async ({ matchId, token }) => {
-    try {
+      try {
         if (!matchId || !token) {
-        socket.emit("error", { message: "Missing matchId or token" });
-        return;
+          socket.emit("error", { message: "Missing matchId or token" });
+          return;
         }
 
-        //  Verify JWT and get user info
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded?.id;
         if (!userId) throw new Error("Invalid token payload");
 
         const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, username: true, avatarUrl: true },
+          where: { id: userId },
+          select: { id: true, username: true, avatarUrl: true },
         });
         if (!user) throw new Error("User not found");
 
         const dbMatch = await prisma.match.findUnique({
-        where: { id: Number(matchId) },
-        select: { id: true, status: true, hostId: true },
+          where: { id: Number(matchId) },
+          select: { id: true, status: true, hostId: true },
         });
         if (!dbMatch) throw new Error("Match not found");
         if (dbMatch.status === "FINISHED") throw new Error("Match already ended");
 
-        // Ensure in memory session exists
         if (!activeMatches.has(matchId)) {
-        activeMatches.set(matchId, {
+          activeMatches.set(matchId, {
             hostId: dbMatch.hostId,
             questionIndex: 0,
             scores: {},
             started: false,
             players: new Map(),
-        });
-        console.log(`🆕 Created in-memory session for match ${matchId}`);
+          });
+          console.log(`🆕 Created in-memory session for match ${matchId}`);
         }
 
-        // Join socket room + store metadata
         socket.join(`match-${matchId}`);
         socket.userId = userId;
         socket.username = user.username;
         socket.avatarUrl = user.avatarUrl;
         socket.matchId = matchId;
 
-        // Prevent duplicate connections (same userId)
         const session = activeMatches.get(matchId);
         for (const [sid, p] of session.players) {
-        if (p.userId === userId) {
-            session.players.delete(sid);
-        }
+          if (p.userId === userId) session.players.delete(sid);
         }
 
-        // Register in-memory player
         session.players.set(socket.id, {
-        userId,
-        username: user.username,
-        avatarUrl: user.avatarUrl,
+          userId,
+          username: user.username,
+          avatarUrl: user.avatarUrl,
         });
 
-        // Non-blocking DB update (async, don’t await)
         prisma.matchPlayer
-        .upsert({
+          .upsert({
             where: { matchId_userId: { matchId: Number(matchId), userId } },
             update: { connected: true },
             create: { matchId: Number(matchId), userId },
-        })
-        .catch(console.error);
+          })
+          .catch(console.error);
 
-        // Send player list to the joining socket instantly
-        const players = [...session.players.values()].map((p) => ({
-        userId: p.userId,
-        username: p.username,
-        avatarUrl: p.avatarUrl,
-        score: session.scores[p.username] || 0,
-        }));
-        socket.emit("playersUpdate", { matchId, players });
-
-        // Broadcast to everyone else
         emitPlayers(io, matchId);
-
         console.log(`✅ ${user.username} joined match ${matchId}`);
-    } catch (err) {
+      } catch (err) {
         console.error("❌ joinMatch error:", err.message);
         socket.emit("error", { message: err.message });
-    }
+      }
     });
-
 
     // ---------------- START MATCH (host only) ----------------
     socket.on("startMatch", async ({ matchId }) => {
@@ -249,8 +256,46 @@ export default function setupSocket(server) {
         data: { status: "ACTIVE" },
       });
 
-      io.to(`match-${matchId}`).emit("matchStarted");
+      console.log(`🎮 Host started match ${matchId}`);
+
+      // ✅ Fetch questions dynamically
+      const dbQuestions = await getQuestionsFromDB();
+      if (dbQuestions.length === 0) {
+        socket.emit("error", { message: "No questions available" });
+        return;
+      }
+
+      // ✅ Store them in memory for this match
+      match.questions = dbQuestions.sort(() => Math.random() - 0.5);
+      match.questionIndex = 0;
+
+      console.log(`📚 Loaded ${match.questions.length} questions for match ${matchId}`);
+
+      // ✅ Notify clients and send first question
+      io.to(`match-${matchId}`).emit("matchStarted", { started: true });
       sendQuestion(io, matchId);
+    });
+
+    // ---------------- REQUEST CURRENT QUESTION ----------------
+    socket.on("requestCurrentQuestion", ({ matchId }) => {
+      const match = activeMatches.get(matchId);
+      if (!match) {
+        socket.emit("error", { message: "Match not found" });
+        return;
+      }
+
+      const current = match.questions?.[match.questionIndex];
+      if (!current) {
+        socket.emit("error", { message: "No active question" });
+        return;
+      }
+
+      console.log(`📤 [RESEND] Current question for match ${matchId}`);
+      socket.emit("newQuestion", {
+        index: match.questionIndex,
+        q: current.q,
+        options: current.options,
+      });
     });
 
     // ---------------- SUBMIT ANSWER ----------------
@@ -258,7 +303,7 @@ export default function setupSocket(server) {
       const match = activeMatches.get(matchId);
       if (!match || !match.started) return;
 
-      const question = QUESTIONS[match.questionIndex];
+      const question = match.questions?.[match.questionIndex];
       if (!question) return;
 
       const correct =
@@ -274,7 +319,7 @@ export default function setupSocket(server) {
         correct,
       });
 
-      // Advance to next question after 2 seconds
+      // Move to next question after 2 seconds
       setTimeout(() => {
         match.questionIndex++;
         sendQuestion(io, matchId);
@@ -286,13 +331,11 @@ export default function setupSocket(server) {
       await handlePlayerLeave(io, socket, matchId, true);
     });
 
-
     // ---------------- DISCONNECT ----------------
     socket.on("disconnect", async () => {
       const { matchId } = socket;
       await handlePlayerLeave(io, socket, matchId, false);
     });
-
   });
 
   console.log("🎯 Socket.IO hybrid setup complete");
