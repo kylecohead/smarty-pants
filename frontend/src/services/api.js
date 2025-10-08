@@ -17,44 +17,33 @@
 const API_BASE = "http://localhost:3000/api";
 
 /**
- * Get authentication token from localStorage
- * @returns {string|null} JWT token or null if not found
+ * Fetch with authentication (using session cookies)
+ * @param {string} endpoint - API endpoint
+ * @param {Object} options - Fetch options
+ * @returns {Promise<Object>} - Parsed JSON response
  */
-const getToken = () => {
-  return localStorage.getItem("accessToken");
-};
-
-/**
- * Make an authenticated API request
- * @param {string} endpoint - API endpoint (e.g., "/users/me")
- * @param {object} options - Fetch options
- * @returns {Promise<any>} - Parsed JSON response
- * @throws {Error} - If response is not ok
- */
-const fetchWithAuth = async (endpoint, options = {}) => {
-  const token = getToken();
-  const headers = {
-    ...options.headers,
+async function fetchWithAuth(endpoint, options = {}) {
+  const baseOptions = {
+    credentials: "include", // Use session cookies for authentication
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+    ...options,
   };
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  const response = await fetch(`${API_BASE}${endpoint}`, baseOptions);
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Not authenticated");
+    }
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.message || errorData.error || `Request failed: ${response.status}`
-    );
+    throw new Error(errorData.error || `Request failed with status ${response.status}`);
   }
 
   return response.json();
-};
+}
 
 /**
  * API service object with methods for all backend endpoints
