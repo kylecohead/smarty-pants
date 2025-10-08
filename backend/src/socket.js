@@ -349,6 +349,7 @@ export default function setupSocket(server) {
         correct,
         points,
         correctAnswer: question.answer,
+          scores: match.scores, 
       });
 
       // Schedule next question ONCE per round (guard with advanceTimeout)

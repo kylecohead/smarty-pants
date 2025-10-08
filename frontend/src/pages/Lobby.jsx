@@ -156,7 +156,7 @@ export default function Lobby() {
     })();
   }, [matchId, currentUser]);
 
-  const isLobbyFull = players.length >= 2;
+  const isLobbyFull = players.length >= 1;
 
   const handleStartGame = () => {
     const socket = socketRef.current;
