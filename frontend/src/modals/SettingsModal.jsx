@@ -301,9 +301,9 @@ export default function SettingsModal() {
                 </h3>
                 <div className="h-px bg-smart-orange/30 mb-6"></div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="flex gap-8">
                   {/* Left: Controls */}
-                  <div className="space-y-6">
+                  <div className="flex-1 space-y-6">
                     {/* Stroke Width */}
                     <div>
                       <h4 className="mb-3 text-md font-body text-smart-orange">
@@ -438,59 +438,49 @@ export default function SettingsModal() {
                     </div>
                   </div>
 
-                  {/* Right: Preview */}
-                  <div className="flex items-center justify-center">
-                    <div className="p-6 rounded-lg border-2 border-smart-orange bg-smart-dark-navy">
-                      <h5 className="text-center text-sm font-body text-smart-orange mb-4">
-                        Preview
-                      </h5>
+                  {/* Right: Stickman Preview */}
+                  <div className="flex flex-col items-center justify-start pt-8">
+                    <div className="flex flex-col items-center">
+                      {/* Preview Label */}
+                      <div className="text-smart-white text-sm font-heading mb-2">
+                        PREVIEW
+                      </div>
+
                       <svg
-                        width={stickmanWidth}
-                        height={stickmanHeight}
-                        viewBox={`0 0 ${stickmanWidth} ${stickmanHeight}`}
-                        className={`text-${stickmanColor} opacity-80`}
+                        width="120"
+                        height="160"
+                        viewBox="0 0 120 160"
+                        className={`text-${stickmanColor} opacity-80 mb-4`}
                         fill="none"
                         stroke="currentColor"
                         strokeWidth={stickmanStrokeWidth}
                         strokeLinecap="round"
                         strokeLinejoin="round"
+                        style={{
+                          transform: `scale(${stickmanWidth / 120}, ${
+                            stickmanHeight / 160
+                          })`,
+                        }}
                       >
-                        <circle
-                          cx={stickmanWidth / 2}
-                          cy={stickmanHeight * 0.125}
-                          r={stickmanHeight * 0.1}
-                        />
-                        <line
-                          x1={stickmanWidth / 2}
-                          y1={stickmanHeight * 0.225}
-                          x2={stickmanWidth / 2}
-                          y2={stickmanHeight * 0.625}
-                        />
-                        <line
-                          x1={stickmanWidth / 2}
-                          y1={stickmanHeight * 0.375}
-                          x2={stickmanWidth * 0.25}
-                          y2={stickmanHeight * 0.29}
-                        />
-                        <line
-                          x1={stickmanWidth / 2}
-                          y1={stickmanHeight * 0.375}
-                          x2={stickmanWidth * 0.75}
-                          y2={stickmanHeight * 0.29}
-                        />
-                        <line
-                          x1={stickmanWidth / 2}
-                          y1={stickmanHeight * 0.625}
-                          x2={stickmanWidth * 0.31}
-                          y2={stickmanHeight * 0.875}
-                        />
-                        <line
-                          x1={stickmanWidth / 2}
-                          y1={stickmanHeight * 0.625}
-                          x2={stickmanWidth * 0.69}
-                          y2={stickmanHeight * 0.875}
-                        />
+                        <circle cx="60" cy="20" r="16" />
+                        <line x1="60" y1="36" x2="60" y2="100" />
+                        <line x1="60" y1="60" x2="30" y2="46" />
+                        <line x1="60" y1="60" x2="90" y2="46" />
+                        <line x1="60" y1="100" x2="37" y2="140" />
+                        <line x1="60" y1="100" x2="83" y2="140" />
                       </svg>
+
+                      {/* Arrow pointing up */}
+                      <div className={`text-${stickmanColor} text-3xl mb-2`}>
+                        ↑
+                      </div>
+
+                      {/* Username */}
+                      <div
+                        className={`text-${stickmanColor} text-2xl font-heading`}
+                      >
+                        {(username || "Player").toUpperCase()}
+                      </div>
                     </div>
                   </div>
                 </div>
