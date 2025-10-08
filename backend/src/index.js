@@ -37,10 +37,11 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // HTTPS only in production
+      secure: false, // Allow HTTP in development (localhost doesn't use HTTPS)
       httpOnly: true, // Prevent XSS attacks
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site cookies in production
+      sameSite: "lax", // Lax allows cookies on same-site navigation and safe cross-site requests
+      domain: "localhost", // Explicitly set domain to localhost
     },
     name: "smartie.sid", // Custom session cookie name
   })
