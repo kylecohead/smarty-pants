@@ -161,25 +161,30 @@ export default function PlayGame() {
 
   if (!question) {
     return (
-      <div className="min-h-screen text-white flex flex-col items-center justify-center"
-          style={{ backgroundColor: colors.darkBlue }}>
-        <div className="text-center">
-          <div className="text-2xl font-heading mb-4">Waiting for Host...</div>
-          <div className="text-smart-light-blue animate-pulse">
+      <div
+        className="min-h-screen flex flex-col items-center justify-center text-white relative overflow-hidden"
+        style={{ backgroundColor: colors.darkBlue }}
+      >
+        {/* Subtle animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0A2442] via-[#143B6E] to-[#0A2442] animate-pulse opacity-40" />
+
+        {/* Center content */}
+        <div className="relative z-10 flex flex-col items-center">
+          {/* Spinner */}
+          <div className="w-16 h-16 border-4 border-t-transparent border-[#6EC5FF] rounded-full animate-spin mb-8"></div>
+
+          {/* Text */}
+          <h1 className="text-3xl font-heading font-semibold mb-3 tracking-wide">
+            Waiting for Host...
+          </h1>
+          <p className="text-[#6EC5FF] text-lg animate-pulse">
             The game will begin shortly
-          </div>
-          <button
-            onClick={() =>
-              socketRef.current?.emit("requestCurrentQuestion", { matchId })
-            }
-            className="mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg"
-          >
-            🔁 Request Current Question
-          </button>
+          </p>
         </div>
       </div>
     );
   }
+
 
   return (
     <div
