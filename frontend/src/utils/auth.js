@@ -1,12 +1,17 @@
 // Utility functions for authenticated API requests with session cookies
 
+const API_BASE = "http://localhost:3000";
+
 /**
  * Make an authenticated fetch request with session cookies
- * @param {string} url - The API endpoint
+ * @param {string} url - The API endpoint (will be prefixed with API_BASE if not already absolute)
  * @param {Object} options - Fetch options
  * @returns {Promise<Response>} - The fetch response
  */
 export async function authenticatedFetch(url, options = {}) {
+  // Add API_BASE if url doesn't already start with http
+  const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
+  
   const defaultOptions = {
     credentials: "include", // Always include cookies
     headers: {
@@ -15,7 +20,7 @@ export async function authenticatedFetch(url, options = {}) {
     },
   };
 
-  return fetch(url, { ...defaultOptions, ...options });
+  return fetch(fullUrl, { ...defaultOptions, ...options });
 }
 
 /**
@@ -31,9 +36,17 @@ export async function checkAuth() {
       return data.user;
     }
     
+    // 401 is expected when not logged in, don't log as error
+    if (response.status === 401) {
+      return null;
+    }
+    
     return null;
   } catch (error) {
-    console.error("Auth check failed:", error);
+    // Only log unexpected errors, not 401s
+    if (!error.message?.includes("401")) {
+      console.error("Auth check failed:", error);
+    }
     return null;
   }
 }
@@ -57,6 +70,11 @@ export async function login(identifier, password, rememberMe = false) {
     if (!response.ok) {
       console.error("Login failed:", data);
       return { success: false, error: data.error || "Login failed" };
+    }
+    
+    // Save JWT token to localStorage for Socket.IO authentication
+    if (data.token) {
+      localStorage.setItem("accessToken", data.token);
     }
     
     return data;
@@ -87,6 +105,11 @@ export async function signup(username, email, password) {
       return { success: false, error: data.error || "Signup failed" };
     }
     
+    // Save JWT token to localStorage for Socket.IO authentication
+    if (data.token) {
+      localStorage.setItem("accessToken", data.token);
+    }
+    
     return data;
   } catch (error) {
     console.error("Signup error:", error);
@@ -102,6 +125,9 @@ export async function logout() {
   const response = await authenticatedFetch("/api/auth/logout", {
     method: "POST",
   });
+
+  // Clear JWT token from localStorage
+  localStorage.removeItem("accessToken");
 
   return response.json();
 }
