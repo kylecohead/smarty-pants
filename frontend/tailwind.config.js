@@ -1,12 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
-        colors: {
+      colors: {
         //Add colours here
         "smart-light-blue": "#00CFFF", // neon cyan-blue
         "smart-dark-blue": "#1740d1ff", // bright neon navy/royal blue
@@ -20,6 +17,7 @@ module.exports = {
         "smart-white": "#FFFFFF",
         "smart-black": "#000000",
         "smart-login-bg": "#0c1b2a",
+        "smart-dark-navy": "#0B1426", // dark navy background
       },
       fontFamily: {
         //Add fonts here

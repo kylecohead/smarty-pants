@@ -67,22 +67,8 @@ export default function App() {
 
       {/* 3) Landing + Settings modal (with tab routes) */}
       <Route path="/landing" element={<Landing />}>
-        <Route
-          path="settings"
-          element={
-            <Modal>
-              <SettingsModal />
-            </Modal>
-          }
-        />
-        <Route
-          path="settings/:tabId"
-          element={
-            <Modal>
-              <SettingsModal />
-            </Modal>
-          }
-        />
+        <Route path="settings" element={<SettingsModal />} />
+        <Route path="settings/:tabId" element={<SettingsModal />} />
       </Route>
 
       {/* 4) Game menu */}
@@ -95,7 +81,6 @@ export default function App() {
 
       {/* 6) Lobby + "Round number" modal */}
       <Route path="/lobby/:matchId" element={<Lobby />}>
-         
         <Route
           path="round"
           element={
