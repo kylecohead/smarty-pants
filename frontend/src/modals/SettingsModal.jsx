@@ -182,7 +182,7 @@ export default function SettingsModal() {
       <div className="relative w-full max-w-4xl rounded-2xl border-2 border-smart-white bg-smart-dark-navy p-6 shadow-xl">
         {/* Close Button */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/landing")}
           className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-lg flex items-center justify-center transition-colors duration-200 border-2 border-red-600 hover:border-red-700"
           title="Close Settings"
         >
