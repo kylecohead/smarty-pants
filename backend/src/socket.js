@@ -89,12 +89,10 @@ function sendQuestion(io, matchId) {
   const match = activeMatches.get(matchId);
   if (!match) return;
 
-  const QUESTION_LIMIT = 5; // Add this limit
+  const QUESTION_LIMIT = 5; // Limit to 5 questions
   
   if (match.questionIndex >= QUESTION_LIMIT || !match.questions[match.questionIndex]) {
-    // End game after 10 questions
-    io.to(`match-${matchId}`).emit("matchEnded", { scores: match.scores });
-    // ... rest of cleanup
+    endMatch(io, matchId); // Use existing endMatch function for proper cleanup
     return;
   }
 

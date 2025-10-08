@@ -11,6 +11,8 @@ import { api } from "../services/api";
 import GameHeader from "../components/GameHeader";
 import QuestionCard from "../components/QuestionCard";
 import GameOverScreen from "../components/GameOverScreen";
+import QuestionRecapModal from "../modals/QuestionRecapModal";
+import GameOverModal from "../modals/GameOverModal";
 import {
   buildPerQuestionLeaderboard,
   buildFinalLeaderboard,
@@ -81,19 +83,20 @@ export default function PlayGame() {
     });
 
     // When answer result received
-    socket.on("answerResult", ({ username, correct, points ,scores}) => {
+    socket.on("answerResult", ({ username, correct, points, scores }) => {
       if (username === currentUser.username) {
         setIsAnswered(true);
         setShowRecap(true);
         setScores(scores);
 
-        // Build per-question leaderboard with current scores
+        // Build leaderboard with both total and round scores
         const currentLeaderboard = Object.entries(scores)
-          .sort((a, b) => b[1] - a[1]) // Sort by score descending
-          .map(([playerName, score], index) => ({
+          .sort((a, b) => b[1] - a[1])
+          .map(([playerName, totalScore], index) => ({
             id: index,
             name: playerName,
-            score: score,
+            total: totalScore, // Total accumulated score
+            round: playerName === currentUser.username ? points : 0, // Points earned this round
             isYou: playerName === currentUser.username,
           }));
 
@@ -105,7 +108,7 @@ export default function PlayGame() {
         
         clearInterval(timerRef.current);
         clearTimeout(timeoutGuardRef.current);
-        setTimeout(() => setShowRecap(false), 5000); // Increased to 5 seconds to view leaderboard
+        setTimeout(() => setShowRecap(false), 5000);
       }
     });
 
@@ -234,84 +237,10 @@ export default function PlayGame() {
     );
   }
 
-  if (showRecap && recapData) {
-    return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center text-white text-center relative overflow-hidden"
-        style={{ backgroundColor: colors.darkBlue }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0A2442] via-[#123E68] to-[#0A2442] opacity-50 animate-pulse" />
-        <div className="relative z-10 w-full max-w-4xl px-4">
-          {/* Answer Result Header */}
-          <h1
-            className={`text-5xl font-black mb-6 drop-shadow-lg ${
-              recapData.correct ? "text-smart-green" : "text-red-400"
-            }`}
-          >
-            {recapData.correct ? "✔ Correct!" : "✖ Wrong!"}
-          </h1>
-          <p className="text-xl mb-2">
-            {recapData.correct ? "Nice work!" : "Better luck next time."}
-          </p>
-          <p className="text-lg mb-8">+{recapData.points} points earned</p>
-
-          {/* Per-Question Leaderboard */}
-          {recapData.leaderboard && recapData.leaderboard.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-2xl font-heading font-bold mb-4 text-[#6EC5FF]">
-                Current Standings
-              </h2>
-              <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
-                <table className="w-full border-collapse text-left">
-                  <thead className="bg-white/10 uppercase tracking-[0.25em] text-white/60 text-sm">
-                    <tr>
-                      <th className="px-4 py-3">Rank</th>
-                      <th className="px-4 py-3">Player</th>
-                      <th className="px-4 py-3 text-right">Score</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recapData.leaderboard.map((row, i) => (
-                      <tr
-                        key={row.id || i}
-                        className={`border-t border-white/10 ${
-                          row.isYou ? "bg-white/15" : "bg-transparent"
-                        }`}
-                      >
-                        <td className="px-4 py-3 font-semibold text-white/90">
-                          {i + 1}
-                        </td>
-                        <td className="px-4 py-3 font-medium text-white">
-                          {row.name}
-                          {row.isYou && (
-                            <span className="ml-2 rounded-full bg-smart-green/20 px-2 py-0.5 text-xs font-semibold text-smart-green">
-                              You
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right font-bold text-white">
-                          {row.score}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          <div className="text-sm text-blue-300 animate-pulse">
-            Next question starting...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // ================== QUESTION DISPLAY ==================
   return (
     <div
-      className="min-h-screen text-white"
+      className="min-h-screen text-white relative"
       style={{ backgroundColor: colors.darkBlue }}
     >
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8">
@@ -336,10 +265,37 @@ export default function PlayGame() {
             youAnswered={isAnswered}
             questionResolved={false}
             waitingOnOthers={false}
-            onAnswer={(optionText) => handleAnswer(optionText)} // Direct string, no .label needed
+            onAnswer={(optionText) => handleAnswer(optionText)}
           />
         </main>
       </div>
+
+      {/* Question Recap Modal Overlay */}
+      {showRecap && recapData && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-4xl">
+            <QuestionRecapModal 
+              correct={recapData.correct}
+              points={recapData.points}
+              leaderboard={recapData.leaderboard}
+              onClose={() => setShowRecap(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Game Over Modal Overlay */}
+      {matchEnded && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-4xl">
+            <GameOverModal 
+              scores={scores}
+              currentUser={currentUser}
+              onClose={() => navigate("/")}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
