@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../services/api";
 
 // "Smart" palette — tweak freely to match your design system
 const colors = {
@@ -19,17 +20,24 @@ import backSports from "../assets/backSports.jpg";
 import backCulture from "../assets/backCulture.jpg";
 
 /**
- * Available game modes with their display labels and background images
- * Each mode represents a different trivia category
- * @type {Array<{key: string, label: string, backgroundImage: string}>}
+ * Map database category names to background images
+ * @param {string} category Category name from database
+ * @returns {string} Background image path
  */
-const MODES = [
-  { key: "general", label: "General Knowledge", backgroundImage: backGeneral },
-  { key: "science", label: "Science", backgroundImage: backScience },
-  { key: "history", label: "History", backgroundImage: backHistory },
-  { key: "sports", label: "Sports", backgroundImage: backSports },
-  { key: "culture", label: "Pop Culture", backgroundImage: backCulture },
-];
+const getCategoryBackground = (category) => {
+  const lowerCategory = category.toLowerCase();
+
+  if (lowerCategory.includes("general")) return backGeneral;
+  if (lowerCategory.includes("science") || lowerCategory.includes("computer"))
+    return backScience;
+  if (lowerCategory.includes("history")) return backHistory;
+  if (lowerCategory.includes("sport")) return backSports;
+  if (lowerCategory.includes("culture") || lowerCategory.includes("pop"))
+    return backCulture;
+
+  // Default fallback
+  return backGeneral;
+};
 
 /**
  * Available scoring models for the trivia game
@@ -108,6 +116,10 @@ export default function CreateGame() {
   const [modeIndex, setModeIndex] = useState(0); // Currently selected game mode index
   const [username, setUsername] = useState(""); // Current user's username
 
+  // Dynamic categories from database
+  const [categories, setCategories] = useState([]); // Available categories from database
+  const [loadingCategories, setLoadingCategories] = useState(true); // Loading state for categories
+
   const [secPerQ, setSecPerQ] = useState(() => {
     if (typeof window !== "undefined") {
       const stored = Number(
@@ -126,11 +138,79 @@ export default function CreateGame() {
     }
   }, [secPerQ]);
   const [scoring, setScoring] = useState(scoringModels[0].key); // Selected scoring model
-  const [requireCorrectAll, setRequireCorrectAll] = useState(false); // Whether all answers must be correct to advance
+
+  const navigate = useNavigate();
+
+  // Fetch categories from database on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await api.getCategories();
+
+        // Check if we got any categories back
+        if (!data || data.length === 0) {
+          console.warn(
+            "No categories found in database. Using fallback categories."
+          );
+          // Fallback to default categories if database is empty
+          const fallbackCategories = [
+            {
+              key: "general-knowledge",
+              label: "General Knowledge",
+              backgroundImage: backGeneral,
+            },
+            {
+              key: "science-nature",
+              label: "Science & Nature",
+              backgroundImage: backScience,
+            },
+            { key: "history", label: "History", backgroundImage: backHistory },
+            { key: "sports", label: "Sports", backgroundImage: backSports },
+          ];
+          setCategories(fallbackCategories);
+        } else {
+          // Transform categories into mode objects with background images
+          const modes = data.map((categoryName) => ({
+            key: categoryName.toLowerCase().replace(/\s+/g, "-"),
+            label: categoryName,
+            backgroundImage: getCategoryBackground(categoryName),
+          }));
+
+          setCategories(modes);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        console.warn("Using fallback categories due to fetch error");
+        // Fallback to default categories if fetch fails (backend not running, etc.)
+        const fallbackCategories = [
+          {
+            key: "general-knowledge",
+            label: "General Knowledge",
+            backgroundImage: backGeneral,
+          },
+          {
+            key: "science-nature",
+            label: "Science & Nature",
+            backgroundImage: backScience,
+          },
+          { key: "history", label: "History", backgroundImage: backHistory },
+          { key: "sports", label: "Sports", backgroundImage: backSports },
+        ];
+        setCategories(fallbackCategories);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Current selected game mode object
-  const mode = MODES[modeIndex];
-  const navigate = useNavigate();
+  const mode = categories[modeIndex] || {
+    key: "",
+    label: "Loading...",
+    backgroundImage: backGeneral,
+  };
 
   // Mock user directory for demonstration (in production, this would come from an API)
   const fakeDirectory = useMemo(
@@ -189,73 +269,56 @@ export default function CreateGame() {
    * Navigate to previous game mode in carousel
    * Uses modulo to wrap around to end when at beginning
    */
-  const goPrev = () =>
-    setModeIndex((i) => (i - 1 + MODES.length) % MODES.length);
+  const goPrev = () => {
+    if (categories.length === 0) return;
+    setModeIndex((i) => (i - 1 + categories.length) % categories.length);
+  };
 
   /**
    * Navigate to next game mode in carousel
    * Uses modulo to wrap around to beginning when at end
    */
-  const goNext = () => setModeIndex((i) => (i + 1) % MODES.length);
+  const goNext = () => {
+    if (categories.length === 0) return;
+    setModeIndex((i) => (i + 1) % categories.length);
+  };
 
-  const API_URL = "/api/users";
-
-
-
-  // Create match in database ==============================
+  // Create match in database using API service
   async function handleCreateGame() {
     try {
-      const token = localStorage.getItem("accessToken");
-
-      if (!token) {
-        alert("Please log in first.");
-        return;
-      }
-
-      // 🔹 Get current user info
-      let currentUsername = "";
+      // 🔹 Get current user info using API service (session cookie authentication)
       try {
-        const res = await fetch(`${API_URL}/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (res.ok && data.user) {
-          currentUsername = data.user.username;
-          setUsername(currentUsername);
+        const data = await api.getCurrentUser();
+        if (data.user) {
+          setUsername(data.user.username);
         }
       } catch (err) {
         console.error("Fetch user failed:", err);
+        alert("Please log in first.");
+        navigate("/");
+        return;
       }
 
-      // 🔹 Create match
-      const res = await fetch("/api/matches", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: title || "Untitled Match",
-          category: mode.label,
-          difficulty: "Easy",
-          isPublic: isPublic,    
-          maxPlayers: maxPlayers,
-        }),
+      // 🔹 Create match using API service
+      // Backend automatically assigns 5 random questions from the selected category
+      const match = await api.createMatch({
+        title: title || "Untitled Match",
+        category: mode.label, // This must match a category name in the database
+        difficulty: "Easy",
+        isPublic: isPublic,
+        maxPlayers: maxPlayers,
+        timeLimit: secPerQ, // Send the selected timer duration (in seconds)
       });
-
-      const match = await res.json();
-      if (!res.ok) throw new Error(match.error || "Failed to create match!");
 
       console.log("✅ Created match:", match.id, match);
 
+      // Navigate to lobby with match ID (Socket.IO compatible route)
       navigate(`/lobby/${match.id}`);
     } catch (err) {
       console.error("❌ Error creating match:", err);
-      alert(err.message);
+      alert(err.message || "Failed to create game");
     }
   }
-  //=============================================================
-
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
@@ -328,7 +391,7 @@ export default function CreateGame() {
                   <div className="flex items-center gap-4 mt-1">
                     <input
                       type="range"
-                      min={2}
+                      min={1}
                       max={20}
                       step={1}
                       value={maxPlayers}
@@ -430,7 +493,8 @@ export default function CreateGame() {
               <div className="relative z-10 flex items-center justify-between h-full">
                 <button
                   onClick={goPrev}
-                  className="rounded-lg bg-white/10 hover:bg-white/20 text-white w-12 h-12 flex items-center justify-center font-bold text-lg"
+                  disabled={loadingCategories || categories.length === 0}
+                  className="rounded-lg bg-white/10 hover:bg-white/20 text-white w-12 h-12 flex items-center justify-center font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Previous mode"
                 >
                   ←
@@ -438,12 +502,13 @@ export default function CreateGame() {
                 <div className="text-center px-4 flex-1">
                   <p className="text-sm text-white/60 mb-1">Mode</p>
                   <p className="text-3xl font-bold text-white drop-shadow-lg">
-                    {mode.label}
+                    {loadingCategories ? "Loading categories..." : mode.label}
                   </p>
                 </div>
                 <button
                   onClick={goNext}
-                  className="rounded-lg bg-white/10 hover:bg-white/20 text-white w-12 h-12 flex items-center justify-center font-bold text-lg"
+                  disabled={loadingCategories || categories.length === 0}
+                  className="rounded-lg bg-white/10 hover:bg-white/20 text-white w-12 h-12 flex items-center justify-center font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Next mode"
                 >
                   →
@@ -451,14 +516,18 @@ export default function CreateGame() {
               </div>
 
               <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex justify-center gap-1">
-                {MODES.map((m, i) => (
-                  <span
-                    key={m.key}
-                    className={`h-2 w-8 rounded-full ${
-                      i === modeIndex ? "bg-white" : "bg-white/30"
-                    }`}
-                  />
-                ))}
+                {loadingCategories ? (
+                  <span className="text-white/60 text-xs">Loading...</span>
+                ) : (
+                  categories.map((m, i) => (
+                    <span
+                      key={m.key}
+                      className={`h-2 w-8 rounded-full ${
+                        i === modeIndex ? "bg-white" : "bg-white/30"
+                      }`}
+                    />
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -514,38 +583,17 @@ export default function CreateGame() {
                   </span>
                 </div>
               </div>
-
-              <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3">
-                <div>
-                  <label className="block text-white/90 text-sm">
-                    Require all answers correct to advance
-                  </label>
-                  <p className="text-xs text-white/60">
-                    Toggle for stricter progression.
-                  </p>
-                </div>
-                <label className="inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={requireCorrectAll}
-                    onChange={(e) => setRequireCorrectAll(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-white/20 rounded-full peer peer-checked:bg-emerald-500 transition-colors relative">
-                    <span className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5" />
-                  </div>
-                </label>
-              </div>
             </div>
           </div>
 
           {/* Send Invite */}
           <div className="mt-8 flex justify-center">
             <button
-              onClick={handleCreateGame}//Create game button
-              className="rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg bg-smart-red hover:opacity-80 text-smart-white font-button transition-opacity"
+              onClick={handleCreateGame}
+              disabled={loadingCategories || categories.length === 0}
+              className="rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg bg-smart-red hover:opacity-80 text-smart-white font-button transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Game
+              {loadingCategories ? "Loading..." : "Create Game"}
             </button>
           </div>
         </div>
