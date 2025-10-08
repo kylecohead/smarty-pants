@@ -82,34 +82,52 @@ export default function PlayGame() {
       );
     });
 
-    // When answer result received
-    socket.on("answerResult", ({ username, correct, points, scores }) => {
-      if (username === currentUser.username) {
+    // Individual answer confirmation (immediate feedback)
+    socket.on("answerSubmitted", ({ correct, points, correctAnswer }) => {
+      if (!isAnswered) {
         setIsAnswered(true);
-        setShowRecap(true);
-        setScores(scores);
-
-        // Build leaderboard with both total and round scores
-        const currentLeaderboard = Object.entries(scores)
-          .sort((a, b) => b[1] - a[1])
-          .map(([playerName, totalScore], index) => ({
-            id: index,
-            name: playerName,
-            total: totalScore, // Total accumulated score
-            round: playerName === currentUser.username ? points : 0, // Points earned this round
-            isYou: playerName === currentUser.username,
-          }));
-
-        setRecapData({ 
-          correct, 
-          points,
-          leaderboard: currentLeaderboard 
-        });
-        
         clearInterval(timerRef.current);
         clearTimeout(timeoutGuardRef.current);
-        setTimeout(() => setShowRecap(false), 5000);
+        
+        // Just show a simple "Answer submitted" state
+        console.log(`✅ Answer submitted: ${correct ? 'Correct' : 'Wrong'} (+${points})`);
       }
+    });
+
+    // Question results for all players (after everyone answered or time up)
+    socket.on("questionResults", ({ responses, scores, correctAnswer }) => {
+      setScores(scores);
+      setShowRecap(true);
+
+      // Find your response
+      const yourResponse = responses.find(r => r.username === currentUser.username);
+      
+      // Build leaderboard with both total and round scores
+      const currentLeaderboard = Object.entries(scores)
+        .sort((a, b) => b[1] - a[1])
+        .map(([playerName, totalScore], index) => {
+          const playerResponse = responses.find(r => r.username === playerName);
+          return {
+            id: index,
+            name: playerName,
+            total: totalScore,
+            round: playerResponse ? playerResponse.points : 0,
+            answered: playerResponse ? playerResponse.answered : false,
+            correct: playerResponse ? playerResponse.correct : false,
+            isYou: playerName === currentUser.username,
+          };
+        });
+
+      setRecapData({
+        correct: yourResponse?.correct || false,
+        points: yourResponse?.points || 0,
+        leaderboard: currentLeaderboard,
+        allResponses: responses, // Include all player responses
+      });
+
+      clearInterval(timerRef.current);
+      clearTimeout(timeoutGuardRef.current);
+      setTimeout(() => setShowRecap(false), 4000); 
     });
 
     socket.on("playersUpdate", ({ players }) => {
@@ -263,8 +281,8 @@ export default function PlayGame() {
             timeLeftMs={timeLeft}
             questionDurationMs={question.timeLimit || 10000}
             youAnswered={isAnswered}
-            questionResolved={false}
-            waitingOnOthers={false}
+            questionResolved={showRecap}
+            waitingOnOthers={isAnswered && !showRecap} // NEW: show waiting state
             onAnswer={(optionText) => handleAnswer(optionText)}
           />
         </main>
@@ -278,6 +296,7 @@ export default function PlayGame() {
               correct={recapData.correct}
               points={recapData.points}
               leaderboard={recapData.leaderboard}
+              allResponses={recapData.allResponses} // Pass this as a prop
               onClose={() => setShowRecap(false)}
             />
           </div>

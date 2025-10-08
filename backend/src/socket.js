@@ -328,37 +328,58 @@ export default function setupSocket(server) {
       const question = match.questions?.[match.questionIndex];
       if (!question) return;
 
+      // Initialize responses tracking for this question if not exists
+      if (!match.currentQuestionResponses) {
+        match.currentQuestionResponses = new Map();
+      }
+
       const correct =
         (answer ?? "").trim().toLowerCase() === question.answer.toLowerCase();
-
-    //   console.log("🔍 Received answer:", answer);
-    //   console.log("🔍 Current question:", question);
-    //   console.log("🔍 Correct answer:", question.answer); // ← Fixed: was question.correct
 
       // Time-based scoring formula
       const timeFactor = Math.max(0, 1 - (elapsedTimeMs || 0) / 10000);
       const points = correct ? Math.round(1 + 4 * timeFactor) : 0;
 
-      match.scores[socket.username] =
-        (match.scores[socket.username] || 0) + points;
+      match.scores[socket.username] = (match.scores[socket.username] || 0) + points;
 
-      io.to(`match-${matchId}`).emit("answerResult", {
+      // Store this player's response
+      match.currentQuestionResponses.set(socket.username, {
         username: socket.username,
+        answer,
+        correct,
+        points,
+        elapsedTimeMs,
+      });
+
+      console.log(`📝 ${socket.username} answered (${match.currentQuestionResponses.size}/${match.players.size})`);
+
+      // Send immediate feedback to just this player
+      socket.emit("answerSubmitted", {
         correct,
         points,
         correctAnswer: question.answer,
-          scores: match.scores, 
       });
 
-      // Schedule next question ONCE per round (guard with advanceTimeout)
-      if (!match.advanceTimeout) {
+      // Check if all players have answered
+      const allPlayersAnswered = match.currentQuestionResponses.size >= match.players.size;
+      
+      if (allPlayersAnswered) {
+        // CLEAR any existing timeout first!
+        if (match.advanceTimeout) {
+          clearTimeout(match.advanceTimeout);
+          match.advanceTimeout = null;
+        }
+        
+        console.log(`🏃‍♂️ All players answered - showing results immediately`);
+        showQuestionResults(io, matchId);
+        
+      } else if (!match.advanceTimeout) {
+        // Start timeout for remaining players (only if not already started)
+        console.log(`⏰ Starting timeout for remaining players`);
         match.advanceTimeout = setTimeout(() => {
-          const stillThere = activeMatches.get(matchId);
-          if (!stillThere) return; // match ended/cleaned
-          stillThere.questionIndex++;
-          stillThere.advanceTimeout = null;
-          sendQuestion(io, matchId);
-        }, 3000);
+          console.log(`⏰ Timeout reached - showing results`);
+          showQuestionResults(io, matchId);
+        }, 15000); // 15 seconds total time limit
       }
     });
 
@@ -376,4 +397,54 @@ export default function setupSocket(server) {
 
   console.log("🎯 Socket.IO hybrid setup complete");
   return io;
+}
+
+function showQuestionResults(io, matchId) {
+  const match = activeMatches.get(matchId);
+  if (!match) return;
+
+  clearAdvanceTimeout(match);
+
+  // Collect all responses (including non-responders)
+  const allResponses = [];
+  for (const [socketId, player] of match.players) {
+    const response = match.currentQuestionResponses.get(player.username);
+    if (response) {
+      allResponses.push({
+        username: player.username,
+        correct: response.correct,
+        points: response.points,
+        answered: true,
+      });
+    } else {
+      // Player didn't answer in time
+      allResponses.push({
+        username: player.username,
+        correct: false,
+        points: 0,
+        answered: false,
+      });
+    }
+  }
+
+  // Send results to ALL players
+  io.to(`match-${matchId}`).emit("questionResults", {
+    responses: allResponses,
+    scores: match.scores,
+    correctAnswer: match.questions[match.questionIndex].answer,
+  });
+
+  console.log(`📊 Question ${match.questionIndex + 1} results sent to all players`);
+
+  // Clear responses for next question
+  match.currentQuestionResponses = new Map();
+
+  // Schedule next question
+  match.advanceTimeout = setTimeout(() => {
+    const stillThere = activeMatches.get(matchId);
+    if (!stillThere) return;
+    stillThere.questionIndex++;
+    stillThere.advanceTimeout = null;
+    sendQuestion(io, matchId);
+  }, 5000); // 5 seconds to view results
 }
