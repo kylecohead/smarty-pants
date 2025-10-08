@@ -11,6 +11,10 @@ import { api } from "../services/api";
 import GameHeader from "../components/GameHeader";
 import QuestionCard from "../components/QuestionCard";
 import GameOverScreen from "../components/GameOverScreen";
+import {
+  buildPerQuestionLeaderboard,
+  buildFinalLeaderboard,
+} from "../utils/gameUtils";
 
 const colors = { darkBlue: "#0A2442" };
 
@@ -32,7 +36,9 @@ export default function PlayGame() {
   const timerRef = useRef(null);
   const timeoutGuardRef = useRef(null);
   const isAnsweredRef = useRef(isAnswered);
-  useEffect(() => { isAnsweredRef.current = isAnswered; }, [isAnswered]);
+  useEffect(() => {
+    isAnsweredRef.current = isAnswered;
+  }, [isAnswered]);
 
   // Fetch user
   useEffect(() => {
@@ -68,14 +74,28 @@ export default function PlayGame() {
       setShowRecap(false);
       setRecapData(null);
 
-      timeoutGuardRef.current = setTimeout(() => startTimer(data.timeLimit || 10000), 200);
+      timeoutGuardRef.current = setTimeout(
+        () => startTimer(data.timeLimit || 10000),
+        200
+      );
     });
 
-    // 🧮 When answer result received
+    // When answer result received
     socket.on("answerResult", ({ username, correct, points }) => {
       if (username === currentUser.username) {
         setIsAnswered(true);
         setShowRecap(true);
+
+        // Build per-question leaderboard
+        const leaderboard = buildPerQuestionLeaderboard(
+          Object.entries(scores).reduce((acc, [user, score]) => {
+            acc[user] = { player: { username: user }, score };
+            return acc;
+          }, {}),
+          scores[currentUser.username] || 0,
+          scores
+        );
+
         setRecapData({ correct, points });
         clearInterval(timerRef.current);
         clearTimeout(timeoutGuardRef.current);
@@ -132,9 +152,16 @@ export default function PlayGame() {
     clearTimeout(timeoutGuardRef.current);
 
     const elapsedTimeMs = Date.now() - questionStartTime;
+
+    // Handle the case where no answer was selected (timer ran out)
+    const finalAnswer = optionLabel || ""; // Convert null/undefined to empty string
+
+    // console.log("🔍 Submitting answer:", finalAnswer);
+    // console.log("🔍 Current question:", question);
+
     socketRef.current.emit("submitAnswer", {
       matchId,
-      answer: optionLabel,
+      answer: finalAnswer,
       elapsedTimeMs,
     });
   };
@@ -151,14 +178,31 @@ export default function PlayGame() {
   // ================== UI RENDERING ==================
 
   if (matchEnded) {
+    // Create properly sorted leaderboard
     const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
     const winner = sorted[0];
+    
+    // Format leaderboard for GameOverScreen component
+    const formattedLeaderboard = sorted.map(([username, score], index) => ({
+      id: index,
+      name: username,
+      total: score,
+      isYou: username === currentUser?.username,
+    }));
+
     return (
-      <div className="min-h-screen flex items-center justify-center text-white" style={{ backgroundColor: colors.darkBlue }}>
+      <div
+        className="min-h-screen flex items-center justify-center text-white"
+        style={{ backgroundColor: colors.darkBlue }}
+      >
         <GameOverScreen
-          winner={{ username: winner[0], score: winner[1] }}
+          winner={{
+            name: winner[0], // Use 'name' not 'username'
+            score: winner[1],
+            isYou: winner[0] === currentUser?.username,
+          }}
           score={scores[currentUser?.username] || 0}
-          finalLeaderboard={sorted.map(([username, score]) => ({ username, score }))}
+          finalLeaderboard={formattedLeaderboard}
         />
       </div>
     );
@@ -166,15 +210,19 @@ export default function PlayGame() {
 
   if (!question) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-white relative overflow-hidden"
-        style={{ backgroundColor: colors.darkBlue }}>
+      <div
+        className="min-h-screen flex flex-col items-center justify-center text-white relative overflow-hidden"
+        style={{ backgroundColor: colors.darkBlue }}
+      >
         <div className="absolute inset-0 bg-gradient-to-br from-[#0A2442] via-[#143B6E] to-[#0A2442] opacity-60 animate-[pulse_3s_infinite]" />
         <div className="relative z-10 flex flex-col items-center">
           <div className="w-16 h-16 border-4 border-t-transparent border-[#6EC5FF] rounded-full animate-spin mb-8"></div>
           <h1 className="text-3xl font-heading font-semibold mb-3 tracking-wide">
             Waiting for Host...
           </h1>
-          <p className="text-[#6EC5FF] text-lg animate-pulse">The game will begin shortly</p>
+          <p className="text-[#6EC5FF] text-lg animate-pulse">
+            The game will begin shortly
+          </p>
         </div>
       </div>
     );
@@ -182,16 +230,26 @@ export default function PlayGame() {
 
   if (showRecap && recapData) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-white text-center relative overflow-hidden"
-        style={{ backgroundColor: colors.darkBlue }}>
+      <div
+        className="min-h-screen flex flex-col items-center justify-center text-white text-center relative overflow-hidden"
+        style={{ backgroundColor: colors.darkBlue }}
+      >
         <div className="absolute inset-0 bg-gradient-to-br from-[#0A2442] via-[#123E68] to-[#0A2442] opacity-50 animate-pulse" />
         <div className="relative z-10">
-          <h1 className={`text-5xl font-black mb-6 drop-shadow-lg ${recapData.correct ? "text-smart-green" : "text-red-400"}`}>
+          <h1
+            className={`text-5xl font-black mb-6 drop-shadow-lg ${
+              recapData.correct ? "text-smart-green" : "text-red-400"
+            }`}
+          >
             {recapData.correct ? "✔ Correct!" : "✖ Wrong!"}
           </h1>
-          <p className="text-xl mb-2">{recapData.correct ? "Nice work!" : "Better luck next time."}</p>
+          <p className="text-xl mb-2">
+            {recapData.correct ? "Nice work!" : "Better luck next time."}
+          </p>
           <p className="text-lg mb-6">+{recapData.points} points earned</p>
-          <div className="text-sm text-blue-300 animate-pulse">Next question starting...</div>
+          <div className="text-sm text-blue-300 animate-pulse">
+            Next question starting...
+          </div>
         </div>
       </div>
     );
@@ -199,7 +257,10 @@ export default function PlayGame() {
 
   // ================== QUESTION DISPLAY ==================
   return (
-    <div className="min-h-screen text-white" style={{ backgroundColor: colors.darkBlue }}>
+    <div
+      className="min-h-screen text-white"
+      style={{ backgroundColor: colors.darkBlue }}
+    >
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8">
         <GameHeader
           score={scores[currentUser?.username] || 0}
@@ -209,7 +270,6 @@ export default function PlayGame() {
         />
 
         <main className="mt-8 flex flex-1 flex-col items-center justify-center text-center">
-
           <QuestionCard
             question={{
               text: question.q,
@@ -223,7 +283,7 @@ export default function PlayGame() {
             youAnswered={isAnswered}
             questionResolved={false}
             waitingOnOthers={false}
-            onAnswer={(opt) => handleAnswer(opt.label)}
+            onAnswer={(optionText) => handleAnswer(optionText)} // Direct string, no .label needed
           />
         </main>
       </div>

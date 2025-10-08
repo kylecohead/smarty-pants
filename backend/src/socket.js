@@ -89,9 +89,12 @@ function sendQuestion(io, matchId) {
   const match = activeMatches.get(matchId);
   if (!match) return;
 
-  const question = match.questions?.[match.questionIndex];
-  if (!question) {
-    endMatch(io, matchId);
+  const QUESTION_LIMIT = 5; // Add this limit
+  
+  if (match.questionIndex >= QUESTION_LIMIT || !match.questions[match.questionIndex]) {
+    // End game after 10 questions
+    io.to(`match-${matchId}`).emit("matchEnded", { scores: match.scores });
+    // ... rest of cleanup
     return;
   }
 
@@ -101,8 +104,8 @@ function sendQuestion(io, matchId) {
   console.log(`🧠 Sending question ${match.questionIndex + 1} for match ${matchId}`);
   io.to(`match-${matchId}`).emit("newQuestion", {
     index: match.questionIndex,
-    q: question.q,
-    options: question.options,
+    q: match.questions[match.questionIndex].q,
+    options: match.questions[match.questionIndex].options,
     timeLimit: 10000, // ms
   });
 }
@@ -329,6 +332,10 @@ export default function setupSocket(server) {
 
       const correct =
         (answer ?? "").trim().toLowerCase() === question.answer.toLowerCase();
+
+    //   console.log("🔍 Received answer:", answer);
+    //   console.log("🔍 Current question:", question);
+    //   console.log("🔍 Correct answer:", question.answer); // ← Fixed: was question.correct
 
       // Time-based scoring formula
       const timeFactor = Math.max(0, 1 - (elapsedTimeMs || 0) / 10000);
