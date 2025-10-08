@@ -220,31 +220,31 @@ export default function SettingsModal() {
                 <h3 className="text-2xl font-heading text-smart-pink mb-4">
                   ⚙️ UPDATE PROFILE
                 </h3>
-                <div className="h-px bg-smart-light-blue/30 mb-6"></div>
+                <div className="h-px bg-smart-pink/30 mb-6"></div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Left: Form */}
                   <form className="flex flex-col gap-4" onSubmit={handleSave}>
                     {/* Username */}
-                    <label className="flex flex-col text-sm font-body text-smart-light-blue">
+                    <label className="flex flex-col text-sm font-body text-smart-pink">
                       Username
                       <input
                         type="text"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className="mt-2 rounded-lg border border-smart-light-blue bg-[#2d2d3a] px-4 py-3 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-purple"
+                        className="mt-2 rounded-lg border border-smart-pink bg-[#2d2d3a] px-4 py-3 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink"
                       />
                     </label>
 
                     {/* Password */}
-                    <label className="flex flex-col text-sm font-body text-smart-light-blue">
+                    <label className="flex flex-col text-sm font-body text-smart-pink">
                       Password
                       <div className="relative mt-2">
                         <input
                           type={showPassword ? "text" : "password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="w-full rounded-lg border border-smart-light-blue bg-[#2d2d3a] px-4 py-3 pr-12 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink"
+                          className="w-full rounded-lg border border-smart-pink bg-[#2d2d3a] px-4 py-3 pr-12 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink"
                         />
                         <button
                           type="button"
@@ -257,7 +257,7 @@ export default function SettingsModal() {
                     </label>
 
                     {/* Edit Avatar */}
-                    <div className="flex flex-col text-sm font-body text-smart-light-blue">
+                    <div className="flex flex-col text-sm font-body text-smart-pink">
                       <span>Avatar Customization</span>
                       <button
                         type="button"
@@ -270,7 +270,7 @@ export default function SettingsModal() {
 
                     <button
                       type="submit"
-                      className="mt-4 rounded-xl bg-smart-green px-4 py-3 font-button text-black hover:bg-smart-light-blue transition"
+                      className="mt-4 rounded-xl bg-smart-pink px-4 py-3 font-button text-black hover:bg-smart-light-pink transition"
                     >
                       Save Profile
                     </button>
@@ -299,18 +299,18 @@ export default function SettingsModal() {
                 <h3 className="text-2xl font-heading text-smart-orange mb-4">
                   🎨 AVATAR CUSTOMIZATION
                 </h3>
-                <div className="h-px bg-smart-light-blue/30 mb-6"></div>
+                <div className="h-px bg-smart-orange/30 mb-6"></div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Left: Controls */}
                   <div className="space-y-6">
                     {/* Stroke Width */}
                     <div>
-                      <h4 className="mb-3 text-md font-body text-smart-white">
+                      <h4 className="mb-3 text-md font-body text-smart-orange">
                         Line Width
                       </h4>
                       <div className="flex items-center gap-4">
-                        <span className="text-sm font-body text-smart-white/60">
+                        <span className="text-sm font-body text-smart-orange/60">
                           Thin
                         </span>
                         <input
@@ -328,7 +328,7 @@ export default function SettingsModal() {
                           }}
                           className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
                         />
-                        <span className="text-sm font-body text-smart-white/60">
+                        <span className="text-sm font-body text-smart-orange/60">
                           Thick
                         </span>
                         <span className="text-sm font-body text-smart-orange font-bold min-w-[2rem]">
@@ -339,11 +339,11 @@ export default function SettingsModal() {
 
                     {/* Height */}
                     <div>
-                      <h4 className="mb-3 text-md font-body text-smart-white">
+                      <h4 className="mb-3 text-md font-body text-smart-orange">
                         Height
                       </h4>
                       <div className="flex items-center gap-4">
-                        <span className="text-sm font-body text-smart-white/60">
+                        <span className="text-sm font-body text-smart-orange/60">
                           Short
                         </span>
                         <input
@@ -361,7 +361,7 @@ export default function SettingsModal() {
                           }}
                           className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
                         />
-                        <span className="text-sm font-body text-smart-white/60">
+                        <span className="text-sm font-body text-smart-orange/60">
                           Tall
                         </span>
                         <span className="text-sm font-body text-smart-orange font-bold min-w-[2rem]">
@@ -372,11 +372,11 @@ export default function SettingsModal() {
 
                     {/* Width */}
                     <div>
-                      <h4 className="mb-3 text-md font-body text-smart-white">
+                      <h4 className="mb-3 text-md font-body text-smart-orange">
                         Width
                       </h4>
                       <div className="flex items-center gap-4">
-                        <span className="text-sm font-body text-smart-white/60">
+                        <span className="text-sm font-body text-smart-orange/60">
                           Narrow
                         </span>
                         <input
@@ -394,7 +394,7 @@ export default function SettingsModal() {
                           }}
                           className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
                         />
-                        <span className="text-sm font-body text-smart-white/60">
+                        <span className="text-sm font-body text-smart-orange/60">
                           Wide
                         </span>
                         <span className="text-sm font-body text-smart-orange font-bold min-w-[2rem]">
@@ -405,7 +405,7 @@ export default function SettingsModal() {
 
                     {/* Color */}
                     <div>
-                      <h4 className="mb-3 text-md font-body text-smart-white">
+                      <h4 className="mb-3 text-md font-body text-smart-orange">
                         Color
                       </h4>
                       <div className="grid grid-cols-4 gap-2">
@@ -440,8 +440,8 @@ export default function SettingsModal() {
 
                   {/* Right: Preview */}
                   <div className="flex items-center justify-center">
-                    <div className="p-6 rounded-lg border-2 border-smart-white bg-smart-dark-navy">
-                      <h5 className="text-center text-sm font-body text-smart-white mb-4">
+                    <div className="p-6 rounded-lg border-2 border-smart-orange bg-smart-dark-navy">
+                      <h5 className="text-center text-sm font-body text-smart-orange mb-4">
                         Preview
                       </h5>
                       <svg
@@ -506,19 +506,19 @@ export default function SettingsModal() {
 
                 <div className="space-y-4">
                   {/* Core Stats */}
-                  <div className="flex items-center justify-between text-sm font-body text-smart-white">
+                  <div className="flex items-center justify-between text-sm font-body text-smart-light-blue">
                     <span>Games Played</span>
-                    <span className="font-bold text-smart-green">
+                    <span className="font-bold text-smart-light-blue">
                       {gamesPlayed}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm font-body text-smart-white">
+                  <div className="flex items-center justify-between text-sm font-body text-smart-light-blue">
                     <span>High Score</span>
-                    <span className="font-bold text-smart-pink">
+                    <span className="font-bold text-smart-light-blue">
                       {highScore}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm font-body text-smart-white">
+                  <div className="flex items-center justify-between text-sm font-body text-smart-light-blue">
                     <span>Win Rate</span>
                     <span className="font-bold text-smart-light-blue">
                       {((wins / gamesPlayed) * 100).toFixed(1)}%
@@ -527,24 +527,24 @@ export default function SettingsModal() {
 
                   {/* Fun Bars */}
                   <div>
-                    <p className="mb-1 text-sm font-body font-semibold text-smart-light-pink">
+                    <p className="mb-1 text-sm font-body font-semibold text-smart-light-blue">
                       😎 Aura
                     </p>
                     <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
                       <div
-                        className="h-3 rounded-full bg-smart-pink"
+                        className="h-3 rounded-full bg-smart-light-blue"
                         style={{ width: `${Math.min(100, wins * 8)}%` }}
                       ></div>
                     </div>
                   </div>
 
                   <div>
-                    <p className="mb-1 text-sm font-body font-semibold text-smart-green">
+                    <p className="mb-1 text-sm font-body font-semibold text-smart-light-blue">
                       🧠 Brain Power
                     </p>
                     <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
                       <div
-                        className="h-3 rounded-full bg-smart-green"
+                        className="h-3 rounded-full bg-smart-light-blue"
                         style={{
                           width: `${Math.min(100, (highScore / 3000) * 100)}%`,
                         }}
@@ -553,12 +553,12 @@ export default function SettingsModal() {
                   </div>
 
                   <div>
-                    <p className="mb-1 text-sm font-body font-semibold text-smart-orange">
+                    <p className="mb-1 text-sm font-body font-semibold text-smart-light-blue">
                       🔥 Dedication
                     </p>
                     <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
                       <div
-                        className="h-3 rounded-full bg-smart-orange"
+                        className="h-3 rounded-full bg-smart-light-blue"
                         style={{ width: `${Math.min(100, gamesPlayed * 2)}%` }}
                       ></div>
                     </div>
@@ -572,24 +572,24 @@ export default function SettingsModal() {
                 <h3 className="mb-4 text-2xl font-heading text-smart-purple">
                   🎯 MATCH HISTORY
                 </h3>
-                <div className="h-px bg-smart-light-blue/30 mb-6"></div>
+                <div className="h-px bg-smart-purple/30 mb-6"></div>
                 <div className="grid gap-4 md:grid-cols-2">
                   {matchHistory.map((m) => (
                     <div
                       key={m.id}
                       className="rounded-xl border-2 border-smart-purple bg-smart-black/30 p-4 hover:border-smart-light-blue transition"
                     >
-                      <div className="flex items-center justify-between text-xs font-body text-smart-light-blue">
+                      <div className="flex items-center justify-between text-xs font-body text-smart-purple">
                         <span>{new Date(m.date).toLocaleDateString()}</span>
-                        <span className="uppercase text-smart-yellow">
+                        <span className="uppercase text-smart-purple">
                           {m.category}
                         </span>
                       </div>
 
-                      <p className="mt-2 text-lg font-body font-bold text-smart-white">
+                      <p className="mt-2 text-lg font-body font-bold text-smart-purple">
                         Score: {m.score}
                       </p>
-                      <p className="text-sm font-body text-smart-light-pink">
+                      <p className="text-sm font-body text-smart-purple">
                         Placement: #{m.placement}
                       </p>
 
