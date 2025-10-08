@@ -110,15 +110,6 @@ Smartie-Pants
 │   │   ├── test.js
 │   │   └── utils
 │   └── uploads
-│       ├── 1759494377720-Screenshot from 2025-09-12 13-16-31.png
-│       ├── avatar1.png
-│       ├── avatar2.png
-│       ├── avatar3.png
-│       ├── avatar4.png
-│       ├── avatar5.png
-│       ├── avatar6.png
-│       ├── conrad.jpg
-│       └── imposter.png
 ├── docker-compose.prod.yml
 ├── docker-compose.yml
 ├── docs.txt
