@@ -1,6 +1,7 @@
 import { NavLink, useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ProfileCard from "../components/ProfileCard";
+import { api } from "../services/api";
 
 const tabs = [
   { id: "1", label: "Account" },
@@ -23,8 +24,6 @@ export default function SettingsModal() {
   const [avatar, setAvatar] = useState("");
   const [loading, setLoading] = useState(true);
 
-
-
   //MOCK DATA======================================
   // Dummy stats for now
   const [gamesPlayed] = useState(42);
@@ -34,31 +33,34 @@ export default function SettingsModal() {
 
   // Match history (mock)
   const [matchHistory] = useState([
-    { id: 1, date: "2025-09-18T19:30:00Z", category: "Science", score: 1800, placement: 2 },
-    { id: 2, date: "2025-09-20T20:00:00Z", category: "Geography", score: 2450, placement: 1 },
+    {
+      id: 1,
+      date: "2025-09-18T19:30:00Z",
+      category: "Science",
+      score: 1800,
+      placement: 2,
+    },
+    {
+      id: 2,
+      date: "2025-09-20T20:00:00Z",
+      category: "Geography",
+      score: 2450,
+      placement: 1,
+    },
   ]);
-//===============================================
-
-
+  //===============================================
 
   // Fetch current user on mount
   useEffect(() => {
     async function fetchUser() {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        setLoading(false);
-        return;
-      }
       try {
-        const res = await fetch(`${API_URL}/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (res.ok && data.user) {
+        // Use API service with session cookie authentication
+        const data = await api.getCurrentUser();
+        if (data && data.user) {
           setUsername(data.user.username || "");
           setAvatar(data.user.avatarUrl || "");
         } else {
-          console.error("Fetch user error:", data.error);
+          console.error("Fetch user error: No user data");
         }
       } catch (err) {
         console.error("Fetch user failed:", err);
@@ -75,7 +77,7 @@ export default function SettingsModal() {
     formData.append("image", file);
 
     try {
-      const res = await fetch(`/api/images/upload`, {   
+      const res = await fetch(`/api/images/upload`, {
         method: "POST",
         body: formData,
       });
@@ -94,16 +96,12 @@ export default function SettingsModal() {
   // Save profile
   async function handleSave(e) {
     e.preventDefault();
-    const token = localStorage.getItem("accessToken");
-    if (!token) return;
 
     try {
-      const res = await fetch(`${API_URL}/me`, {
+      // Use authenticatedFetch for session cookie authentication
+      const { authenticatedFetch } = await import("../utils/auth.js");
+      const res = await authenticatedFetch(`${API_URL}/me`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({
           username,
           password: password || undefined, // don’t send empty string
@@ -159,13 +157,12 @@ export default function SettingsModal() {
         </button>
       </aside>
 
-
       {/* Content */}
-      <section className="flex-1 rounded-xl border border-smart-light-blue 
+      <section
+        className="flex-1 rounded-xl border border-smart-light-blue 
         bg-smart-black/40 backdrop-blur-md shadow-lg shadow-smart-light-blue/30 
-        p-6 min-h-[450px]">
-
-
+        p-6 min-h-[450px]"
+      >
         {active === "1" && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
             {/* Left: Form */}
@@ -173,7 +170,9 @@ export default function SettingsModal() {
               className="flex flex-col gap-4 md:col-span-1 p-4 rounded-xl border-2 border-smart-purple bg-smart-black/60 backdrop-blur-md shadow-lg shadow-smart-purple/30"
               onSubmit={handleSave}
             >
-              <h3 className="text-base font-semibold text-smart-light-blue">⚙️ Update Profile</h3>
+              <h3 className="text-base font-semibold text-smart-light-blue">
+                ⚙️ Update Profile
+              </h3>
 
               {/* Username */}
               <label className="flex flex-col text-xs text-smart-light-blue">
@@ -235,13 +234,10 @@ export default function SettingsModal() {
                               px-3 py-2 text-xs font-bold text-smart-white shadow-md 
                               hover:shadow-lg hover:shadow-smart-pink/40 transition"
                   >
-                    📷 
+                    📷
                   </label>
-
-        
                 </div>
               </label>
-
 
               <button
                 type="submit"
@@ -269,13 +265,17 @@ export default function SettingsModal() {
 
         {active === "2" && (
           <div className="p-6 rounded-xl border-2 border-smart-light-blue bg-smart-black/60 shadow-lg shadow-smart-light-blue/30">
-            <h3 className="mb-6 text-xl font-bold text-smart-yellow">🚀 Your Epic Stats</h3>
+            <h3 className="mb-6 text-xl font-bold text-smart-yellow">
+              🚀 Your Epic Stats
+            </h3>
 
             <div className="space-y-4">
               {/* Core Stats */}
               <div className="flex items-center justify-between text-sm text-smart-white">
                 <span>Games Played</span>
-                <span className="font-bold text-smart-green">{gamesPlayed}</span>
+                <span className="font-bold text-smart-green">
+                  {gamesPlayed}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm text-smart-white">
                 <span>High Score</span>
@@ -290,7 +290,9 @@ export default function SettingsModal() {
 
               {/* Fun Bars */}
               <div>
-                <p className="mb-1 text-sm font-semibold text-smart-light-pink">😎 Aura</p>
+                <p className="mb-1 text-sm font-semibold text-smart-light-pink">
+                  😎 Aura
+                </p>
                 <div className="h-3 w-full rounded-full bg-smart-black/40 overflow-hidden">
                   <div
                     className="h-3 rounded-full bg-gradient-to-r from-smart-pink via-smart-purple to-smart-orange animate-pulse"
@@ -300,17 +302,23 @@ export default function SettingsModal() {
               </div>
 
               <div>
-                <p className="mb-1 text-sm font-semibold text-smart-green">🧠 Brain Power</p>
+                <p className="mb-1 text-sm font-semibold text-smart-green">
+                  🧠 Brain Power
+                </p>
                 <div className="h-3 w-full rounded-full bg-smart-black/40 overflow-hidden">
                   <div
                     className="h-3 rounded-full bg-gradient-to-r from-smart-light-blue via-smart-dark-blue to-smart-green animate-pulse"
-                    style={{ width: `${Math.min(100, (highScore / 3000) * 100)}%` }}
+                    style={{
+                      width: `${Math.min(100, (highScore / 3000) * 100)}%`,
+                    }}
                   ></div>
                 </div>
               </div>
 
               <div>
-                <p className="mb-1 text-sm font-semibold text-smart-orange">🔥 Dedication</p>
+                <p className="mb-1 text-sm font-semibold text-smart-orange">
+                  🔥 Dedication
+                </p>
                 <div className="h-3 w-full rounded-full bg-smart-black/40 overflow-hidden">
                   <div
                     className="h-3 rounded-full bg-gradient-to-r from-smart-orange to-smart-red animate-pulse"
@@ -324,7 +332,9 @@ export default function SettingsModal() {
 
         {active === "3" && (
           <div>
-            <h3 className="mb-6 text-xl font-bold text-smart-purple">🎯 Match History</h3>
+            <h3 className="mb-6 text-xl font-bold text-smart-purple">
+              🎯 Match History
+            </h3>
             <div className="grid gap-4 md:grid-cols-2">
               {matchHistory.map((m) => (
                 <div
@@ -333,11 +343,17 @@ export default function SettingsModal() {
                 >
                   <div className="flex items-center justify-between text-xs text-smart-light-blue">
                     <span>{new Date(m.date).toLocaleDateString()}</span>
-                    <span className="uppercase text-smart-yellow">{m.category}</span>
+                    <span className="uppercase text-smart-yellow">
+                      {m.category}
+                    </span>
                   </div>
 
-                  <p className="mt-2 text-lg font-bold text-smart-white">Score: {m.score}</p>
-                  <p className="text-sm text-smart-light-pink">Placement: #{m.placement}</p>
+                  <p className="mt-2 text-lg font-bold text-smart-white">
+                    Score: {m.score}
+                  </p>
+                  <p className="text-sm text-smart-light-pink">
+                    Placement: #{m.placement}
+                  </p>
 
                   <div className="mt-3 h-2 w-full rounded-full bg-smart-black/30 overflow-hidden">
                     <div
@@ -346,7 +362,9 @@ export default function SettingsModal() {
                           ? "bg-gradient-to-r from-smart-yellow to-smart-green"
                           : "bg-gradient-to-r from-smart-purple to-smart-pink"
                       }`}
-                      style={{ width: `${Math.min(100, (m.score / highScore) * 100)}%` }}
+                      style={{
+                        width: `${Math.min(100, (m.score / highScore) * 100)}%`,
+                      }}
                     ></div>
                   </div>
                 </div>
@@ -357,13 +375,14 @@ export default function SettingsModal() {
 
         {active === "4" && (
           <div className="p-6 rounded-xl border-2 border-smart-orange bg-smart-black/60 shadow-lg shadow-smart-orange/30">
-            <h3 className="mb-2 text-lg font-bold text-smart-orange">⚡ Other Settings</h3>
+            <h3 className="mb-2 text-lg font-bold text-smart-orange">
+              ⚡ Other Settings
+            </h3>
             <p className="text-sm text-smart-white/70">
               Placeholder for extra settings. Add more neon toggles here!
             </p>
           </div>
         )}
-
       </section>
     </div>
   );
