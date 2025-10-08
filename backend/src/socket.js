@@ -9,17 +9,15 @@ const prisma = new PrismaClient();
  * key: matchId → {
  *   hostId,
  *   questionIndex,
- *   questions,        // ← now fetched from DB
+ *   questions,        // fetched from DB
  *   scores: {},
  *   started,
- *   players: Map<socketId, { userId, username, avatarUrl }>
+ *   players: Map<socketId, { userId, username, avatarUrl }>,
+ *   advanceTimeout: NodeJS.Timeout | null,   // ← NEW: guard next-question timer
  * }
  */
 const activeMatches = new Map();
 
-// =============================================================
-//  Fetch questions from database
-// =============================================================
 // =============================================================
 //  Fetch questions from database (mapped for frontend)
 // =============================================================
@@ -28,9 +26,9 @@ async function getQuestionsFromDB() {
     const questions = await prisma.question.findMany({
       select: {
         id: true,
-        question: true,   // actual DB column
-        correct: true,    // actual DB column
-        options: true,    // String[]
+        question: true, // DB column
+        correct: true,  // DB column
+        options: true,  // String[]
       },
     });
 
@@ -45,7 +43,6 @@ async function getQuestionsFromDB() {
     return [];
   }
 }
-
 
 // =============================================================
 //  Utility helpers
@@ -64,29 +61,49 @@ function emitPlayers(io, matchId) {
   io.to(`match-${matchId}`).emit("playersUpdate", { matchId, players });
 }
 
+function clearAdvanceTimeout(match) {
+  if (match?.advanceTimeout) {
+    clearTimeout(match.advanceTimeout);
+    match.advanceTimeout = null;
+  }
+}
+
+function endMatch(io, matchId) {
+  const match = activeMatches.get(matchId);
+  if (!match) return;
+  clearAdvanceTimeout(match);
+
+  io.to(`match-${matchId}`).emit("matchEnded", { scores: match.scores });
+  console.log(`🏁 Match ${matchId} ended`);
+
+  activeMatches.delete(matchId);
+  prisma.match
+    .update({
+      where: { id: Number(matchId) },
+      data: { status: "FINISHED" },
+    })
+    .catch(console.error);
+}
+
 function sendQuestion(io, matchId) {
   const match = activeMatches.get(matchId);
   if (!match) return;
 
   const question = match.questions?.[match.questionIndex];
   if (!question) {
-    io.to(`match-${matchId}`).emit("matchEnded", { scores: match.scores });
-    console.log(`🏁 Match ${matchId} ended`);
-    activeMatches.delete(matchId);
-    prisma.match
-      .update({
-        where: { id: Number(matchId) },
-        data: { status: "FINISHED" },
-      })
-      .catch(console.error);
+    endMatch(io, matchId);
     return;
   }
+
+  // Clear any pending "advance to next" timer before sending a fresh Q
+  clearAdvanceTimeout(match);
 
   console.log(`🧠 Sending question ${match.questionIndex + 1} for match ${matchId}`);
   io.to(`match-${matchId}`).emit("newQuestion", {
     index: match.questionIndex,
     q: question.q,
     options: question.options,
+    timeLimit: 10000, // ms
   });
 }
 
@@ -120,6 +137,7 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
       }
 
       match.players.delete(socket.id);
+
       await prisma.matchPlayer.updateMany({
         where: { matchId: Number(matchId), userId },
         data: { connected: false },
@@ -136,6 +154,7 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
       }
 
       if (match.players.size === 0) {
+        clearAdvanceTimeout(match);
         activeMatches.delete(matchId);
         await prisma.match.update({
           where: { id: Number(matchId) },
@@ -190,9 +209,11 @@ export default function setupSocket(server) {
           activeMatches.set(matchId, {
             hostId: dbMatch.hostId,
             questionIndex: 0,
+            questions: [],
             scores: {},
             started: false,
             players: new Map(),
+            advanceTimeout: null, // NEW
           });
           console.log(`🆕 Created in-memory session for match ${matchId}`);
         }
@@ -250,6 +271,7 @@ export default function setupSocket(server) {
 
       match.started = true;
       match.questionIndex = 0;
+      clearAdvanceTimeout(match);
 
       await prisma.match.update({
         where: { id: Number(matchId) },
@@ -258,20 +280,18 @@ export default function setupSocket(server) {
 
       console.log(`🎮 Host started match ${matchId}`);
 
-      // ✅ Fetch questions dynamically
+      // Fetch questions
       const dbQuestions = await getQuestionsFromDB();
       if (dbQuestions.length === 0) {
         socket.emit("error", { message: "No questions available" });
         return;
       }
 
-      // ✅ Store them in memory for this match
       match.questions = dbQuestions.sort(() => Math.random() - 0.5);
       match.questionIndex = 0;
 
       console.log(`📚 Loaded ${match.questions.length} questions for match ${matchId}`);
 
-      // ✅ Notify clients and send first question
       io.to(`match-${matchId}`).emit("matchStarted", { started: true });
       sendQuestion(io, matchId);
     });
@@ -295,11 +315,12 @@ export default function setupSocket(server) {
         index: match.questionIndex,
         q: current.q,
         options: current.options,
+        timeLimit: 10000, // keep in sync with sendQuestion
       });
     });
 
     // ---------------- SUBMIT ANSWER ----------------
-    socket.on("submitAnswer", ({ matchId, answer }) => {
+    socket.on("submitAnswer", ({ matchId, answer, elapsedTimeMs }) => {
       const match = activeMatches.get(matchId);
       if (!match || !match.started) return;
 
@@ -307,23 +328,32 @@ export default function setupSocket(server) {
       if (!question) return;
 
       const correct =
-        answer?.trim().toLowerCase() === question.answer.toLowerCase();
+        (answer ?? "").trim().toLowerCase() === question.answer.toLowerCase();
 
-      if (correct) {
-        match.scores[socket.username] =
-          (match.scores[socket.username] || 0) + 1;
-      }
+      // Time-based scoring formula
+      const timeFactor = Math.max(0, 1 - (elapsedTimeMs || 0) / 10000);
+      const points = correct ? Math.round(1 + 4 * timeFactor) : 0;
+
+      match.scores[socket.username] =
+        (match.scores[socket.username] || 0) + points;
 
       io.to(`match-${matchId}`).emit("answerResult", {
         username: socket.username,
         correct,
+        points,
+        correctAnswer: question.answer,
       });
 
-      // Move to next question after 2 seconds
-      setTimeout(() => {
-        match.questionIndex++;
-        sendQuestion(io, matchId);
-      }, 2000);
+      // Schedule next question ONCE per round (guard with advanceTimeout)
+      if (!match.advanceTimeout) {
+        match.advanceTimeout = setTimeout(() => {
+          const stillThere = activeMatches.get(matchId);
+          if (!stillThere) return; // match ended/cleaned
+          stillThere.questionIndex++;
+          stillThere.advanceTimeout = null;
+          sendQuestion(io, matchId);
+        }, 3000);
+      }
     });
 
     // ---------------- LEAVE MATCH ----------------
