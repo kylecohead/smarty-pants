@@ -179,7 +179,19 @@ export default function SettingsModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-smart-black/60 p-4">
-      <div className="relative w-full max-w-4xl rounded-2xl border-2 border-smart-white bg-smart-dark-navy p-6 shadow-xl">
+      <div
+        className={`relative w-full max-w-4xl rounded-2xl border-2 bg-smart-dark-navy p-6 shadow-xl ${
+          active === "1"
+            ? "border-smart-pink"
+            : active === "2"
+            ? "border-smart-orange"
+            : active === "3"
+            ? "border-smart-yellow"
+            : active === "4"
+            ? "border-smart-green"
+            : "border-smart-white"
+        }`}
+      >
         {/* Close Button */}
         <button
           onClick={() => navigate("/landing")}
@@ -189,9 +201,33 @@ export default function SettingsModal() {
           ×
         </button>
 
-        <div className="flex rounded-xl border-4 border-smart-white bg-smart-dark-navy overflow-hidden">
+        <div
+          className={`flex rounded-xl border-4 bg-smart-dark-navy overflow-hidden ${
+            active === "1"
+              ? "border-smart-pink"
+              : active === "2"
+              ? "border-smart-orange"
+              : active === "3"
+              ? "border-smart-yellow"
+              : active === "4"
+              ? "border-smart-green"
+              : "border-smart-white"
+          }`}
+        >
           {/* Sidebar */}
-          <aside className="w-48 shrink-0 border-r-4 border-smart-white bg-smart-dark-navy p-4">
+          <aside
+            className={`w-48 shrink-0 border-r-4 bg-smart-dark-navy p-4 ${
+              active === "1"
+                ? "border-smart-pink"
+                : active === "2"
+                ? "border-smart-orange"
+                : active === "3"
+                ? "border-smart-yellow"
+                : active === "4"
+                ? "border-smart-green"
+                : "border-smart-white"
+            }`}
+          >
             <nav className="flex flex-col gap-3">
               {tabs.map((t) => (
                 <NavLink
@@ -401,14 +437,70 @@ export default function SettingsModal() {
                       </h4>
                       <div className="grid grid-cols-4 gap-2">
                         {[
-                          { name: "smart-light-blue", label: "Blue" },
-                          { name: "smart-green", label: "Green" },
-                          { name: "smart-yellow", label: "Yellow" },
-                          { name: "smart-orange", label: "Orange" },
-                          { name: "smart-red", label: "Red" },
-                          { name: "smart-purple", label: "Purple" },
-                          { name: "smart-light-pink", label: "Pink" },
-                          { name: "smart-white", label: "White" },
+                          {
+                            name: "smart-light-blue",
+                            label: "Blue",
+                            bgClass: "bg-smart-light-blue",
+                            textClass: "text-smart-light-blue",
+                            borderClass: "border-smart-light-blue",
+                            hoverClass: "hover:bg-smart-light-blue/20",
+                          },
+                          {
+                            name: "smart-green",
+                            label: "Green",
+                            bgClass: "bg-smart-green",
+                            textClass: "text-smart-green",
+                            borderClass: "border-smart-green",
+                            hoverClass: "hover:bg-smart-green/20",
+                          },
+                          {
+                            name: "smart-yellow",
+                            label: "Yellow",
+                            bgClass: "bg-smart-yellow",
+                            textClass: "text-smart-yellow",
+                            borderClass: "border-smart-yellow",
+                            hoverClass: "hover:bg-smart-yellow/20",
+                          },
+                          {
+                            name: "smart-orange",
+                            label: "Orange",
+                            bgClass: "bg-smart-orange",
+                            textClass: "text-smart-orange",
+                            borderClass: "border-smart-orange",
+                            hoverClass: "hover:bg-smart-orange/20",
+                          },
+                          {
+                            name: "smart-red",
+                            label: "Red",
+                            bgClass: "bg-smart-red",
+                            textClass: "text-smart-red",
+                            borderClass: "border-smart-red",
+                            hoverClass: "hover:bg-smart-red/20",
+                          },
+                          {
+                            name: "smart-purple",
+                            label: "Purple",
+                            bgClass: "bg-smart-purple",
+                            textClass: "text-smart-purple",
+                            borderClass: "border-smart-purple",
+                            hoverClass: "hover:bg-smart-purple/20",
+                          },
+                          {
+                            name: "smart-light-pink",
+                            label: "Pink",
+                            bgClass: "bg-smart-light-pink",
+                            textClass: "text-smart-light-pink",
+                            borderClass: "border-smart-light-pink",
+                            hoverClass: "hover:bg-smart-light-pink/20",
+                          },
+                          {
+                            name: "smart-white",
+                            label: "White",
+                            bgClass: "bg-smart-white",
+                            textClass: "text-smart-white",
+                            borderClass: "border-smart-white",
+                            hoverClass: "hover:bg-smart-white/20",
+                          },
                         ].map((color) => (
                           <button
                             key={color.name}
@@ -418,8 +510,8 @@ export default function SettingsModal() {
                             }}
                             className={`rounded-lg p-3 text-lg font-body transition border-2 ${
                               stickmanColor === color.name
-                                ? `bg-${color.name} text-smart-black border-${color.name}`
-                                : `text-${color.name} border-${color.name} hover:bg-${color.name}/20`
+                                ? `${color.bgClass} text-smart-black ${color.borderClass}`
+                                : `${color.textClass} ${color.borderClass} ${color.hoverClass}`
                             }`}
                           >
                             {color.label}
@@ -433,14 +525,14 @@ export default function SettingsModal() {
                   <div className="flex flex-col items-center justify-start pt-8">
                     <div className="flex flex-col items-center">
                       {/* Preview Label */}
-                      <div className="text-smart-white text-sm font-heading mb-2">
+                      <div className="text-smart-white text-lg font-heading mb-2">
                         PREVIEW
                       </div>
 
                       <svg
-                        width="120"
-                        height="160"
-                        viewBox="0 0 120 160"
+                        width="140"
+                        height="180"
+                        viewBox="0 0 140 180"
                         className={`text-${stickmanColor} opacity-80 mb-4`}
                         fill="none"
                         stroke="currentColor"
@@ -448,17 +540,17 @@ export default function SettingsModal() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         style={{
-                          transform: `scale(${stickmanWidth / 120}, ${
-                            stickmanHeight / 160
+                          transform: `scale(${stickmanWidth / 140}, ${
+                            stickmanHeight / 180
                           })`,
                         }}
                       >
-                        <circle cx="60" cy="20" r="16" />
-                        <line x1="60" y1="36" x2="60" y2="100" />
-                        <line x1="60" y1="60" x2="30" y2="46" />
-                        <line x1="60" y1="60" x2="90" y2="46" />
-                        <line x1="60" y1="100" x2="37" y2="140" />
-                        <line x1="60" y1="100" x2="83" y2="140" />
+                        <circle cx="70" cy="22" r="18" />
+                        <line x1="70" y1="40" x2="70" y2="115" />
+                        <line x1="70" y1="70" x2="35" y2="52" />
+                        <line x1="70" y1="70" x2="105" y2="52" />
+                        <line x1="70" y1="115" x2="43" y2="160" />
+                        <line x1="70" y1="115" x2="97" y2="160" />
                       </svg>
 
                       {/* Arrow pointing up */}

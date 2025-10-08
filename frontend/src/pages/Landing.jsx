@@ -229,6 +229,18 @@ export default function Landing() {
                 memberSince: user.memberSince,
               }}
               size="large"
+              stickmanStrokeWidth={
+                parseInt(localStorage.getItem("stickmanStrokeWidth")) || 3
+              }
+              stickmanColor={
+                localStorage.getItem("stickmanColor") || "smart-light-blue"
+              }
+              stickmanHeight={
+                parseInt(localStorage.getItem("stickmanHeight")) || 120
+              }
+              stickmanWidth={
+                parseInt(localStorage.getItem("stickmanWidth")) || 80
+              }
             />
           </div>
         </div>

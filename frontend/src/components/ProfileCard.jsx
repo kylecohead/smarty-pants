@@ -12,19 +12,21 @@ export default function ProfileCard({
     parseInt(localStorage.getItem("stickmanStrokeWidth")) ??
     3;
   const height =
-    stickmanHeight ??
-    parseInt(localStorage.getItem("stickmanHeight")) ?? 120;
-  const width = stickmanWidth ?? parseInt(localStorage.getItem("stickmanWidth")) ?? 80;
+    stickmanHeight ?? parseInt(localStorage.getItem("stickmanHeight")) ?? 120;
+  const width =
+    stickmanWidth ?? parseInt(localStorage.getItem("stickmanWidth")) ?? 80;
   const color =
-    stickmanColor ?? localStorage.getItem("stickmanColor") ?? "smart-light-blue";
+    stickmanColor ??
+    localStorage.getItem("stickmanColor") ??
+    "smart-light-blue";
 
   // Size classes based on the size prop
-  const sizeClasses = size === "large" ? "max-w-sm p-6" : "max-w-xs p-4";
+  const sizeClasses = size === "large" ? "max-w-lg p-8" : "max-w-xs p-4";
 
   return (
     <div>
       <div
-        className={`rounded-xl border-2 border-smart-light-blue bg-[#1a237e] ${sizeClasses} mx-auto`}
+        className={`rounded-xl border-2 border-${color} bg-[#1a237e] ${sizeClasses} mx-auto`}
       >
         {/* Username + Member Since */}
         <div className="text-center mb-3">
@@ -41,13 +43,13 @@ export default function ProfileCard({
           <div
             className="flex items-center justify-center"
             style={{
-              width: `${Math.max(80, width)}px`,
-              height: `${Math.max(120, height)}px`,
+              width: `${Math.max(60, width * 0.8)}px`,
+              height: `${Math.max(100, height * 0.8)}px`,
             }}
           >
             <svg
-              width={width}
-              height={height}
+              width={width * 0.8}
+              height={height * 0.8}
               viewBox={`0 0 ${width} ${height}`}
               className={`text-${color} opacity-80`}
               fill="none"
@@ -57,11 +59,7 @@ export default function ProfileCard({
               strokeLinejoin="round"
             >
               {/* Head */}
-              <circle
-                cx={width / 2}
-                cy={height * 0.125}
-                r={height * 0.1}
-              />
+              <circle cx={width / 2} cy={height * 0.125} r={height * 0.1} />
 
               {/* Body */}
               <line
