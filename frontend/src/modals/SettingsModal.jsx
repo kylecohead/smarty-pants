@@ -174,9 +174,9 @@ export default function SettingsModal() {
   }
 
   return (
-    <div className="flex rounded-xl border-4 border-smart-very-dark-navy bg-[#1a237e] overflow-hidden">
+    <div className="flex rounded-xl border-4 border-smart-orange bg-smart-dark-blue overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-48 shrink-0 border-r-4 border-smart-very-dark-navy bg-[#1a237e] p-4">
+      <aside className="w-48 shrink-0 border-r-4 border-smart-orange bg-smart-dark-blue p-4">
         <nav className="flex flex-col gap-3">
           {tabs.map((t) => (
             <NavLink
@@ -199,10 +199,10 @@ export default function SettingsModal() {
       </aside>
 
       {/* Content */}
-      <section className="flex-1 p-6 min-h-[450px] bg-[#1a237e]">
+      <section className="flex-1 p-6 min-h-[450px] bg-smart-login-bg">
         {active === "1" && (
           <div>
-            <h3 className="text-2xl font-heading text-smart-pink mb-4 text-center tracking-wider">
+            <h3 className="text-2xl font-heading text-smart-pink mb-4">
               ⚙️ UPDATE PROFILE
             </h3>
             <div className="h-px bg-smart-light-blue/30 mb-6"></div>
@@ -211,30 +211,30 @@ export default function SettingsModal() {
               {/* Left: Form */}
               <form className="flex flex-col gap-4" onSubmit={handleSave}>
                 {/* Username */}
-                <label className="flex flex-col text-sm font-body text-white">
+                <label className="flex flex-col text-sm font-body text-smart-light-blue">
                   Username
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="mt-2 rounded-lg border border-smart-pink bg-[#2d2d3a] px-4 py-3 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink"
+                    className="mt-2 rounded-lg border border-smart-light-blue bg-[#2d2d3a] px-4 py-3 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-purple"
                   />
                 </label>
 
                 {/* Password */}
-                <label className="flex flex-col text-sm font-body text-white">
+                <label className="flex flex-col text-sm font-body text-smart-light-blue">
                   Password
                   <div className="relative mt-2">
                     <input
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full rounded-lg border border-smart-pink bg-[#2d2d3a] px-4 py-3 pr-12 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink"
+                      className="w-full rounded-lg border border-smart-light-blue bg-[#2d2d3a] px-4 py-3 pr-12 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((p) => !p)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-body text-smart-pink hover:text-white"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-body text-smart-light-pink hover:text-smart-pink"
                     >
                       {showPassword ? "Hide" : "Show"}
                     </button>
@@ -242,7 +242,7 @@ export default function SettingsModal() {
                 </label>
 
                 {/* Edit Avatar */}
-                <div className="flex flex-col text-sm font-body text-white">
+                <div className="flex flex-col text-sm font-body text-smart-light-blue">
                   <span>Avatar Customization</span>
                   <button
                     type="button"
@@ -255,7 +255,7 @@ export default function SettingsModal() {
 
                 <button
                   type="submit"
-                  className="mt-4 rounded-xl bg-smart-pink px-4 py-3 font-button text-white hover:bg-smart-pink/80 transition"
+                  className="mt-4 rounded-xl bg-smart-green px-4 py-3 font-button text-black hover:bg-smart-light-blue transition"
                 >
                   Save Profile
                 </button>
@@ -281,23 +281,21 @@ export default function SettingsModal() {
 
         {active === "2" && (
           <div>
-            <h3 className="text-2xl font-heading text-smart-orange mb-4 text-center tracking-wider">
+            <h3 className="text-2xl font-heading text-smart-orange mb-4">
               🎨 AVATAR CUSTOMIZATION
             </h3>
-            <div className="h-px bg-smart-orange/30 mb-6"></div>
+            <div className="h-px bg-smart-light-blue/30 mb-6"></div>
 
-            <div className="space-y-8">
-              {/* Top: Controls and Avatar side by side */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Left: Controls */}
-                <div className="space-y-6">
-                  {/* Stroke Width */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left: Controls */}
+              <div className="space-y-6">
+                {/* Stroke Width */}
                 <div>
-                  <h4 className="mb-3 text-md font-body text-white">
+                  <h4 className="mb-3 text-md font-body text-smart-white">
                     Line Width
                   </h4>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm font-body text-white/60">
+                    <span className="text-sm font-body text-smart-white/60">
                       Thin
                     </span>
                     <input
@@ -315,7 +313,7 @@ export default function SettingsModal() {
                       }}
                       className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
                     />
-                    <span className="text-sm font-body text-white/60">
+                    <span className="text-sm font-body text-smart-white/60">
                       Thick
                     </span>
                     <span className="text-sm font-body text-smart-orange font-bold min-w-[2rem]">
@@ -326,11 +324,11 @@ export default function SettingsModal() {
 
                 {/* Height */}
                 <div>
-                  <h4 className="mb-3 text-md font-body text-white">
+                  <h4 className="mb-3 text-md font-body text-smart-white">
                     Height
                   </h4>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm font-body text-white/60">
+                    <span className="text-sm font-body text-smart-white/60">
                       Short
                     </span>
                     <input
@@ -348,7 +346,7 @@ export default function SettingsModal() {
                       }}
                       className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
                     />
-                    <span className="text-sm font-body text-white/60">
+                    <span className="text-sm font-body text-smart-white/60">
                       Tall
                     </span>
                     <span className="text-sm font-body text-smart-orange font-bold min-w-[2rem]">
@@ -359,11 +357,11 @@ export default function SettingsModal() {
 
                 {/* Width */}
                 <div>
-                  <h4 className="mb-3 text-md font-body text-white">
+                  <h4 className="mb-3 text-md font-body text-smart-white">
                     Width
                   </h4>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm font-body text-white/60">
+                    <span className="text-sm font-body text-smart-white/60">
                       Narrow
                     </span>
                     <input
@@ -381,7 +379,7 @@ export default function SettingsModal() {
                       }}
                       className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
                     />
-                    <span className="text-sm font-body text-white/60">
+                    <span className="text-sm font-body text-smart-white/60">
                       Wide
                     </span>
                     <span className="text-sm font-body text-smart-orange font-bold min-w-[2rem]">
@@ -390,13 +388,47 @@ export default function SettingsModal() {
                   </div>
                 </div>
 
-              {/* Right: Preview */}
-              <div className="flex flex-col items-center justify-start">
-                <h5 className="text-center text-sm font-body text-white mb-4 flex items-center justify-center gap-2">
-                  {username.toUpperCase()}
-                  <span className="text-white">↓</span>
-                </h5>
+                {/* Color */}
                 <div>
+                  <h4 className="mb-3 text-md font-body text-smart-white">
+                    Color
+                  </h4>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { name: "smart-light-blue", label: "Blue" },
+                      { name: "smart-green", label: "Green" },
+                      { name: "smart-yellow", label: "Yellow" },
+                      { name: "smart-orange", label: "Orange" },
+                      { name: "smart-red", label: "Red" },
+                      { name: "smart-purple", label: "Purple" },
+                      { name: "smart-light-pink", label: "Pink" },
+                      { name: "smart-white", label: "White" },
+                    ].map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => {
+                          setStickmanColor(color.name);
+                          localStorage.setItem("stickmanColor", color.name);
+                        }}
+                        className={`rounded-lg p-3 text-xs font-body transition border-2 ${
+                          stickmanColor === color.name
+                            ? `bg-${color.name} text-smart-black border-${color.name}`
+                            : `text-${color.name} border-${color.name} hover:bg-${color.name}/20`
+                        }`}
+                      >
+                        {color.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Preview */}
+              <div className="flex items-center justify-center">
+                <div className="p-6 rounded-lg border-2 border-smart-orange bg-smart-dark-blue">
+                  <h5 className="text-center text-sm font-body text-smart-white mb-4">
+                    Preview
+                  </h5>
                   <svg
                     width={stickmanWidth}
                     height={stickmanHeight}
@@ -446,65 +478,30 @@ export default function SettingsModal() {
                   </svg>
                 </div>
               </div>
-
-              {/* Bottom: Color Selection as Fat Squares */}
-              <div className="mt-8">
-                <h4 className="mb-4 text-md font-body text-white text-center">
-                  Color
-                </h4>
-                <div className="grid grid-cols-4 gap-3">
-                  {[
-                    { name: "smart-light-blue", label: "Blue" },
-                    { name: "smart-green", label: "Green" },
-                    { name: "smart-yellow", label: "Yellow" },
-                    { name: "smart-orange", label: "Orange" },
-                    { name: "smart-red", label: "Red" },
-                    { name: "smart-purple", label: "Purple" },
-                    { name: "smart-light-pink", label: "Pink" },
-                    { name: "smart-white", label: "White" },
-                  ].map((color) => (
-                    <button
-                      key={color.name}
-                      onClick={() => {
-                        setStickmanColor(color.name);
-                        localStorage.setItem("stickmanColor", color.name);
-                      }}
-                      className={`rounded-lg px-6 py-6 text-xs font-body transition border-2 aspect-square ${
-                        stickmanColor === color.name
-                          ? `bg-${color.name} text-smart-black border-${color.name}`
-                          : `text-${color.name} border-${color.name} hover:bg-${color.name}/20`
-                      }`}
-                    >
-                      {color.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              </div>
             </div>
           </div>
         )}
 
         {active === "3" && (
           <div>
-            <h3 className="mb-4 text-2xl font-heading text-smart-light-blue text-center tracking-wider">
+            <h3 className="mb-4 text-2xl font-heading text-smart-light-blue">
               🚀 YOUR EPIC STATS
             </h3>
             <div className="h-px bg-smart-light-blue/30 mb-6"></div>
 
             <div className="space-y-4">
               {/* Core Stats */}
-              <div className="flex items-center justify-between text-sm font-body text-white">
+              <div className="flex items-center justify-between text-sm font-body text-smart-white">
                 <span>Games Played</span>
-                <span className="font-bold text-smart-light-blue">
+                <span className="font-bold text-smart-green">
                   {gamesPlayed}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-sm font-body text-white">
+              <div className="flex items-center justify-between text-sm font-body text-smart-white">
                 <span>High Score</span>
-                <span className="font-bold text-smart-light-blue">{highScore}</span>
+                <span className="font-bold text-smart-pink">{highScore}</span>
               </div>
-              <div className="flex items-center justify-between text-sm font-body text-white">
+              <div className="flex items-center justify-between text-sm font-body text-smart-white">
                 <span>Win Rate</span>
                 <span className="font-bold text-smart-light-blue">
                   {((wins / gamesPlayed) * 100).toFixed(1)}%
@@ -513,24 +510,24 @@ export default function SettingsModal() {
 
               {/* Fun Bars */}
               <div>
-                <p className="mb-1 text-sm font-body font-semibold text-white">
+                <p className="mb-1 text-sm font-body font-semibold text-smart-light-pink">
                   😎 Aura
                 </p>
                 <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
                   <div
-                    className="h-3 rounded-full bg-smart-light-blue"
+                    className="h-3 rounded-full bg-smart-pink"
                     style={{ width: `${Math.min(100, wins * 8)}%` }}
                   ></div>
                 </div>
               </div>
 
               <div>
-                <p className="mb-1 text-sm font-body font-semibold text-white">
+                <p className="mb-1 text-sm font-body font-semibold text-smart-green">
                   🧠 Brain Power
                 </p>
                 <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
                   <div
-                    className="h-3 rounded-full bg-smart-light-blue"
+                    className="h-3 rounded-full bg-smart-green"
                     style={{
                       width: `${Math.min(100, (highScore / 3000) * 100)}%`,
                     }}
@@ -539,12 +536,12 @@ export default function SettingsModal() {
               </div>
 
               <div>
-                <p className="mb-1 text-sm font-body font-semibold text-white">
+                <p className="mb-1 text-sm font-body font-semibold text-smart-orange">
                   🔥 Dedication
                 </p>
                 <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
                   <div
-                    className="h-3 rounded-full bg-smart-light-blue"
+                    className="h-3 rounded-full bg-smart-orange"
                     style={{ width: `${Math.min(100, gamesPlayed * 2)}%` }}
                   ></div>
                 </div>
@@ -555,33 +552,37 @@ export default function SettingsModal() {
 
         {active === "4" && (
           <div>
-            <h3 className="mb-4 text-2xl font-heading text-smart-purple text-center tracking-wider">
+            <h3 className="mb-4 text-2xl font-heading text-smart-purple">
               🎯 MATCH HISTORY
             </h3>
-            <div className="h-px bg-smart-purple/30 mb-6"></div>
+            <div className="h-px bg-smart-light-blue/30 mb-6"></div>
             <div className="grid gap-4 md:grid-cols-2">
               {matchHistory.map((m) => (
                 <div
                   key={m.id}
-                  className="rounded-xl border-2 border-smart-purple bg-smart-black/30 p-4 hover:border-smart-purple/80 transition"
+                  className="rounded-xl border-2 border-smart-purple bg-smart-black/30 p-4 hover:border-smart-light-blue transition"
                 >
-                  <div className="flex items-center justify-between text-xs font-body text-white">
+                  <div className="flex items-center justify-between text-xs font-body text-smart-light-blue">
                     <span>{new Date(m.date).toLocaleDateString()}</span>
-                    <span className="uppercase text-smart-purple">
+                    <span className="uppercase text-smart-yellow">
                       {m.category}
                     </span>
                   </div>
 
-                  <p className="mt-2 text-lg font-body font-bold text-white">
+                  <p className="mt-2 text-lg font-body font-bold text-smart-white">
                     Score: {m.score}
                   </p>
-                  <p className="text-sm font-body text-smart-purple">
+                  <p className="text-sm font-body text-smart-light-pink">
                     Placement: #{m.placement}
                   </p>
 
                   <div className="mt-3 h-2 w-full rounded-full bg-smart-black overflow-hidden">
                     <div
-                      className="h-2 rounded-full bg-smart-purple"
+                      className={`h-2 rounded-full ${
+                        m.placement === 1
+                          ? "bg-smart-yellow"
+                          : "bg-smart-purple"
+                      }`}
                       style={{
                         width: `${Math.min(100, (m.score / highScore) * 100)}%`,
                       }}
