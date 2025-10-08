@@ -56,6 +56,7 @@ model Match {
   difficulty  String?
   isPublic    Boolean       @default(true)
   maxPlayers  Int           @default(5)
+  timeLimit   Int           @default(10) // Seconds per question
   status      MatchStatus   @default(LOBBY)
   createdAt   DateTime      @default(now())
   startedAt   DateTime?
