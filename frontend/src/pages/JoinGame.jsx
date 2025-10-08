@@ -1,5 +1,5 @@
 /**
- * NINA 
+ * NINA
  * PAGE: Join Game (spec #6)
  * Displays match details and allows player to join.
  * "Join Game" -> /lobby/:matchId
@@ -8,6 +8,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { api } from "../services/api";
 
 import backGeneral from "../assets/backGeneral.jpg";
 import backScience from "../assets/backScience.jpg";
@@ -80,26 +81,19 @@ export default function JoinGame() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-
   useEffect(() => {
     const fetchMatch = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-          setError("You must be logged in to view this match.");
-          setLoading(false);
-          return;
-        }
-        const res = await fetch(`${API_URL}/matches/${matchId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error("Failed to load match.");
-        const data = await res.json();
+        // Use API service with session cookie authentication
+        const data = await api.getMatch(matchId);
         setMatch(data.match || data);
       } catch (err) {
         console.error(err);
-        setError("Unable to load match details.");
+        if (err.message === "Not authenticated") {
+          setError("Unauthorized. Please log in again.");
+        } else {
+          setError("Unable to load match details.");
+        }
       } finally {
         setLoading(false);
       }
@@ -171,13 +165,16 @@ export default function JoinGame() {
             <div className="flex flex-wrap items-center gap-3">
               <div
                 className={`rounded-2xl px-4 py-2 text-sm font-medium ${
-                  match.isPublic ? "bg-emerald-500 text-black" : "bg-amber-500 text-black"
+                  match.isPublic
+                    ? "bg-emerald-500 text-black"
+                    : "bg-amber-500 text-black"
                 }`}
               >
                 {match.isPublic ? "🌍 Public" : "🔒 Private"}
               </div>
               <div className="rounded-2xl px-4 py-2 text-sm font-medium bg-white/10 text-white">
-                👥 {match.currentPlayers?.length || 1}/{match.maxPlayers || 6} Players
+                👥 {match.currentPlayers?.length || 1}/{match.maxPlayers || 6}{" "}
+                Players
               </div>
               <div className="rounded-2xl px-4 py-2 text-sm font-medium bg-white/10 text-white">
                 👑 Host: @{match.host?.username || "unknown"}
@@ -198,7 +195,8 @@ export default function JoinGame() {
                   </div>
                 ))}
                 {Array.from({
-                  length: (match.maxPlayers || 6) -
+                  length:
+                    (match.maxPlayers || 6) -
                     (match.currentPlayers?.length || 1),
                 }).map((_, i) => (
                   <div key={i} className="relative">
