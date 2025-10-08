@@ -68,7 +68,6 @@ export default function Lobby() {
       setPlayers(players);
     });
 
-
     // socket.on("matchStarted", ({ firstQuestion }) => {
     //   console.log("🏁 Match started!");
     //   navigate(`/game/play/${matchId}`, { state: { firstQuestion } });
@@ -77,9 +76,6 @@ export default function Lobby() {
       console.log("🏁 Match started!");
       navigate(`/game/play/${matchId}`);
     });
-
-
-
 
     socket.on("matchEnded", ({ scores }) => {
       console.log("🎯 Match ended:", scores);
@@ -122,7 +118,6 @@ export default function Lobby() {
         console.log("🔄 Transitioning to gameplay — keeping socket alive");
       }
     };
-
   }, [matchId, navigate]);
 
   // Listen for playersUpdate
@@ -156,8 +151,6 @@ export default function Lobby() {
     })();
   }, [matchId, currentUser]);
 
-  const isLobbyFull = players.length >= 2;
-
   const handleStartGame = () => {
     const socket = socketRef.current;
     if (!socket) return console.warn("⚠️ No socket instance found");
@@ -170,7 +163,6 @@ export default function Lobby() {
     console.log("🚀 Starting match:", matchId);
     socket.emit("startMatch", { matchId });
   };
-
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
@@ -242,9 +234,9 @@ export default function Lobby() {
             <div className="mt-8 flex justify-center gap-4">
               <button
                 onClick={handleStartGame}
-                disabled={!isLobbyFull}
+                disabled={!socketConnected}
                 className={`rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg transition-opacity ${
-                  isLobbyFull
+                  socketConnected
                     ? "bg-smart-red hover:opacity-80 text-white"
                     : "bg-white/10 text-white/50 cursor-not-allowed"
                 }`}
@@ -257,8 +249,8 @@ export default function Lobby() {
 
         <p className="mt-4 text-center text-xs" style={{ color: colors.muted }}>
           Anyone entering{" "}
-          <span className="text-white/70">/lobby/{matchId}</span> will
-          auto-join the room.
+          <span className="text-white/70">/lobby/{matchId}</span> will auto-join
+          the room.
         </p>
       </div>
 
