@@ -9,7 +9,7 @@ module.exports = {
         colors: {
         //Add colours here
         "smart-light-blue": "#00CFFF", // neon cyan-blue
-        "smart-dark-blue": "#1F51FF", // bright neon navy/royal blue
+        "smart-dark-blue": "#1740d1ff", // bright neon navy/royal blue
         "smart-red": "#FF073A", // neon red
         "smart-pink": "#FF1493", // neon pink (deep)
         "smart-light-pink": "#FF66CC", // lighter bright neon pink

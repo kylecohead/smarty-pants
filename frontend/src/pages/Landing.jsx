@@ -228,6 +228,7 @@ export default function Landing() {
                 wins: user.wins,
                 memberSince: user.memberSince,
               }}
+              size="large"
             />
           </div>
         </div>
