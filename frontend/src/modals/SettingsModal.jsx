@@ -226,47 +226,35 @@ export default function SettingsModal() {
                   {/* Left: Form */}
                   <form className="flex flex-col gap-4" onSubmit={handleSave}>
                     {/* Username */}
-                    <label className="flex flex-col text-sm font-body text-smart-pink">
+                    <label className="flex flex-col text-lg font-body text-smart-pink">
                       Username
                       <input
                         type="text"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className="mt-2 rounded-lg border border-smart-pink bg-[#2d2d3a] px-4 py-3 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink"
+                        className="mt-2 rounded-lg border border-smart-pink bg-[#2d2d3a] px-4 py-3 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink text-lg"
                       />
                     </label>
 
                     {/* Password */}
-                    <label className="flex flex-col text-sm font-body text-smart-pink">
+                    <label className="flex flex-col text-lg font-body text-smart-pink">
                       Password
                       <div className="relative mt-2">
                         <input
                           type={showPassword ? "text" : "password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="w-full rounded-lg border border-smart-pink bg-[#2d2d3a] px-4 py-3 pr-12 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink"
+                          className="w-full rounded-lg border border-smart-pink bg-[#2d2d3a] px-4 py-3 pr-12 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink text-lg"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword((p) => !p)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-body text-smart-light-pink hover:text-smart-pink"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-lg font-body text-smart-light-pink hover:text-smart-pink"
                         >
                           {showPassword ? "Hide" : "Show"}
                         </button>
                       </div>
                     </label>
-
-                    {/* Edit Avatar */}
-                    <div className="flex flex-col text-sm font-body text-smart-pink">
-                      <span>Avatar Customization</span>
-                      <button
-                        type="button"
-                        onClick={() => navigate("/landing/settings/2")}
-                        className="mt-2 rounded-lg border-2 border-smart-orange bg-smart-orange px-4 py-3 text-sm font-button text-black hover:bg-smart-orange/80 transition"
-                      >
-                        🎨 Edit Avatar
-                      </button>
-                    </div>
 
                     <button
                       type="submit"
@@ -288,6 +276,9 @@ export default function SettingsModal() {
                         memberSince,
                       }}
                       stickmanStrokeWidth={stickmanStrokeWidth}
+                      stickmanColor={stickmanColor}
+                      stickmanHeight={stickmanHeight}
+                      stickmanWidth={stickmanWidth}
                     />
                   </div>
                 </div>
@@ -306,11 +297,11 @@ export default function SettingsModal() {
                   <div className="flex-1 space-y-6">
                     {/* Stroke Width */}
                     <div>
-                      <h4 className="mb-3 text-md font-body text-smart-orange">
+                      <h4 className="mb-3 text-xl font-body text-smart-orange">
                         Line Width
                       </h4>
                       <div className="flex items-center gap-4">
-                        <span className="text-sm font-body text-smart-orange/60">
+                        <span className="text-lg font-body text-smart-orange/60">
                           Thin
                         </span>
                         <input
@@ -328,10 +319,10 @@ export default function SettingsModal() {
                           }}
                           className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
                         />
-                        <span className="text-sm font-body text-smart-orange/60">
+                        <span className="text-lg font-body text-smart-orange/60">
                           Thick
                         </span>
-                        <span className="text-sm font-body text-smart-orange font-bold min-w-[2rem]">
+                        <span className="text-lg font-body text-smart-orange font-bold min-w-[2rem]">
                           {stickmanStrokeWidth}
                         </span>
                       </div>
@@ -339,11 +330,11 @@ export default function SettingsModal() {
 
                     {/* Height */}
                     <div>
-                      <h4 className="mb-3 text-md font-body text-smart-orange">
+                      <h4 className="mb-3 text-xl font-body text-smart-orange">
                         Height
                       </h4>
                       <div className="flex items-center gap-4">
-                        <span className="text-sm font-body text-smart-orange/60">
+                        <span className="text-lg font-body text-smart-orange/60">
                           Short
                         </span>
                         <input
@@ -361,10 +352,10 @@ export default function SettingsModal() {
                           }}
                           className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
                         />
-                        <span className="text-sm font-body text-smart-orange/60">
+                        <span className="text-lg font-body text-smart-orange/60">
                           Tall
                         </span>
-                        <span className="text-sm font-body text-smart-orange font-bold min-w-[2rem]">
+                        <span className="text-lg font-body text-smart-orange font-bold min-w-[2rem]">
                           {stickmanHeight}
                         </span>
                       </div>
@@ -372,11 +363,11 @@ export default function SettingsModal() {
 
                     {/* Width */}
                     <div>
-                      <h4 className="mb-3 text-md font-body text-smart-orange">
+                      <h4 className="mb-3 text-xl font-body text-smart-orange">
                         Width
                       </h4>
                       <div className="flex items-center gap-4">
-                        <span className="text-sm font-body text-smart-orange/60">
+                        <span className="text-lg font-body text-smart-orange/60">
                           Narrow
                         </span>
                         <input
@@ -394,10 +385,10 @@ export default function SettingsModal() {
                           }}
                           className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
                         />
-                        <span className="text-sm font-body text-smart-orange/60">
+                        <span className="text-lg font-body text-smart-orange/60">
                           Wide
                         </span>
-                        <span className="text-sm font-body text-smart-orange font-bold min-w-[2rem]">
+                        <span className="text-lg font-body text-smart-orange font-bold min-w-[2rem]">
                           {stickmanWidth}
                         </span>
                       </div>
@@ -405,7 +396,7 @@ export default function SettingsModal() {
 
                     {/* Color */}
                     <div>
-                      <h4 className="mb-3 text-md font-body text-smart-orange">
+                      <h4 className="mb-3 text-xl font-body text-smart-orange">
                         Color
                       </h4>
                       <div className="grid grid-cols-4 gap-2">
@@ -425,7 +416,7 @@ export default function SettingsModal() {
                               setStickmanColor(color.name);
                               localStorage.setItem("stickmanColor", color.name);
                             }}
-                            className={`rounded-lg p-3 text-xs font-body transition border-2 ${
+                            className={`rounded-lg p-3 text-lg font-body transition border-2 ${
                               stickmanColor === color.name
                                 ? `bg-${color.name} text-smart-black border-${color.name}`
                                 : `text-${color.name} border-${color.name} hover:bg-${color.name}/20`
@@ -496,19 +487,19 @@ export default function SettingsModal() {
 
                 <div className="space-y-4">
                   {/* Core Stats */}
-                  <div className="flex items-center justify-between text-sm font-body text-smart-light-blue">
+                  <div className="flex items-center justify-between text-lg font-body text-smart-light-blue">
                     <span>Games Played</span>
                     <span className="font-bold text-smart-light-blue">
                       {gamesPlayed}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm font-body text-smart-light-blue">
+                  <div className="flex items-center justify-between text-lg font-body text-smart-light-blue">
                     <span>High Score</span>
                     <span className="font-bold text-smart-light-blue">
                       {highScore}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm font-body text-smart-light-blue">
+                  <div className="flex items-center justify-between text-lg font-body text-smart-light-blue">
                     <span>Win Rate</span>
                     <span className="font-bold text-smart-light-blue">
                       {((wins / gamesPlayed) * 100).toFixed(1)}%
@@ -517,7 +508,7 @@ export default function SettingsModal() {
 
                   {/* Fun Bars */}
                   <div>
-                    <p className="mb-1 text-sm font-body font-semibold text-smart-light-blue">
+                    <p className="mb-1 text-lg font-body font-semibold text-smart-light-blue">
                       😎 Aura
                     </p>
                     <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
@@ -529,7 +520,7 @@ export default function SettingsModal() {
                   </div>
 
                   <div>
-                    <p className="mb-1 text-sm font-body font-semibold text-smart-light-blue">
+                    <p className="mb-1 text-lg font-body font-semibold text-smart-light-blue">
                       🧠 Brain Power
                     </p>
                     <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
@@ -543,7 +534,7 @@ export default function SettingsModal() {
                   </div>
 
                   <div>
-                    <p className="mb-1 text-sm font-body font-semibold text-smart-light-blue">
+                    <p className="mb-1 text-lg font-body font-semibold text-smart-light-blue">
                       🔥 Dedication
                     </p>
                     <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
@@ -569,17 +560,17 @@ export default function SettingsModal() {
                       key={m.id}
                       className="rounded-xl border-2 border-smart-purple bg-smart-black/30 p-4 hover:border-smart-light-blue transition"
                     >
-                      <div className="flex items-center justify-between text-xs font-body text-smart-purple">
+                      <div className="flex items-center justify-between text-lg font-body text-smart-purple">
                         <span>{new Date(m.date).toLocaleDateString()}</span>
                         <span className="uppercase text-smart-purple">
                           {m.category}
                         </span>
                       </div>
 
-                      <p className="mt-2 text-lg font-body font-bold text-smart-purple">
+                      <p className="mt-2 text-xl font-body font-bold text-smart-purple">
                         Score: {m.score}
                       </p>
-                      <p className="text-sm font-body text-smart-purple">
+                      <p className="text-lg font-body text-smart-purple">
                         Placement: #{m.placement}
                       </p>
 

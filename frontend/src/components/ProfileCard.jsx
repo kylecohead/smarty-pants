@@ -1,6 +1,9 @@
 export default function ProfileCard({
   user,
   stickmanStrokeWidth,
+  stickmanColor,
+  stickmanHeight,
+  stickmanWidth,
   size = "default",
 }) {
   // Get customization settings from props or localStorage
@@ -8,11 +11,12 @@ export default function ProfileCard({
     stickmanStrokeWidth ??
     parseInt(localStorage.getItem("stickmanStrokeWidth")) ??
     3;
-  const stickmanHeight =
+  const height =
+    stickmanHeight ??
     parseInt(localStorage.getItem("stickmanHeight")) ?? 120;
-  const stickmanWidth = parseInt(localStorage.getItem("stickmanWidth")) ?? 80;
-  const stickmanColor =
-    localStorage.getItem("stickmanColor") ?? "smart-light-blue";
+  const width = stickmanWidth ?? parseInt(localStorage.getItem("stickmanWidth")) ?? 80;
+  const color =
+    stickmanColor ?? localStorage.getItem("stickmanColor") ?? "smart-light-blue";
 
   // Size classes based on the size prop
   const sizeClasses = size === "large" ? "max-w-sm p-6" : "max-w-xs p-4";
@@ -24,7 +28,7 @@ export default function ProfileCard({
       >
         {/* Username + Member Since */}
         <div className="text-center mb-3">
-          <h2 className="font-heading text-lg font-bold text-smart-white">
+          <h2 className={`font-heading text-2xl font-bold text-${color}`}>
             {user.username.toUpperCase()}
           </h2>
           <p className="font-body text-smart-white/60 text-xs">
@@ -37,15 +41,15 @@ export default function ProfileCard({
           <div
             className="flex items-center justify-center"
             style={{
-              width: `${Math.max(80, stickmanWidth)}px`,
-              height: `${Math.max(120, stickmanHeight)}px`,
+              width: `${Math.max(80, width)}px`,
+              height: `${Math.max(120, height)}px`,
             }}
           >
             <svg
-              width={stickmanWidth}
-              height={stickmanHeight}
-              viewBox={`0 0 ${stickmanWidth} ${stickmanHeight}`}
-              className={`text-${stickmanColor} opacity-80`}
+              width={width}
+              height={height}
+              viewBox={`0 0 ${width} ${height}`}
+              className={`text-${color} opacity-80`}
               fill="none"
               stroke="currentColor"
               strokeWidth={strokeWidth}
@@ -54,45 +58,45 @@ export default function ProfileCard({
             >
               {/* Head */}
               <circle
-                cx={stickmanWidth / 2}
-                cy={stickmanHeight * 0.125}
-                r={stickmanHeight * 0.1}
+                cx={width / 2}
+                cy={height * 0.125}
+                r={height * 0.1}
               />
 
               {/* Body */}
               <line
-                x1={stickmanWidth / 2}
-                y1={stickmanHeight * 0.225}
-                x2={stickmanWidth / 2}
-                y2={stickmanHeight * 0.625}
+                x1={width / 2}
+                y1={height * 0.225}
+                x2={width / 2}
+                y2={height * 0.625}
               />
 
               {/* Arms */}
               <line
-                x1={stickmanWidth / 2}
-                y1={stickmanHeight * 0.375}
-                x2={stickmanWidth * 0.25}
-                y2={stickmanHeight * 0.29}
+                x1={width / 2}
+                y1={height * 0.375}
+                x2={width * 0.25}
+                y2={height * 0.29}
               />
               <line
-                x1={stickmanWidth / 2}
-                y1={stickmanHeight * 0.375}
-                x2={stickmanWidth * 0.75}
-                y2={stickmanHeight * 0.29}
+                x1={width / 2}
+                y1={height * 0.375}
+                x2={width * 0.75}
+                y2={height * 0.29}
               />
 
               {/* Legs */}
               <line
-                x1={stickmanWidth / 2}
-                y1={stickmanHeight * 0.625}
-                x2={stickmanWidth * 0.31}
-                y2={stickmanHeight * 0.875}
+                x1={width / 2}
+                y1={height * 0.625}
+                x2={width * 0.31}
+                y2={height * 0.875}
               />
               <line
-                x1={stickmanWidth / 2}
-                y1={stickmanHeight * 0.625}
-                x2={stickmanWidth * 0.69}
-                y2={stickmanHeight * 0.875}
+                x1={width / 2}
+                y1={height * 0.625}
+                x2={width * 0.69}
+                y2={height * 0.875}
               />
             </svg>
           </div>
