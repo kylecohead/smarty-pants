@@ -1,5 +1,6 @@
 import express from "express";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 import authMiddleware from "../middleware/authMiddleware.js";
 
@@ -24,6 +25,14 @@ router.post("/signup", async (req, res) => {
       role: user.role,
     };
 
+    // Generate JWT token for Socket.IO authentication
+    const JWT_SECRET = process.env.ACCESS_TOKEN_SECRET || "your-secret-key-change-this-in-production";
+    const token = jwt.sign(
+      { id: user.id, username: user.username, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
     res.json({ 
       success: true, 
       user: { 
@@ -31,7 +40,8 @@ router.post("/signup", async (req, res) => {
         username: user.username, 
         email: user.email, 
         role: user.role 
-      } 
+      },
+      token: token // Return JWT token for Socket.IO
     });
   } catch (err) {
     res.status(400).json({ error: "User already exists" });
@@ -68,6 +78,14 @@ router.post("/login", async (req, res) => {
     req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours (default)
   }
 
+  // Generate JWT token for Socket.IO authentication
+  const JWT_SECRET = process.env.ACCESS_TOKEN_SECRET || "your-secret-key-change-this-in-production";
+  const token = jwt.sign(
+    { id: user.id, username: user.username, email: user.email, role: user.role },
+    JWT_SECRET,
+    { expiresIn: rememberMe ? "30d" : "24h" }
+  );
+
   res.json({ 
     success: true, 
     user: { 
@@ -76,6 +94,7 @@ router.post("/login", async (req, res) => {
       email: user.email, 
       role: user.role 
     },
+    token: token, // Return JWT token for Socket.IO
     rememberMe: rememberMe || false
   });
 });
