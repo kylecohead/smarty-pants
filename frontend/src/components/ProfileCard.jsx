@@ -26,25 +26,36 @@ export default function ProfileCard({
   return (
     <div>
       <div
-        className={`rounded-xl border-2 border-${color} bg-[#1a237e] ${sizeClasses} mx-auto`}
+        className={`rounded-xl border-4 border-${color} bg-[#1a237e] ${sizeClasses} mx-auto`}
       >
-        {/* Username + Member Since */}
+        {/* Username */}
         <div className={`text-center ${size === "large" ? "mb-6" : "mb-3"}`}>
-          <h2 className={`font-heading ${size === "large" ? "text-4xl" : "text-2xl"} font-bold text-${color}`}>
+          <h2
+            className={`font-heading ${
+              size === "large" ? "text-5xl" : "text-3xl"
+            } font-bold text-${color}`}
+          >
             {user.username.toUpperCase()}
           </h2>
-          <p className={`font-body text-smart-white/60 ${size === "large" ? "text-lg" : "text-xs"}`}>
-            EST. {new Date(user.memberSince).toLocaleDateString()}
-          </p>
         </div>
 
         {/* Avatar - Customizable Stick Man */}
-        <div className={`flex justify-center ${size === "large" ? "mb-8" : "mb-4"}`}>
+        <div
+          className={`flex justify-center ${
+            size === "large" ? "mb-2" : "mb-1"
+          }`}
+        >
           <div
             className="flex items-center justify-center"
             style={{
-              width: `${Math.max(60, width * (size === "large" ? 1.5 : 0.8))}px`,
-              height: `${Math.max(100, height * (size === "large" ? 1.5 : 0.8))}px`,
+              width: `${Math.max(
+                60,
+                width * (size === "large" ? 1.5 : 0.8)
+              )}px`,
+              height: `${Math.max(
+                100,
+                height * (size === "large" ? 1.5 : 0.8)
+              )}px`,
             }}
           >
             <svg
@@ -100,25 +111,78 @@ export default function ProfileCard({
           </div>
         </div>
 
+        {/* Member Since */}
+        <div className={`text-center ${size === "large" ? "mb-8" : "mb-4"}`}>
+          <p
+            className={`font-body text-smart-white/60 ${
+              size === "large" ? "text-xl" : "text-sm"
+            }`}
+          >
+            EST. {new Date(user.memberSince).toLocaleDateString()}
+          </p>
+        </div>
+
         {/* User Stats - Compact */}
-        <div className={`grid grid-cols-3 ${size === "large" ? "gap-4" : "gap-2"}`}>
-          <div className={`rounded-lg border border-smart-green bg-smart-dark-blue ${size === "large" ? "p-4" : "p-2"} text-center`}>
-            <p className={`font-body text-smart-white/60 ${size === "large" ? "text-sm mb-2" : "text-xs mb-1"}`}>Games</p>
-            <p className={`font-heading ${size === "large" ? "text-xl" : "text-sm"} font-bold text-smart-green`}>
+        <div
+          className={`grid grid-cols-3 ${size === "large" ? "gap-4" : "gap-2"}`}
+        >
+          <div
+            className={`rounded-lg border-2 border-smart-purple bg-smart-dark-blue ${
+              size === "large" ? "p-4" : "p-2"
+            } text-center`}
+          >
+            <p
+              className={`font-body font-bold text-smart-white/60 ${
+                size === "large" ? "text-xl mb-2" : "text-base mb-1"
+              }`}
+            >
+              Games
+            </p>
+            <p
+              className={`font-heading ${
+                size === "large" ? "text-2xl" : "text-base"
+              } font-bold text-smart-purple`}
+            >
               {user.gamesPlayed}
             </p>
           </div>
-          <div className={`rounded-lg border border-smart-yellow bg-smart-dark-blue ${size === "large" ? "p-4" : "p-2"} text-center`}>
-            <p className={`font-body text-smart-white/60 ${size === "large" ? "text-sm mb-2" : "text-xs mb-1"}`}>
+          <div
+            className={`rounded-lg border-2 border-smart-orange bg-smart-dark-blue ${
+              size === "large" ? "p-4" : "p-2"
+            } text-center`}
+          >
+            <p
+              className={`font-body font-bold text-smart-white/60 ${
+                size === "large" ? "text-xl mb-2" : "text-base mb-1"
+              }`}
+            >
               High Score
             </p>
-            <p className={`font-heading ${size === "large" ? "text-xl" : "text-sm"} font-bold text-smart-yellow`}>
+            <p
+              className={`font-heading ${
+                size === "large" ? "text-2xl" : "text-base"
+              } font-bold text-smart-orange`}
+            >
               {user.highScore.toLocaleString()}
             </p>
           </div>
-          <div className={`rounded-lg border border-smart-light-blue bg-smart-dark-blue ${size === "large" ? "p-4" : "p-2"} text-center`}>
-            <p className={`font-body text-smart-white/60 ${size === "large" ? "text-sm mb-2" : "text-xs mb-1"}`}>Wins</p>
-            <p className={`font-heading ${size === "large" ? "text-xl" : "text-sm"} font-bold text-smart-light-blue`}>
+          <div
+            className={`rounded-lg border-2 border-smart-green bg-smart-dark-blue ${
+              size === "large" ? "p-4" : "p-2"
+            } text-center`}
+          >
+            <p
+              className={`font-body font-bold text-smart-white/60 ${
+                size === "large" ? "text-xl mb-2" : "text-base mb-1"
+              }`}
+            >
+              Wins
+            </p>
+            <p
+              className={`font-heading ${
+                size === "large" ? "text-2xl" : "text-base"
+              } font-bold text-smart-green`}
+            >
               {user.wins}
             </p>
           </div>

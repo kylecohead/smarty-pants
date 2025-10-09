@@ -47,6 +47,9 @@ export default function SettingsModal() {
   const [avatar, setAvatar] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Logout modal state
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   // Stick man settings
   const [stickmanStrokeWidth, setStickmanStrokeWidth] = useState(() => {
     return parseInt(localStorage.getItem("stickmanStrokeWidth")) || 3;
@@ -114,6 +117,18 @@ export default function SettingsModal() {
     }
     fetchUser();
   }, []);
+
+  // Logout functions
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    setShowLogoutModal(false);
+    navigate("/"); // Navigate to home page
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
+  };
 
   // Upload avatar
   async function handleAvatarUpload(file) {
@@ -247,6 +262,16 @@ export default function SettingsModal() {
                 </NavLink>
               ))}
             </nav>
+
+            {/* Logout Button */}
+            <div className="mt-6">
+              <button
+                onClick={() => setShowLogoutModal(true)}
+                className="rounded-lg border-2 border-smart-red bg-smart-red/20 hover:bg-smart-red/30 px-6 py-4 font-heading text-sm tracking-wide text-smart-red transition-colors w-full text-center"
+              >
+                🚪 LOG OUT
+              </button>
+            </div>
           </aside>
 
           {/* Content */}
@@ -643,7 +668,7 @@ export default function SettingsModal() {
             {active === "4" && (
               <div>
                 <h3 className="mb-4 text-2xl font-heading text-smart-purple">
-                  🎯 MATCH HISTORY
+                  MATCH HISTORY
                 </h3>
                 <div className="h-px bg-smart-purple/30 mb-6"></div>
                 <div className="grid gap-4 md:grid-cols-2">
@@ -689,6 +714,34 @@ export default function SettingsModal() {
           </section>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="max-w-md mx-4 rounded-2xl bg-smart-dark-blue border-2 border-smart-red p-6 shadow-xl">
+            <h3 className="mb-4 text-2xl font-heading text-smart-red text-center">
+              Log Out
+            </h3>
+            <p className="mb-6 text-center text-smart-white font-body">
+              Are you sure you want to log out?
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={handleLogoutCancel}
+                className="rounded-xl border-2 border-smart-white/30 bg-smart-white/10 hover:bg-smart-white/20 px-6 py-2 font-button text-smart-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="rounded-xl border-2 border-smart-red bg-smart-red hover:bg-smart-red/80 px-6 py-2 font-button text-smart-white transition-colors"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -18,6 +18,11 @@ const mockLeaderboard = [
   { rank: 3, name: "mason", highScore: 2100, avatar: "M" },
   { rank: 4, name: "sara", highScore: 1950, avatar: "S" },
   { rank: 5, name: "jo", highScore: 1850, avatar: "J" },
+  { rank: 6, name: "kai", highScore: 1750, avatar: "K" },
+  { rank: 7, name: "zoe", highScore: 1650, avatar: "Z" },
+  { rank: 8, name: "ben", highScore: 1550, avatar: "B" },
+  { rank: 9, name: "mia", highScore: 1450, avatar: "M" },
+  { rank: 10, name: "leo", highScore: 1350, avatar: "L" },
 ];
 
 const mockNotifications = [
@@ -42,7 +47,7 @@ function Heading() {
     { t: "s", c: "text-smart-light-blue" },
   ];
   return (
-    <h1 className="text-center font-heading text-3xl sm:text-4xl lg:text-5xl font-black leading-none mb-8">
+    <h1 className="text-center font-heading text-4xl sm:text-5xl lg:text-6xl font-black leading-none mb-8">
       {letters.map((l, i) => (
         <span key={i} className={l.c}>
           {String(l.t).toUpperCase()}
@@ -59,6 +64,7 @@ export default function Landing() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [leaderboardStart, setLeaderboardStart] = useState(0);
 
   // Fetch user data
   useEffect(() => {
@@ -106,14 +112,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-smart-dark-blue text-smart-white">
       {/* Top Navigation Bar */}
-      <div className="flex justify-between items-center p-4">
-        <button
-          onClick={() => navigate("/")}
-          className="rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-smart-white font-button transition-colors"
-        >
-          ← Back
-        </button>
-
+      <div className="flex justify-end items-center p-4">
         <div className="flex items-center gap-4">
           {/* Notifications */}
           <div className="relative">
@@ -176,32 +175,57 @@ export default function Landing() {
           {/* Left Side - Leaderboard & Let's Play Button */}
           <div className="space-y-6">
             {/* Leaderboard */}
-            <div className="bg-smart-orange rounded-2xl p-6 border-4 border-smart-white">
-              <h2 className="font-heading text-2xl font-bold text-smart-black mb-6 text-center">
-                LEADERBOARD
-              </h2>
-              <div className="space-y-3">
-                {mockLeaderboard.map((player) => (
+            <div className="bg-smart-orange rounded-2xl p-4 border-4 border-smart-white">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-heading text-xl font-bold text-smart-black text-center flex-1">
+                  LEADERBOARD
+                </h2>
+              </div>
+              
+              {/* Leaderboard entries */}
+              <div className="space-y-2">
+                {mockLeaderboard.slice(leaderboardStart, leaderboardStart + 5).map((player) => (
                   <div
                     key={player.rank}
-                    className="flex items-center gap-4 bg-smart-black/20 rounded-xl p-4"
+                    className="flex items-center gap-3 bg-smart-black/20 rounded-lg p-3"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="font-heading text-xl font-bold text-smart-black">
+                    <div className="flex items-center gap-2">
+                      <span className="font-heading text-lg font-bold text-smart-black">
                         #{player.rank}
                       </span>
-                      <div className="w-10 h-10 rounded-full bg-smart-white text-smart-black flex items-center justify-center font-bold">
+                      <div className="w-8 h-8 rounded-full bg-smart-white text-smart-black flex items-center justify-center font-bold text-sm">
                         {player.avatar}
                       </div>
-                      <span className="font-button font-bold text-smart-black">
+                      <span className="font-button font-bold text-smart-black text-sm">
                         {player.name}
                       </span>
                     </div>
-                    <div className="ml-auto font-button font-bold text-smart-black">
+                    <div className="ml-auto font-button font-bold text-smart-black text-sm">
                       {player.highScore.toLocaleString()}
                     </div>
                   </div>
                 ))}
+              </div>
+              
+              {/* Navigation buttons */}
+              <div className="flex justify-between items-center mt-4">
+                <button
+                  onClick={() => setLeaderboardStart(Math.max(0, leaderboardStart - 5))}
+                  disabled={leaderboardStart === 0}
+                  className="px-3 py-1 rounded-lg bg-smart-black/20 text-smart-black font-button text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-smart-black/30 transition-colors"
+                >
+                  ← Prev
+                </button>
+                <span className="font-button text-smart-black text-sm font-bold">
+                  {Math.floor(leaderboardStart / 5) + 1} / {Math.ceil(mockLeaderboard.length / 5)}
+                </span>
+                <button
+                  onClick={() => setLeaderboardStart(Math.min(mockLeaderboard.length - 5, leaderboardStart + 5))}
+                  disabled={leaderboardStart + 5 >= mockLeaderboard.length}
+                  className="px-3 py-1 rounded-lg bg-smart-black/20 text-smart-black font-button text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-smart-black/30 transition-colors"
+                >
+                  Next →
+                </button>
               </div>
             </div>
 
