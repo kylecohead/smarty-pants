@@ -172,6 +172,16 @@ export default function PlayGame() {
       clearTimeout(timeoutGuardRef.current);
     });
 
+    socket.on("hostLeft", ({ message, scores }) => {
+      console.log("👑 Host left the game:", message);
+      setScores(scores || {});
+      setMatchEnded(true);
+      clearInterval(timerRef.current);
+      clearTimeout(timeoutGuardRef.current);
+      // Show message to user
+      alert(message);
+    });
+
     socket.connect();
 
     return () => {
