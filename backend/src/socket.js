@@ -159,16 +159,38 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
         data: { connected: false },
       });
 
-      emitPlayers(io, matchId);
-
+      // If host leaves, end the match for everyone
       if (match.hostId === userId) {
+        console.log(`👑 Host ${username} left match ${matchId} - ending game for all players`);
+        
+        // Clear all timers
+        clearAdvanceTimeout(match);
+        if (match.questionTimer) {
+          clearTimeout(match.questionTimer);
+          match.questionTimer = null;
+        }
+
+        // Notify all players that host left and game is ending
+        io.to(`match-${matchId}`).emit("hostLeft", { 
+          message: "The host has left the game. Match ended.",
+          scores: match.scores 
+        });
+
+        // Update match status to FINISHED
         await prisma.match.update({
           where: { id: Number(matchId) },
-          data: { status: "PAUSED" },
+          data: { status: "FINISHED" },
         });
-        io.to(`match-${matchId}`).emit("matchPaused");
+
+        // Clean up the match from memory
+        activeMatches.delete(matchId);
+        return; // Exit early since match is ended
       }
 
+      // If not host, just update players list
+      emitPlayers(io, matchId);
+
+      // If all players left, clean up match
       if (match.players.size === 0) {
         clearAdvanceTimeout(match);
         activeMatches.delete(matchId);
