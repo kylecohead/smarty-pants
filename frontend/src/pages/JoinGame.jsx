@@ -1,13 +1,12 @@
 /**
- * NINA 
- * PAGE: Join Game (spec #6)
- * Displays match details and allows player to join.
- * "Join Game" -> /lobby/:matchId
+ * PAGE: Join Game - Browse Public Games
+ * Displays all public games available to join
+ * Shows games in LOBBY status that are public
  * Back -> /game
  */
 
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 import backGeneral from "../assets/backGeneral.jpg";
 import backScience from "../assets/backScience.jpg";
@@ -24,12 +23,6 @@ const colors = {
   muted: "#94A3B8",
 };
 
-const scoringLabels = {
-  classic: "Classic (1 pt / correct)",
-  speed: "Speed Bonus",
-  streak: "Streaks",
-};
-
 const categoryBackgrounds = {
   general: backGeneral,
   science: backScience,
@@ -37,14 +30,6 @@ const categoryBackgrounds = {
   sports: backSports,
   culture: backCulture,
 };
-
-function SectionTitle({ children, color }) {
-  return (
-    <h3 className="text-lg font-semibold tracking-wide mb-2" style={{ color }}>
-      {children}
-    </h3>
-  );
-}
 
 function Heading() {
   const letters = [
@@ -74,38 +59,41 @@ function Heading() {
 }
 
 export default function JoinGame() {
-  const { matchId } = useParams();
   const navigate = useNavigate();
-  const [match, setMatch] = useState(null);
+  const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
   useEffect(() => {
-    const fetchMatch = async () => {
+    const fetchPublicGames = async () => {
       try {
         const token = localStorage.getItem("accessToken");
         if (!token) {
-          setError("You must be logged in to view this match.");
+          setError("You must be logged in to view public games.");
           setLoading(false);
           return;
         }
-        const res = await fetch(`${API_URL}/matches/${matchId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error("Failed to load match.");
+        // Fetch public games in LOBBY status
+        const res = await fetch(
+          `${API_URL}/matches?isPublic=true&status=LOBBY`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (!res.ok) throw new Error("Failed to load public games.");
         const data = await res.json();
-        setMatch(data.match || data);
+        setMatches(data);
       } catch (err) {
         console.error(err);
-        setError("Unable to load match details.");
+        setError("Unable to load public games.");
       } finally {
         setLoading(false);
       }
     };
-    fetchMatch();
-  }, [matchId]);
+    fetchPublicGames();
+  }, []);
 
   if (loading)
     return (
@@ -113,7 +101,7 @@ export default function JoinGame() {
         className="flex items-center justify-center min-h-screen text-white text-xl"
         style={{ backgroundColor: colors.darkBlue }}
       >
-        Loading game...
+        Loading public games...
       </div>
     );
 
@@ -133,12 +121,9 @@ export default function JoinGame() {
       </div>
     );
 
-  const bgImage =
-    categoryBackgrounds[match.category?.toLowerCase?.()] || backGeneral;
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
-      <div className="max-w-3xl mx-auto px-4 py-10">
+      <div className="max-w-5xl mx-auto px-4 py-10">
         {/* Back */}
         <button
           onClick={() => navigate(-1)}
@@ -147,135 +132,148 @@ export default function JoinGame() {
           ← Back
         </button>
 
-        <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-6 sm:p-8">
-          <div className="flex justify-center">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-center mb-3">
             <Heading />
           </div>
-
-          <div className="text-center mt-2">
-            <h2 className="text-smart-red font-heading text-xl font-bold tracking-wider">
-              ~JOIN GAME~
-            </h2>
-          </div>
-
-          {/* Game title */}
-          <div className="flex justify-center mt-4">
-            <div className="w-full max-w-md text-center rounded-xl bg-white/10 border border-white/20 text-white px-4 py-3 text-lg font-semibold">
-              {match.title || "Untitled Match"}
-            </div>
-          </div>
-
-          {/* Details */}
-          <div className="mt-6">
-            <SectionTitle color={colors.accentA}>Game Details</SectionTitle>
-            <div className="flex flex-wrap items-center gap-3">
-              <div
-                className={`rounded-2xl px-4 py-2 text-sm font-medium ${
-                  match.isPublic ? "bg-emerald-500 text-black" : "bg-amber-500 text-black"
-                }`}
-              >
-                {match.isPublic ? "🌍 Public" : "🔒 Private"}
-              </div>
-              <div className="rounded-2xl px-4 py-2 text-sm font-medium bg-white/10 text-white">
-                👥 {match.currentPlayers?.length || 1}/{match.maxPlayers || 6} Players
-              </div>
-              <div className="rounded-2xl px-4 py-2 text-sm font-medium bg-white/10 text-white">
-                👑 Host: @{match.host?.username || "unknown"}
-              </div>
-            </div>
-
-            {/* Current Players */}
-            <div className="mt-4">
-              <label className="block text-white/90 text-sm mb-2">
-                Current Players
-              </label>
-              <div className="flex -space-x-3">
-                {match.currentPlayers?.map((p) => (
-                  <div key={p.id} className="relative">
-                    <div className="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center text-xs ring-2 ring-[#0A2442] shadow">
-                      {p.username.slice(0, 2).toUpperCase()}
-                    </div>
-                  </div>
-                ))}
-                {Array.from({
-                  length: (match.maxPlayers || 6) -
-                    (match.currentPlayers?.length || 1),
-                }).map((_, i) => (
-                  <div key={i} className="relative">
-                    <div className="w-9 h-9 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center text-xs text-white/30 ring-2 ring-[#0A2442]">
-                      ?
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Game Mode */}
-          <div className="mt-8">
-            <SectionTitle color={colors.accentB}>Game Mode</SectionTitle>
-            <div className="relative mt-3 rounded-2xl border border-white/10 bg-white/5 p-6 h-32">
-              <div
-                className="absolute inset-0 rounded-2xl bg-cover bg-center opacity-20"
-                style={{ backgroundImage: `url(${bgImage})` }}
-              />
-              <div className="relative z-10 flex items-center justify-center h-full">
-                <div className="text-center">
-                  <p className="text-sm text-white/60 mb-1">Mode</p>
-                  <p className="text-3xl font-bold text-white drop-shadow-lg">
-                    {match.category || "General Knowledge"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Game Settings */}
-          <div className="mt-8">
-            <SectionTitle color={colors.accentC}>Game Settings</SectionTitle>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                <label className="block text-white/90 text-sm font-medium mb-2">
-                  Per-question timer
-                </label>
-                <div className="text-2xl font-bold text-white">
-                  {match.secPerQ || 30}s
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                <label className="block text-white/90 text-sm font-medium mb-2">
-                  Scoring model
-                </label>
-                <div className="text-lg font-semibold text-white">
-                  {scoringLabels[match.scoring] || "Classic"}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Join button */}
-          <div className="mt-8 flex justify-center">
-            <Link
-              to={`/lobby/${matchId}`}
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  sessionStorage.setItem(
-                    "questionDurationSeconds",
-                    String(match.secPerQ || 30)
-                  );
-                }
-              }}
-              className="rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg bg-smart-red hover:opacity-80 text-white transition-opacity"
-            >
-              Join Game
-            </Link>
-          </div>
+          <h2 className="text-center text-smart-red font-heading text-xl font-bold tracking-wider">
+            ~PUBLIC GAMES~
+          </h2>
+          <p className="text-center text-white/60 mt-2">
+            Join an open game or create your own
+          </p>
         </div>
 
-        <p className="mt-4 text-center text-xs" style={{ color: colors.muted }}>
-          You're invited to join this game!
-        </p>
+        {/* Games List */}
+        {matches.length === 0 ? (
+          <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-8 text-center">
+            <div className="text-6xl mb-4">🎮</div>
+            <h3 className="text-xl font-semibold text-white mb-2">
+              No Public Games Available
+            </h3>
+            <p className="text-white/60 mb-6">
+              Be the first to create a public game!
+            </p>
+            <Link
+              to="/create"
+              className="inline-block rounded-2xl px-6 py-3 text-lg font-semibold shadow-lg bg-smart-green hover:opacity-80 text-white transition-opacity"
+            >
+              Create Game
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2">
+            {matches.map((match) => {
+              const bgImage =
+                categoryBackgrounds[match.category?.toLowerCase?.()] ||
+                backGeneral;
+              const currentPlayers = match.players?.length || 0;
+              const maxPlayers = match.maxPlayers || 5;
+
+              return (
+                <div
+                  key={match.id}
+                  className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm overflow-hidden hover:border-white/20 transition-all hover:scale-[1.02]"
+                >
+                  {/* Category Banner */}
+                  <div
+                    className="relative h-32 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${bgImage})` }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0A2442]/80" />
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <h3 className="text-2xl font-bold text-white drop-shadow-lg">
+                        {match.title || "Untitled Match"}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Game Info */}
+                  <div className="p-6">
+                    {/* Category & Stats */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="rounded-xl px-3 py-1 text-sm font-medium bg-smart-purple/20 text-smart-purple border border-smart-purple/30">
+                        {match.category || "General"}
+                      </span>
+                      <span className="rounded-xl px-3 py-1 text-sm font-medium bg-white/10 text-white">
+                        ⏱️ {match.timeLimit || 10}s
+                      </span>
+                    </div>
+
+                    {/* Players */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex -space-x-2">
+                        {match.players?.slice(0, 4).map((p) => (
+                          <div key={p.id} className="relative">
+                            <div className="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center text-xs ring-2 ring-[#0A2442] shadow font-medium">
+                              {p.user?.username?.slice(0, 2).toUpperCase() ||
+                                "?"}
+                            </div>
+                          </div>
+                        ))}
+                        {currentPlayers > 4 && (
+                          <div className="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center text-xs ring-2 ring-[#0A2442] shadow">
+                            +{currentPlayers - 4}
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-white/80 text-sm font-medium">
+                        {currentPlayers}/{maxPlayers} players
+                      </span>
+                      {currentPlayers >= maxPlayers && (
+                        <span className="text-red-400 text-xs font-semibold">
+                          FULL
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Host */}
+                    <div className="mb-4 text-sm text-white/60">
+                      👑 Hosted by{" "}
+                      <span className="text-white font-medium">
+                        @{match.host?.username || "unknown"}
+                      </span>
+                    </div>
+
+                    {/* Join Button */}
+                    <Link
+                      to={`/lobby/${match.id}`}
+                      onClick={() => {
+                        if (typeof window !== "undefined") {
+                          sessionStorage.setItem(
+                            "questionDurationSeconds",
+                            String(match.timeLimit || 10)
+                          );
+                        }
+                      }}
+                      className={`block text-center rounded-2xl px-6 py-3 text-lg font-semibold shadow-lg transition-opacity ${
+                        currentPlayers >= maxPlayers
+                          ? "bg-gray-500 opacity-50 cursor-not-allowed pointer-events-none"
+                          : "bg-smart-red hover:opacity-80"
+                      } text-white`}
+                    >
+                      {currentPlayers >= maxPlayers ? "Game Full" : "Join Game"}
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Create Game CTA */}
+        {matches.length > 0 && (
+          <div className="mt-8 text-center">
+            <p className="text-white/60 mb-4">Don't see a game you like?</p>
+            <Link
+              to="/create"
+              className="inline-block rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg bg-smart-green hover:opacity-80 text-white transition-opacity"
+            >
+              Create Your Own Game
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
