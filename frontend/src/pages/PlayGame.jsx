@@ -37,6 +37,8 @@ export default function PlayGame() {
   const socketRef = useRef(null);
   const timerRef = useRef(null);
   const timeoutGuardRef = useRef(null);
+  const questionStartTimeRef = useRef(0);
+  const timeLeftRef = useRef(0);
   const isAnsweredRef = useRef(isAnswered);
   useEffect(() => {
     isAnsweredRef.current = isAnswered;
@@ -49,7 +51,7 @@ export default function PlayGame() {
         const data = await api.getCurrentUser();
         setCurrentUser(data.user);
       } catch (err) {
-        console.error("❌ Failed to fetch user:", err);
+        console.error(" Failed to fetch user:", err);
       }
     })();
   }, []);
@@ -66,7 +68,7 @@ export default function PlayGame() {
       setTimeout(() => socket.emit("requestCurrentQuestion", { matchId }), 500);
     });
 
-    // 🧠 When new question arrives
+    // When new question arrives
     socket.on("newQuestion", (data) => {
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
@@ -86,27 +88,33 @@ export default function PlayGame() {
     socket.on("answerSubmitted", ({ correct, points, correctAnswer }) => {
       if (!isAnswered) {
         setIsAnswered(true);
-        clearInterval(timerRef.current);
+        // DON'T clear the timer - let it keep running for synchronized leaderboard
+        // clearInterval(timerRef.current); // REMOVED
         clearTimeout(timeoutGuardRef.current);
-        
+
         // Just show a simple "Answer submitted" state
-        console.log(`✅ Answer submitted: ${correct ? 'Correct' : 'Wrong'} (+${points})`);
+        console.log(
+          ` Answer submitted: ${correct ? "Correct" : "Wrong"} (+${points})`
+        );
       }
     });
 
     // Question results for all players (after everyone answered or time up)
     socket.on("questionResults", ({ responses, scores, correctAnswer }) => {
       setScores(scores);
-      setShowRecap(true);
 
       // Find your response
-      const yourResponse = responses.find(r => r.username === currentUser.username);
-      
+      const yourResponse = responses.find(
+        (r) => r.username === currentUser.username
+      );
+
       // Build leaderboard with both total and round scores
       const currentLeaderboard = Object.entries(scores)
         .sort((a, b) => b[1] - a[1])
         .map(([playerName, totalScore], index) => {
-          const playerResponse = responses.find(r => r.username === playerName);
+          const playerResponse = responses.find(
+            (r) => r.username === playerName
+          );
           return {
             id: index,
             name: playerName,
@@ -118,16 +126,37 @@ export default function PlayGame() {
           };
         });
 
-      setRecapData({
+      const recapDataToShow = {
         correct: yourResponse?.correct || false,
         points: yourResponse?.points || 0,
         leaderboard: currentLeaderboard,
         allResponses: responses, // Include all player responses
-      });
+      };
 
-      clearInterval(timerRef.current);
-      clearTimeout(timeoutGuardRef.current);
-      setTimeout(() => setShowRecap(false), 4000); 
+      // WAIT for the visual timer to hit 0 before showing leaderboard
+      // This ensures the timer bar is empty when the leaderboard pops up
+      const timeRemaining = timeLeftRef.current;
+      if (timeRemaining > 100) {
+        // If there's still time on the clock, wait for it
+        setTimeout(() => {
+          setRecapData(recapDataToShow);
+          setShowRecap(true);
+          setTimeLeft(0);
+          timeLeftRef.current = 0;
+          clearInterval(timerRef.current);
+          clearTimeout(timeoutGuardRef.current);
+          setTimeout(() => setShowRecap(false), 4000);
+        }, timeRemaining);
+      } else {
+        // Timer already at 0 or very close, show immediately
+        setRecapData(recapDataToShow);
+        setShowRecap(true);
+        setTimeLeft(0);
+        timeLeftRef.current = 0;
+        clearInterval(timerRef.current);
+        clearTimeout(timeoutGuardRef.current);
+        setTimeout(() => setShowRecap(false), 4000);
+      }
     });
 
     socket.on("playersUpdate", ({ players }) => {
@@ -154,37 +183,43 @@ export default function PlayGame() {
     };
   }, [currentUser, matchId]);
 
-  // Start countdown
+  // Start countdown with smooth updates
   const startTimer = (duration) => {
     clearInterval(timerRef.current);
+    const startTime = Date.now();
+    setQuestionStartTime(startTime);
+    questionStartTimeRef.current = startTime;
     setTimeLeft(duration);
-    setQuestionStartTime(Date.now());
 
+    // Update timer every 100ms for smooth progress bar
     timerRef.current = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1000) {
-          clearInterval(timerRef.current);
-          if (!isAnsweredRef.current) handleAnswer(null);
-          return 0;
-        }
-        return t - 1000;
-      });
-    }, 1000);
+      const elapsed = Date.now() - questionStartTimeRef.current;
+      const remaining = Math.max(0, duration - elapsed);
+
+      setTimeLeft(remaining);
+      timeLeftRef.current = remaining; // Keep ref in sync
+
+      if (remaining <= 0) {
+        clearInterval(timerRef.current);
+        if (!isAnsweredRef.current) handleAnswer(null);
+      }
+    }, 100);
   };
 
   const handleAnswer = (optionLabel) => {
     if (isAnswered || !socketRef.current || !question) return;
     setIsAnswered(true);
-    clearInterval(timerRef.current);
+    // DON'T clear the timer - let it keep running for synchronized display
+    // clearInterval(timerRef.current); // REMOVED
     clearTimeout(timeoutGuardRef.current);
 
-    const elapsedTimeMs = Date.now() - questionStartTime;
+    const elapsedTimeMs = Date.now() - questionStartTimeRef.current;
 
     // Handle the case where no answer was selected (timer ran out)
     const finalAnswer = optionLabel || ""; // Convert null/undefined to empty string
 
-    // console.log("🔍 Submitting answer:", finalAnswer);
-    // console.log("🔍 Current question:", question);
+    // console.log(" Submitting answer:", finalAnswer);
+    // console.log(" Current question:", question);
 
     socketRef.current.emit("submitAnswer", {
       matchId,
@@ -208,7 +243,7 @@ export default function PlayGame() {
     // Create properly sorted leaderboard
     const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
     const winner = sorted[0];
-    
+
     // Format leaderboard for GameOverScreen component
     const formattedLeaderboard = sorted.map(([username, score], index) => ({
       id: index,
@@ -264,8 +299,8 @@ export default function PlayGame() {
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8">
         <GameHeader
           score={scores[currentUser?.username] || 0}
-          currentQuestion={question.index + 1}
-          totalQuestions={undefined}
+          currentQuestion={question.index}
+          totalQuestions={question.total || 5}
           onQuit={handleQuitGame}
         />
 
@@ -292,7 +327,7 @@ export default function PlayGame() {
       {showRecap && recapData && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-4xl">
-            <QuestionRecapModal 
+            <QuestionRecapModal
               correct={recapData.correct}
               points={recapData.points}
               leaderboard={recapData.leaderboard}
@@ -307,7 +342,7 @@ export default function PlayGame() {
       {matchEnded && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-4xl">
-            <GameOverModal 
+            <GameOverModal
               scores={scores}
               currentUser={currentUser}
               onClose={() => navigate("/")}
