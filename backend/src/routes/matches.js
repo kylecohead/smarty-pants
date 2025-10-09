@@ -14,18 +14,28 @@ const router = express.Router();
  * Uses QUESTIONS_PER_GAME constant (default: 5) for number of questions.
  */
 router.post("/", authMiddleware, async (req, res) => {
-  const { title, category, difficulty } = req.body;
+  const { title, category, difficulty, numQuestions, timeLimit } = req.body;
   const userId = req.user.id;
 
   try {
+    // Validate numQuestions (5-10 range, default to 5)
+    const questionsCount = numQuestions && numQuestions >= 5 && numQuestions <= 10 
+      ? numQuestions 
+      : 5;
+
+    // Validate timeLimit (5-60 seconds, default to 10)
+    const timeLimitSeconds = timeLimit && timeLimit >= 5 && timeLimit <= 60 
+      ? timeLimit 
+      : 10;
+
     // Step 1: Check if category has enough questions
     const availableQuestions = await prisma.question.count({
       where: { category }
     });
 
-    if (availableQuestions < QUESTIONS_PER_GAME) {
+    if (availableQuestions < questionsCount) {
       return res.status(400).json({ 
-        error: `Not enough questions in category "${category}". Available: ${availableQuestions}, Required: ${QUESTIONS_PER_GAME}` 
+        error: `Not enough questions in category "${category}". Available: ${availableQuestions}, Required: ${questionsCount}` 
       });
     }
 
@@ -34,9 +44,9 @@ router.post("/", authMiddleware, async (req, res) => {
       where: { category }
     });
 
-    // Shuffle and take first QUESTIONS_PER_GAME questions
+    // Shuffle and take first questionsCount questions
     const shuffledQuestions = shuffle(allCategoryQuestions);
-    const selectedQuestions = shuffledQuestions.slice(0, QUESTIONS_PER_GAME);
+    const selectedQuestions = shuffledQuestions.slice(0, questionsCount);
 
     // Step 3: Create match with questions assigned
     const match = await prisma.match.create({
@@ -44,6 +54,7 @@ router.post("/", authMiddleware, async (req, res) => {
         title,
         category,
         difficulty,
+        timeLimit: timeLimitSeconds,
         hostId: userId,
         players: {
           create: { userId } // host auto-joins

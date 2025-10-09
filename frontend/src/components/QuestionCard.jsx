@@ -17,6 +17,7 @@ export default function QuestionCard({
     "bg-gradient-to-br from-[#FFC857] to-[#FFAE42] text-black",
     "bg-gradient-to-br from-[#32D399] to-[#0FB57D]",
   ];
+  const totalDuration = questionDurationMs || 6000;
 
   return (
     <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 text-center shadow-2xl backdrop-blur-sm sm:p-10">
@@ -27,12 +28,10 @@ export default function QuestionCard({
         </p>
         <div className="h-3 w-full overflow-hidden rounded-full border border-white/20 bg-white/10">
           <div
-            className="h-full bg-smart-green transition-[width] duration-100 ease-linear"
+            className="h-full bg-smart-green transition-all duration-100 ease-linear"
             style={{
               width: `${
-                questionDurationMs > 0
-                  ? (timeLeftMs / questionDurationMs) * 100
-                  : 0
+                totalDuration > 0 ? (timeLeftMs / totalDuration) * 100 : 0
               }%`,
             }}
           />

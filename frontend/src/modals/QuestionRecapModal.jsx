@@ -4,38 +4,24 @@
  * Automatically returns to the game after a countdown.
  */
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { RECAP_DELAY_SECONDS } from "../config/gameConfig";
 
 const colors = {
   accentA: "#32D399",
   accentD: "#FF8FAB",
 };
 
-export default function QuestionRecapModal() {
-  const { state } = useLocation();
-  const navigate = useNavigate();
-
-  const correct = state?.correct ?? false;
-  const points = state?.points ?? 0;
-  const questionIndex = state?.questionIndex ?? 0;
-  const leaderboard = Array.isArray(state?.leaderboard)
-    ? state.leaderboard
-    : [];
-  const initialCountdown = state?.nextInSeconds ?? RECAP_DELAY_SECONDS;
-
-  const [countdown, setCountdown] = useState(initialCountdown);
+export default function QuestionRecapModal({ correct, points, leaderboard, onClose }) {
+  const [countdown, setCountdown] = useState(5);
 
   // Auto-advance countdown
   useEffect(() => {
-    setCountdown(initialCountdown);
-    if (initialCountdown <= 0) return;
+    if (countdown <= 0) return;
 
     const t = setInterval(() => {
       setCountdown((c) => {
         if (c <= 1) {
           clearInterval(t);
-          navigate("..", { replace: true });
+          onClose(); // Call the onClose prop instead of navigate
           return 0;
         }
         return c - 1;
@@ -43,24 +29,28 @@ export default function QuestionRecapModal() {
     }, 1000);
 
     return () => clearInterval(t);
-  }, [initialCountdown, navigate]);
+  }, [onClose]);
+
+  // Use the props directly instead of state
+  const questionIndex = 0; // You can pass this as a prop too if needed
+  const leaderboardArray = Array.isArray(leaderboard) ? leaderboard : [];
 
   // Top 3 performers this question (by round score)
   const top3ThisQuestion = useMemo(() => {
-    const rows = [...leaderboard];
+    const rows = [...leaderboardArray];
     rows.sort(
       (a, b) =>
         (b.round ?? 0) - (a.round ?? 0) || (b.total ?? 0) - (a.total ?? 0)
     );
     return rows.slice(0, 3);
-  }, [leaderboard]);
+  }, [leaderboardArray]);
 
   // Overall standings (by total score)
   const overall = useMemo(() => {
-    const rows = [...leaderboard];
+    const rows = [...leaderboardArray];
     rows.sort((a, b) => (b.total ?? 0) - (a.total ?? 0));
     return rows;
-  }, [leaderboard]);
+  }, [leaderboardArray]);
 
   return (
     <div className="w-full text-white">
@@ -168,7 +158,7 @@ export default function QuestionRecapModal() {
       </section>
 
       {/* Countdown */}
-      {initialCountdown > 0 && (
+      {countdown > 0 && (
         <div className="mt-8 text-center text-sm uppercase tracking-[0.3em] text-white/60">
           Next question in {countdown}s…
         </div>
