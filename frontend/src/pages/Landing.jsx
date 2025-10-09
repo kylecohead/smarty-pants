@@ -175,56 +175,66 @@ export default function Landing() {
           {/* Left Side - Leaderboard & Let's Play Button */}
           <div className="space-y-6">
             {/* Leaderboard */}
-            <div className="bg-smart-orange rounded-2xl p-4 border-4 border-smart-white">
+            <div className="bg-smart-orange rounded-2xl p-4 border-4 border-smart-yellow">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-heading text-xl font-bold text-smart-black text-center flex-1">
+                <h2 className="font-heading text-2xl font-bold text-smart-yellow text-center flex-1">
                   LEADERBOARD
                 </h2>
               </div>
-              
-              {/* Leaderboard entries */}
-              <div className="space-y-2">
-                {mockLeaderboard.slice(leaderboardStart, leaderboardStart + 5).map((player) => (
-                  <div
-                    key={player.rank}
-                    className="flex items-center gap-3 bg-smart-black/20 rounded-lg p-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-heading text-lg font-bold text-smart-black">
-                        #{player.rank}
-                      </span>
-                      <div className="w-8 h-8 rounded-full bg-smart-white text-smart-black flex items-center justify-center font-bold text-sm">
-                        {player.avatar}
+
+              {/* Leaderboard container with fixed height and scroll */}
+              <div className="h-80 overflow-hidden relative">
+                <div
+                  className="space-y-2 transition-transform duration-300 ease-in-out"
+                  style={{
+                    transform: `translateY(-${leaderboardStart * 64}px)`, // 64px per item (height + margin)
+                  }}
+                >
+                  {mockLeaderboard.map((player) => (
+                    <div
+                      key={player.rank}
+                      className="flex items-center gap-3 bg-smart-yellow/20 rounded-lg p-3 h-14"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-heading text-lg font-bold text-smart-black">
+                          #{player.rank}
+                        </span>
+                        <div className="w-8 h-8 rounded-full bg-smart-white text-smart-black flex items-center justify-center font-bold text-sm">
+                          {player.avatar}
+                        </div>
+                        <span className="font-button font-bold text-smart-black text-sm">
+                          {player.name}
+                        </span>
                       </div>
-                      <span className="font-button font-bold text-smart-black text-sm">
-                        {player.name}
-                      </span>
+                      <div className="ml-auto font-button font-bold text-smart-black text-sm">
+                        {player.highScore.toLocaleString()}
+                      </div>
                     </div>
-                    <div className="ml-auto font-button font-bold text-smart-black text-sm">
-                      {player.highScore.toLocaleString()}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-              
-              {/* Navigation buttons */}
-              <div className="flex justify-between items-center mt-4">
+
+              {/* Scroll buttons */}
+              <div className="flex justify-center items-center mt-4 gap-4">
                 <button
-                  onClick={() => setLeaderboardStart(Math.max(0, leaderboardStart - 5))}
+                  onClick={() =>
+                    setLeaderboardStart(Math.max(0, leaderboardStart - 1))
+                  }
                   disabled={leaderboardStart === 0}
-                  className="px-3 py-1 rounded-lg bg-smart-black/20 text-smart-black font-button text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-smart-black/30 transition-colors"
+                  className="px-4 py-2 rounded-lg bg-smart-yellow/30 text-smart-black font-button text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-smart-yellow/40 transition-colors"
                 >
-                  ← Prev
+                  ↑ Up
                 </button>
-                <span className="font-button text-smart-black text-sm font-bold">
-                  {Math.floor(leaderboardStart / 5) + 1} / {Math.ceil(mockLeaderboard.length / 5)}
-                </span>
                 <button
-                  onClick={() => setLeaderboardStart(Math.min(mockLeaderboard.length - 5, leaderboardStart + 5))}
+                  onClick={() =>
+                    setLeaderboardStart(
+                      Math.min(mockLeaderboard.length - 5, leaderboardStart + 1)
+                    )
+                  }
                   disabled={leaderboardStart + 5 >= mockLeaderboard.length}
-                  className="px-3 py-1 rounded-lg bg-smart-black/20 text-smart-black font-button text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-smart-black/30 transition-colors"
+                  className="px-4 py-2 rounded-lg bg-smart-yellow/30 text-smart-black font-button text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-smart-yellow/40 transition-colors"
                 >
-                  Next →
+                  ↓ Down
                 </button>
               </div>
             </div>
