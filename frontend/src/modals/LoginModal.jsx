@@ -14,9 +14,7 @@ export default function LoginModal({ mode = "login", onAuth }) {
     const API_URL = "/api";
 
     const url =
-      mode === "login"
-        ? `${API_URL}/auth/login`
-        : `${API_URL}/auth/signup`;
+      mode === "login" ? `${API_URL}/auth/login` : `${API_URL}/auth/signup`;
 
     const body =
       mode === "signup"
@@ -50,10 +48,10 @@ export default function LoginModal({ mode = "login", onAuth }) {
   }
 
   return (
-    <div className="max-w-md mx-auto rounded-2xl bg-[#0c1b2a] p-6 shadow-lg border border-smart-light-blue">
+    <div className="max-w-md mx-auto rounded-2xl bg-smartie-light-blue p-8 border border-smart-light-blue">
       {/* Heading */}
-      <h2 className="mb-6 text-center font-heading text-3xl text-smart-orange drop-shadow-[0_0_10px_#FF6700]">
-        {mode === "login" ? "Login" : "Signup"}
+      <h2 className="mb-6 text-center font-heading  text-4xl text-white">
+        {mode === "login" ? "LOGIN" : "SIGNUP"}
       </h2>
 
       {/* Form */}
@@ -64,7 +62,7 @@ export default function LoginModal({ mode = "login", onAuth }) {
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Username"
             required
-            className="w-full rounded-lg bg-[#2d2d3a] px-4 py-2 text-smart-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-smart-pink"
+            className="w-full rounded-lg bg-[#2d2d3a] px-4 py-2 text-smart-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-smart-light-blue"
           />
         )}
 
@@ -83,19 +81,19 @@ export default function LoginModal({ mode = "login", onAuth }) {
           type="password"
           placeholder="Password"
           required
-          className="w-full rounded-lg bg-[#2d2d3a] px-4 py-2 text-smart-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-smart-green"
+          className="w-full rounded-lg bg-[#2d2d3a] px-4 py-2 text-smart-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-smart-light-blue"
         />
 
         <button
           type="submit"
-          className="w-full rounded-xl bg-smart-green px-4 py-3 font-button text-black shadow-lg hover:bg-smart-light-blue transition"
+          className="w-full rounded-xl bg-smart-orange px-4 py-3 font-button text-black shadow-lg hover:bg-smart-yellow transition"
         >
           {mode === "login" ? "Login" : "Signup"}
         </button>
       </form>
 
       {/* Small footer */}
-      <p className="mt-4 text-center text-sm text-gray-300 font-body">
+      <p className="mt-4 text-center text-sm text-gray-100 font-body">
         {mode === "login"
           ? "Don’t have an account? Sign up now!"
           : "Already have an account? Log in instead!"}
