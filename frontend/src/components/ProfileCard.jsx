@@ -21,23 +21,25 @@ export default function ProfileCard({
     "smart-light-blue";
 
   // Size classes based on the size prop
-  const sizeClasses = size === "large" ? "max-w-2xl p-12" : "max-w-xs p-4";
+  const sizeClasses = size === "large" ? "max-w-2xl p-8" : "max-w-xs p-4";
 
   return (
     <div>
       <div
         className={`rounded-xl border-4 border-${color} bg-[#1a237e] ${sizeClasses} mx-auto`}
       >
-        {/* Username */}
-        <div className={`text-center ${size === "large" ? "mb-6" : "mb-3"}`}>
-          <h2
-            className={`font-heading ${
-              size === "large" ? "text-5xl" : "text-3xl"
-            } font-bold text-${color}`}
-          >
-            {user.username.toUpperCase()}
-          </h2>
-        </div>
+        {/* Title and Avatar Section with Color Overlay */}
+        <div className={`rounded-t-lg bg-${color}/10 ${size === "large" ? "mb-4" : "mb-3"}`}>
+          {/* Username */}
+          <div className={`text-center ${size === "large" ? "pt-4 pb-2" : "pt-3 pb-2"}`}>
+            <h2
+              className={`font-heading ${
+                size === "large" ? "text-5xl" : "text-3xl"
+              } font-bold text-${color}`}
+            >
+              {user.username.toUpperCase()}
+            </h2>
+          </div>
 
         {/* Avatar - Customizable Stick Man */}
         <div
@@ -111,15 +113,16 @@ export default function ProfileCard({
           </div>
         </div>
 
-        {/* Member Since */}
-        <div className={`text-center ${size === "large" ? "mb-8" : "mb-4"}`}>
-          <p
-            className={`font-body text-smart-white/60 ${
-              size === "large" ? "text-xl" : "text-sm"
-            }`}
-          >
-            EST. {new Date(user.memberSince).toLocaleDateString()}
-          </p>
+          {/* Member Since */}
+          <div className={`text-center ${size === "large" ? "pb-4" : "pb-3"}`}>
+            <p
+              className={`font-body text-smart-white/60 ${
+                size === "large" ? "text-xl" : "text-sm"
+              }`}
+            >
+              EST. {new Date(user.memberSince).toLocaleDateString()}
+            </p>
+          </div>
         </div>
 
         {/* User Stats - Compact */}

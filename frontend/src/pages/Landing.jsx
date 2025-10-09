@@ -110,7 +110,7 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen bg-smart-dark-blue text-smart-white">
+    <div className="h-screen bg-smart-dark-blue text-smart-white overflow-hidden">
       {/* Top Navigation Bar */}
       <div className="flex justify-end items-center p-4">
         <div className="flex items-center gap-4">
@@ -118,11 +118,11 @@ export default function Landing() {
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 rounded-lg bg-white/10 hover:bg-white/20 text-smart-white transition-colors"
+              className="relative p-4 rounded-lg bg-white/10 hover:bg-white/20 text-smart-white transition-colors text-xl"
             >
               🔔
               {mockNotifications.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-smart-red text-smart-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-smart-red text-smart-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
                   {mockNotifications.length}
                 </span>
               )}
@@ -130,7 +130,7 @@ export default function Landing() {
 
             {/* Notification Dropdown */}
             {showNotifications && (
-              <div className="absolute right-0 top-12 w-80 bg-white/10 border border-white/20 rounded-xl backdrop-blur-sm shadow-xl z-50">
+              <div className="absolute right-0 top-16 w-80 bg-white/10 border border-white/20 rounded-xl backdrop-blur-sm shadow-xl z-50">
                 <div className="p-4">
                   <h3 className="font-button font-bold mb-3">Notifications</h3>
                   {mockNotifications.map((notif) => (
@@ -147,18 +147,10 @@ export default function Landing() {
             )}
           </div>
 
-          {/* Dark/Light Mode Toggle */}
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-smart-white transition-colors"
-          >
-            {isDarkMode ? "🌙" : "☀️"}
-          </button>
-
           {/* Settings */}
           <Link
             to="settings"
-            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-smart-white transition-colors"
+            className="p-4 rounded-lg bg-white/10 hover:bg-white/20 text-smart-white transition-colors text-xl"
           >
             ⚙️
           </Link>

@@ -269,7 +269,7 @@ export default function SettingsModal() {
                 onClick={() => setShowLogoutModal(true)}
                 className="rounded-lg border-2 border-smart-red bg-smart-red/20 hover:bg-smart-red/30 px-6 py-4 font-heading text-sm tracking-wide text-smart-red transition-colors w-full text-center"
               >
-                🚪 LOG OUT
+                LOG OUT
               </button>
             </div>
           </aside>
@@ -668,7 +668,7 @@ export default function SettingsModal() {
             {active === "4" && (
               <div>
                 <h3 className="mb-4 text-2xl font-heading text-smart-purple">
-                  MATCH HISTORY
+                  🎯 MATCH HISTORY
                 </h3>
                 <div className="h-px bg-smart-purple/30 mb-6"></div>
                 <div className="grid gap-4 md:grid-cols-2">
@@ -720,7 +720,7 @@ export default function SettingsModal() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="max-w-md mx-4 rounded-2xl bg-smart-dark-blue border-2 border-smart-red p-6 shadow-xl">
             <h3 className="mb-4 text-2xl font-heading text-smart-red text-center">
-              Log Out
+              LOGOUT
             </h3>
             <p className="mb-6 text-center text-smart-white font-body">
               Are you sure you want to log out?
@@ -736,7 +736,7 @@ export default function SettingsModal() {
                 onClick={handleLogout}
                 className="rounded-xl border-2 border-smart-red bg-smart-red hover:bg-smart-red/80 px-6 py-2 font-button text-smart-white transition-colors"
               >
-                Log Out
+                LOGOUT
               </button>
             </div>
           </div>
