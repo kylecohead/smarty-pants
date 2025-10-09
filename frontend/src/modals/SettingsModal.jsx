@@ -186,9 +186,9 @@ export default function SettingsModal() {
             : active === "2"
             ? "border-smart-orange"
             : active === "3"
-            ? "border-smart-yellow"
+            ? "border-smart-light-blue"
             : active === "4"
-            ? "border-smart-green"
+            ? "border-smart-purple"
             : "border-smart-white"
         }`}
       >
@@ -208,9 +208,9 @@ export default function SettingsModal() {
               : active === "2"
               ? "border-smart-orange"
               : active === "3"
-              ? "border-smart-yellow"
+              ? "border-smart-light-blue"
               : active === "4"
-              ? "border-smart-green"
+              ? "border-smart-purple"
               : "border-smart-white"
           }`}
         >
@@ -222,9 +222,9 @@ export default function SettingsModal() {
                 : active === "2"
                 ? "border-smart-orange"
                 : active === "3"
-                ? "border-smart-yellow"
+                ? "border-smart-light-blue"
                 : active === "4"
-                ? "border-smart-green"
+                ? "border-smart-purple"
                 : "border-smart-white"
             }`}
           >
