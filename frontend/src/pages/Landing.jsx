@@ -182,60 +182,104 @@ export default function Landing() {
                 </h2>
               </div>
 
-              {/* Leaderboard container with fixed height and scroll */}
-              <div className="h-80 overflow-hidden relative">
-                <div
-                  className="space-y-2 transition-transform duration-300 ease-in-out"
-                  style={{
-                    transform: `translateY(-${leaderboardStart * 64}px)`, // 64px per item (height + margin)
-                  }}
-                >
-                  {mockLeaderboard.map((player) => (
-                    <div
-                      key={player.rank}
-                      className="flex items-center gap-3 bg-smart-yellow/20 rounded-lg p-3 h-14"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-heading text-lg font-bold text-smart-black">
-                          #{player.rank}
-                        </span>
-                        <div className="w-8 h-8 rounded-full bg-smart-white text-smart-black flex items-center justify-center font-bold text-sm">
-                          {player.avatar}
+              {/* Leaderboard container with slider */}
+              <div className="flex gap-4">
+                {/* Leaderboard entries */}
+                <div className="flex-1 h-80 overflow-hidden relative">
+                  <div
+                    className="space-y-2 transition-transform duration-300 ease-in-out"
+                    style={{
+                      transform: `translateY(-${leaderboardStart * 64}px)`, // 64px per item (height + margin)
+                    }}
+                  >
+                    {mockLeaderboard.map((player) => (
+                      <div
+                        key={player.rank}
+                        className="flex items-center gap-3 bg-smart-yellow/20 rounded-lg p-3 h-14 ml-4 mr-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-heading text-xl font-bold text-smart-black">
+                            #{player.rank}
+                          </span>
+                          <div className="w-10 h-10 rounded-full bg-smart-white text-smart-black flex items-center justify-center font-bold text-base">
+                            {player.avatar}
+                          </div>
+                          <span className="font-button font-bold text-smart-black text-base">
+                            {player.name}
+                          </span>
                         </div>
-                        <span className="font-button font-bold text-smart-black text-sm">
-                          {player.name}
-                        </span>
+                        <div className="ml-auto font-button font-bold text-smart-black text-base">
+                          {player.highScore.toLocaleString()}
+                        </div>
                       </div>
-                      <div className="ml-auto font-button font-bold text-smart-black text-sm">
-                        {player.highScore.toLocaleString()}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Scroll buttons */}
-              <div className="flex justify-center items-center mt-4 gap-4">
-                <button
-                  onClick={() =>
-                    setLeaderboardStart(Math.max(0, leaderboardStart - 1))
-                  }
-                  disabled={leaderboardStart === 0}
-                  className="px-4 py-2 rounded-lg bg-smart-yellow/30 text-smart-black font-button text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-smart-yellow/40 transition-colors"
-                >
-                  ↑ Up
-                </button>
-                <button
-                  onClick={() =>
-                    setLeaderboardStart(
-                      Math.min(mockLeaderboard.length - 5, leaderboardStart + 1)
-                    )
-                  }
-                  disabled={leaderboardStart + 5 >= mockLeaderboard.length}
-                  className="px-4 py-2 rounded-lg bg-smart-yellow/30 text-smart-black font-button text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-smart-yellow/40 transition-colors"
-                >
-                  ↓ Down
-                </button>
+                {/* Vertical Slider */}
+                <div className="flex flex-col items-center h-80 w-8">
+                  <div
+                    className="flex-1 w-2 bg-smart-yellow/30 rounded-full relative cursor-pointer"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const clickY = e.clientY - rect.top;
+                      const percentage = clickY / rect.height;
+                      const newStart = Math.round(
+                        percentage * Math.max(0, mockLeaderboard.length - 5)
+                      );
+                      setLeaderboardStart(
+                        Math.min(
+                          Math.max(0, newStart),
+                          mockLeaderboard.length - 5
+                        )
+                      );
+                    }}
+                  >
+                    {/* Slider thumb - draggable */}
+                    <div
+                      className="absolute w-4 h-6 bg-smart-yellow rounded-lg shadow-lg cursor-grab active:cursor-grabbing -left-1"
+                      style={{
+                        top: `${
+                          (leaderboardStart /
+                            Math.max(1, mockLeaderboard.length - 5)) *
+                          (100 - 7.5)
+                        }%`,
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        const startY = e.clientY;
+                        const startPos = leaderboardStart;
+                        const slider = e.currentTarget.parentElement;
+                        const sliderHeight =
+                          slider.getBoundingClientRect().height;
+                        const maxPos = Math.max(0, mockLeaderboard.length - 5);
+
+                        const handleMouseMove = (moveEvent) => {
+                          const deltaY = moveEvent.clientY - startY;
+                          const deltaPos = (deltaY / sliderHeight) * maxPos;
+                          const newPos = Math.round(startPos + deltaPos);
+                          setLeaderboardStart(
+                            Math.min(Math.max(0, newPos), maxPos)
+                          );
+                        };
+
+                        const handleMouseUp = () => {
+                          document.removeEventListener(
+                            "mousemove",
+                            handleMouseMove
+                          );
+                          document.removeEventListener(
+                            "mouseup",
+                            handleMouseUp
+                          );
+                        };
+
+                        document.addEventListener("mousemove", handleMouseMove);
+                        document.addEventListener("mouseup", handleMouseUp);
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
