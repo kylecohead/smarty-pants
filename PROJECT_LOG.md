@@ -9,13 +9,13 @@
 
 ## 🧑‍💻 Team Members & Roles
 
-| Name            | Student Number   | Primary Role       | Primary Responsibilities                                  |
-| --------------- | ---------------- | ------------------ | --------------------------------------------------------- |
-| [Your Name]     | [Your Student #] | Frontend Developer | React components, styling, UI improvements, profile pages |
-| **Nina Swart**  | **26970341**     | Frontend Developer | Styling, landing page, create & join game frontend        |
-| [Teammate 2]    | [Student #]      | Database Engineer  | PostgreSQL schema, normalization (3NF), Prisma setup      |
-| **Kyle Cohead** | **25964917**     | Real-time Systems  | Socket.IO setup, live gameplay logic                      |
-| [Teammate 4]    | [Student #]      | QA & Admin Tools   | Testing, admin dashboard, bug fixes, review merges        |
+| Name               | Student Number   | Primary Role       | Primary Responsibilities                                  |
+| ------------------ | ---------------- | ------------------ | --------------------------------------------------------- |
+| [Your Name]        | [Your Student #] | Frontend Developer | React components, styling, UI improvements, profile pages |
+| **Nina Swart**     | **26970341**     | Frontend Developer | Styling, landing page, create & join game frontend        |
+| [Teammate 2]       | [Student #]      | Database Engineer  | PostgreSQL schema, normalization (3NF), Prisma setup      |
+| **Kyle Cohead**    | **25964917**     | Real-time Systems  | Socket.IO setup, live gameplay logic                      |
+|**Wikus van Biljon**|**26927543**      | authentication     | Login and signup, , Socket.IO, version control            |
 
 ---
 
