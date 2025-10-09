@@ -16,7 +16,7 @@ export default function AboutModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-smart-black/60 p-4">
-      <div className="relative w-full max-w-4xl max-h-[80vh] rounded-xl overflow-hidden shadow-2xl">
+      <div className="relative w-full max-w-4xl max-h-[80vh] rounded-xl overflow-hidden shadow-2xl border-4 border-smart-green">
         {/* Close Button */}
         <button
           onClick={handleClose}
