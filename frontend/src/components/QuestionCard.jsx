@@ -19,7 +19,6 @@ export default function QuestionCard({
   ];
   const totalDuration = questionDurationMs || 6000;
 
-
   return (
     <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 text-center shadow-2xl backdrop-blur-sm sm:p-10">
       {/* Timer Progress Bar */}
@@ -29,11 +28,11 @@ export default function QuestionCard({
         </p>
         <div className="h-3 w-full overflow-hidden rounded-full border border-white/20 bg-white/10">
           <div
-            className="h-full bg-smart-green transition-[width] duration-1000 ease-linear"
-
+            className="h-full bg-smart-green transition-all duration-100 ease-linear"
             style={{
-              width: `${totalDuration > 0 ? (timeLeftMs / totalDuration) * 100 : 0}%`,
-
+              width: `${
+                totalDuration > 0 ? (timeLeftMs / totalDuration) * 100 : 0
+              }%`,
             }}
           />
         </div>
