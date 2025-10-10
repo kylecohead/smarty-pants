@@ -10,8 +10,10 @@ import { useNavigate, useParams, Outlet } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import catImage from "../assets/cat.jpg";
 import backgroundLanding from "../assets/background_landing.jpg";
+import lobbyPhoto from "../assets/lobby_photo.jpg";
 import { getSocket, closeSocket } from "../services/socket";
 import { api } from "../services/api";
+import ProfileCard from "../components/ProfileCard";
 
 const colors = {
   darkBlue: "#0A2442",
@@ -227,8 +229,8 @@ export default function Lobby() {
             </div>
 
             {/* Player grid */}
-            <div className="flex-1 flex items-center justify-center py-4">
-              <div className="grid grid-cols-3 gap-4 w-full max-w-5xl">
+            <div className="flex-1 flex items-center justify-center py-2">
+              <div className="grid grid-cols-3 gap-3 w-full max-w-4xl px-4">
                 {Array.from({ length: 6 }).map((_, i) => {
                   const p = players[i];
                   return (
@@ -241,16 +243,52 @@ export default function Lobby() {
                       }`}
                     >
                       {p ? (
-                        <>
-                          <img
-                            src={p.avatarUrl || catImage}
-                            alt={p.username}
-                            className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-full ring-2 ring-white/20 flex-shrink-0"
-                          />
-                          <span className="text-sm sm:text-base mt-1 text-white font-semibold text-center px-1 truncate w-full">
-                            {p.username}
-                          </span>
-                        </>
+                        <div className="w-full h-full flex flex-col">
+                          {/* Player photo block with color overlay */}
+                          <div 
+                            className="flex-1 relative overflow-hidden rounded-lg border-8"
+                            style={{
+                              borderColor:
+                                p.stickmanColor ||
+                                localStorage.getItem("stickmanColor") ||
+                                "#FF69B4", // default pink
+                            }}
+                          >
+                            <img
+                              src={lobbyPhoto}
+                              alt={`${p.username}'s lobby`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.log("Image failed to load:", e);
+                                e.target.style.backgroundColor = "#1a237e";
+                              }}
+                            />
+                            {/* Color overlay based on user's stickman color - more visible */}
+                            <div
+                              className="absolute inset-0 opacity-60 mix-blend-overlay"
+                              style={{
+                                backgroundColor:
+                                  p.stickmanColor ||
+                                  localStorage.getItem("stickmanColor") ||
+                                  "#FF69B4", // default pink
+                              }}
+                            />
+                          </div>
+                          {/* Username below the photo in user color */}
+                          <div className="mt-1 text-center">
+                            <h3
+                              className="font-heading text-xs font-bold truncate"
+                              style={{
+                                color:
+                                  p.stickmanColor ||
+                                  localStorage.getItem("stickmanColor") ||
+                                  "#FF69B4", // default pink
+                              }}
+                            >
+                              {p.username.toUpperCase()}
+                            </h3>
+                          </div>
+                        </div>
                       ) : (
                         <span className="text-white text-sm sm:text-base">
                           Waiting...
