@@ -13,6 +13,7 @@ import QuestionCard from "../components/QuestionCard";
 import GameOverScreen from "../components/GameOverScreen";
 import QuestionRecapModal from "../modals/QuestionRecapModal";
 import GameOverModal from "../modals/GameOverModal";
+import QuitConfirmModal from "../modals/QuitConfirmModal";
 import {
   buildPerQuestionLeaderboard,
   buildFinalLeaderboard,
@@ -33,6 +34,7 @@ export default function PlayGame() {
   const [showRecap, setShowRecap] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [questionStartTime, setQuestionStartTime] = useState(0);
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
 
   const socketRef = useRef(null);
   const timerRef = useRef(null);
@@ -239,12 +241,21 @@ export default function PlayGame() {
   };
 
   const handleQuitGame = () => {
+    // Show confirmation modal before quitting
+    setShowQuitConfirm(true);
+  };
+
+  const confirmQuitGame = () => {
     const socket = socketRef.current;
     if (socket && socket.connected) {
       socket.emit("leaveMatch", { matchId });
       socket.disconnect();
     }
     navigate("/landing");
+  };
+
+  const cancelQuit = () => {
+    setShowQuitConfirm(false);
   };
 
   // ================== UI RENDERING ==================
@@ -343,6 +354,18 @@ export default function PlayGame() {
               leaderboard={recapData.leaderboard}
               allResponses={recapData.allResponses} // Pass this as a prop
               onClose={() => setShowRecap(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Quit Confirmation Modal */}
+      {showQuitConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-md">
+            <QuitConfirmModal
+              onConfirm={confirmQuitGame}
+              onCancel={cancelQuit}
             />
           </div>
         </div>

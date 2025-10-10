@@ -307,7 +307,7 @@ export default function Admin() {
             disabled={isBusy}
             className="rounded-lg border border-white/50 px-4 py-2 text-sm font-semibold uppercase tracking-wide transition hover:border-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            ← Back
+            ← Dashboard
           </button>
           <h1 className="text-2xl font-black uppercase tracking-widest text-yellow-300">
             Question Admin

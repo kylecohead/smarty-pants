@@ -32,7 +32,7 @@ export default function GameHeader({
         onClick={onQuit}
         className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20 sm:w-auto"
       >
-        Quit
+        Quit Game
       </button>
     </header>
   );

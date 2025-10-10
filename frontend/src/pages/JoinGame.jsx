@@ -116,7 +116,7 @@ export default function JoinGame() {
           onClick={() => navigate(-1)}
           className="rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-white transition-colors"
         >
-          ← Back
+          ← Game Menu
         </button>
       </div>
     );
