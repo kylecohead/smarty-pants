@@ -20,8 +20,8 @@
  */
 export const CATEGORY_MAP = [
   { id: 9, name: "General Knowledge" },
-  { id: 17, name: "Science & Nature" },
-  { id: 18, name: "Science: Computers" },
+  { id: 17, name: "Science" },
+  { id: 11, name: "Entertainment" },
   { id: 23, name: "History" },
   { id: 21, name: "Sports" },
 ];
@@ -30,7 +30,7 @@ export const CATEGORY_MAP = [
  * Number of questions per game match.
  * This constant determines how many questions are randomly selected
  * and assigned to each match when it's created.
- * 
+ * Dont think this is used.
  * @type {number}
  */
 export const QUESTIONS_PER_GAME = 5;
