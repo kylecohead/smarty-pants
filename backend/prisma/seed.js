@@ -65,29 +65,7 @@ async function main() {
     createdUsers.push(user);
   }
 
-  const host = createdUsers[0];
-
-  const match = await prisma.match.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      title: "Demo Match",
-      category: "General Knowledge",
-      difficulty: "easy",
-      hostId: host.id,
-      status: "LOBBY",
-    },
-  });
-
-  for (const u of createdUsers) {
-    await prisma.matchPlayer.upsert({
-      where: { matchId_userId: { matchId: match.id, userId: u.id } },
-      update: {},
-      create: { matchId: match.id, userId: u.id, score: 0 },
-    });
-  }
-
-  console.log("✅ Seed complete: users, match, and (if empty) questions added.");
+  console.log("✅ Seed complete: users and (if empty) questions added.");
 }
 
 main()
