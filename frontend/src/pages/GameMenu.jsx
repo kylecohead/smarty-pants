@@ -9,6 +9,7 @@
  * Flow: GameMenu -> JoinGameLobby -> JoinGame (for specific game details)
  */
 import { Link, useNavigate } from "react-router-dom";
+import gameMenuBackground from "../assets/gameMenu_background.jpg";
 
 function Heading() {
   const letters = [
@@ -40,7 +41,12 @@ function Heading() {
 export default function GameMenu() {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-smart-dark-blue flex items-center justify-center">
+    <div
+      className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: `url(${gameMenuBackground})`,
+      }}
+    >
       <div className="max-w-2xl mx-auto px-4 py-10 text-center">
         {/* Back button */}
         <button
