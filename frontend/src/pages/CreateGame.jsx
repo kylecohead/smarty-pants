@@ -494,13 +494,13 @@ export default function CreateGame() {
 
               <div>
                 <label className="block text-white/90 text-sm">
-                  Number of questions
+                  Number of questions per round
                 </label>
                 <div className="flex items-center gap-4 mt-1">
                   <input
                     type="range"
-                    min={5}
-                    max={10}
+                    min={3}
+                    max={7}
                     step={1}
                     value={numQuestions}
                     onChange={(e) =>
