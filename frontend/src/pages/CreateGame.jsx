@@ -28,7 +28,11 @@ const MODES = [
   { key: "science", label: "Science", backgroundImage: backScience },
   { key: "history", label: "History", backgroundImage: backHistory },
   { key: "sports", label: "Sports", backgroundImage: backSports },
-  { key: "culture", label: "Pop Culture", backgroundImage: backCulture },
+  {
+    key: "entertainment",
+    label: "Entertainment",
+    backgroundImage: backCulture,
+  },
 ];
 
 /**
