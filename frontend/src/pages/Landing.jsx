@@ -131,7 +131,7 @@ export default function Landing() {
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-3 rounded-lg bg-white/10 hover:bg-white/20 text-smart-white transition-colors text-xl"
+                className="relative p-3 rounded-lg border-2 border-white hover:bg-white/10 text-white transition-colors text-xl"
               >
                 🔔
                 {mockNotifications.length > 0 && (
@@ -167,7 +167,7 @@ export default function Landing() {
             {/* Settings */}
             <Link
               to="settings"
-              className="p-3 rounded-lg bg-white/10 hover:bg-white/20 text-smart-white transition-colors text-xl"
+              className="p-3 rounded-lg border-2 border-white hover:bg-white/10 text-white transition-colors text-xl"
             >
               ⚙️
             </Link>
