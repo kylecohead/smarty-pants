@@ -86,13 +86,24 @@ router.post("/", authMiddleware, async (req, res) => {
 /**
  * Get all matches (list view)
  * Supports filtering and sorting
+ * Query params:
+ *   - category: filter by category
+ *   - sort: "asc" or "desc" (default: desc)
+ *   - isPublic: "true" to filter public games only
+ *   - status: filter by match status (e.g., "LOBBY")
  */
 router.get("/", authMiddleware, async (req, res) => {
-  const { category, sort } = req.query;
+  const { category, sort, isPublic, status } = req.query;
 
   try {
+    // Build where clause dynamically
+    const whereClause = {};
+    if (category) whereClause.category = category;
+    if (isPublic === "true") whereClause.isPublic = true;
+    if (status) whereClause.status = status;
+
     const matches = await prisma.match.findMany({
-      where: category ? { category } : {},
+      where: whereClause,
       orderBy: sort === "asc" ? { createdAt: "asc" } : { createdAt: "desc" },
       include: {
         players: { include: { user: true } },

@@ -71,19 +71,23 @@ function clearAdvanceTimeout(match) {
   }
 }
 
-function endMatch(io, matchId) {
+function endMatch(io, matchId, completed = true) {
   const match = activeMatches.get(matchId);
   if (!match) return;
   clearAdvanceTimeout(match);
 
   io.to(`match-${matchId}`).emit("matchEnded", { scores: match.scores });
-  console.log(`🏁 Match ${matchId} ended`);
+  console.log(`🏁 Match ${matchId} ended - Completed: ${completed}`);
 
   activeMatches.delete(matchId);
   prisma.match
     .update({
       where: { id: Number(matchId) },
-      data: { status: "FINISHED" },
+      data: { 
+        status: "FINISHED",
+        completed: completed, // Mark if match was properly completed
+        finishedAt: new Date()
+      },
     })
     .catch(console.error);
 }
@@ -159,24 +163,65 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
         data: { connected: false },
       });
 
-      emitPlayers(io, matchId);
-
+      // If host leaves, end the match for everyone
       if (match.hostId === userId) {
+        console.log(`👑 Host ${username} left match ${matchId} - ending game for all players`);
+        
+        // Clear all timers
+        clearAdvanceTimeout(match);
+        if (match.questionTimer) {
+          clearTimeout(match.questionTimer);
+          match.questionTimer = null;
+        }
+
+        // Notify all players that host left and game is ending
+        io.to(`match-${matchId}`).emit("hostLeft", { 
+          message: "The host has left the game. Match ended. Stats will not be saved.",
+          scores: match.scores 
+        });
+
+        // Update match status to FINISHED and mark as incomplete (stats discarded)
         await prisma.match.update({
           where: { id: Number(matchId) },
-          data: { status: "PAUSED" },
+          data: { 
+            status: "FINISHED",
+            completed: false, // Match incomplete, stats discarded
+            finishedAt: new Date()
+          },
         });
-        io.to(`match-${matchId}`).emit("matchPaused");
+
+        // Clean up the match from memory
+        activeMatches.delete(matchId);
+        console.log(`❌ Match ${matchId} marked as incomplete - stats discarded`);
+        return; // Exit early since match is ended
       }
 
+      // If non-host player leaves during active game, mark match as incomplete
+      if (match.status === "ACTIVE") {
+        console.log(`⚠️ Player ${username} left active match ${matchId} - marking as incomplete`);
+        // Don't end the match, but mark it as incomplete so stats won't count
+        await prisma.match.update({
+          where: { id: Number(matchId) },
+          data: { completed: false },
+        });
+      }
+
+      // If not host, just update players list
+      emitPlayers(io, matchId);
+
+      // If all players left, clean up match
       if (match.players.size === 0) {
         clearAdvanceTimeout(match);
         activeMatches.delete(matchId);
         await prisma.match.update({
           where: { id: Number(matchId) },
-          data: { status: "FINISHED" },
+          data: { 
+            status: "FINISHED",
+            completed: false, // No players, incomplete match
+            finishedAt: new Date()
+          },
         });
-        console.log(`🧹 Cleared empty match ${matchId}`);
+        console.log(`🧹 Cleared empty match ${matchId} - marked incomplete`);
       }
     }, 10000);
   } catch (err) {

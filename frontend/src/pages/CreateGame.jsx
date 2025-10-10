@@ -28,7 +28,11 @@ const MODES = [
   { key: "science", label: "Science", backgroundImage: backScience },
   { key: "history", label: "History", backgroundImage: backHistory },
   { key: "sports", label: "Sports", backgroundImage: backSports },
-  { key: "culture", label: "Pop Culture", backgroundImage: backCulture },
+  {
+    key: "entertainment",
+    label: "Entertainment",
+    backgroundImage: backCulture,
+  },
 ];
 
 /**
@@ -259,12 +263,12 @@ export default function CreateGame() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
       <div className="max-w-3xl mx-auto px-4 py-10">
-        {/* Back button */}
+        {/* Back to Game Menu button */}
         <button
           onClick={() => navigate(-1)}
           className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-white font-button transition-colors"
         >
-          ← Back
+          ← Game Menu
         </button>
 
         {/* Card substitute */}
@@ -490,13 +494,13 @@ export default function CreateGame() {
 
               <div>
                 <label className="block text-white/90 text-sm">
-                  Number of questions
+                  Number of questions per round
                 </label>
                 <div className="flex items-center gap-4 mt-1">
                   <input
                     type="range"
-                    min={5}
-                    max={10}
+                    min={3}
+                    max={7}
                     step={1}
                     value={numQuestions}
                     onChange={(e) =>

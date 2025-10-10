@@ -68,7 +68,6 @@ export default function Lobby() {
       setPlayers(players);
     });
 
-
     // socket.on("matchStarted", ({ firstQuestion }) => {
     //   console.log("🏁 Match started!");
     //   navigate(`/game/play/${matchId}`, { state: { firstQuestion } });
@@ -78,15 +77,19 @@ export default function Lobby() {
       navigate(`/game/play/${matchId}`);
     });
 
-
-
-
     socket.on("matchEnded", ({ scores }) => {
       console.log("🎯 Match ended:", scores);
     });
 
     socket.on("matchPaused", () => {
       console.warn("⏸️ Match paused (host left)");
+    });
+
+    socket.on("hostLeft", ({ message }) => {
+      console.log("👑 Host left the lobby:", message);
+      alert(message);
+      // Navigate back to game menu after host leaves
+      navigate("/game");
     });
 
     socket.on("disconnect", () => {
@@ -122,7 +125,6 @@ export default function Lobby() {
         console.log("🔄 Transitioning to gameplay — keeping socket alive");
       }
     };
-
   }, [matchId, navigate]);
 
   // Listen for playersUpdate
@@ -171,7 +173,6 @@ export default function Lobby() {
     socket.emit("startMatch", { matchId });
   };
 
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
       <div className="max-w-7xl mx-auto px-6 py-16">
@@ -179,7 +180,7 @@ export default function Lobby() {
           onClick={() => navigate(-1)}
           className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-white font-button transition-colors"
         >
-          ← Back
+          ← Game Menu
         </button>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-8 sm:p-12">
@@ -257,8 +258,8 @@ export default function Lobby() {
 
         <p className="mt-4 text-center text-xs" style={{ color: colors.muted }}>
           Anyone entering{" "}
-          <span className="text-white/70">/lobby/{matchId}</span> will
-          auto-join the room.
+          <span className="text-white/70">/lobby/{matchId}</span> will auto-join
+          the room.
         </p>
       </div>
 

@@ -50,7 +50,13 @@ export default function Home() {
         <div className="text-right space-y-8 max-w-md">
           {/* heading font - SMARTIE on one line, PANTS on another, right-aligned and colorful */}
           <div className="text-right">
-            <h1 className="text-7xl lg:text-8xl font-heading font-black leading-tight drop-shadow-2xl" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)' }}>
+            <h1
+              className="text-7xl lg:text-8xl font-heading font-black leading-tight drop-shadow-2xl"
+              style={{
+                textShadow:
+                  "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)",
+              }}
+            >
               <span className="text-smart-green">S</span>
               <span className="text-smart-orange">M</span>
               <span className="text-smart-light-blue">A</span>
@@ -59,7 +65,13 @@ export default function Home() {
               <span className="text-smart-red">I</span>
               <span className="text-smart-purple">E</span>
             </h1>
-            <h1 className="text-7xl lg:text-8xl font-heading font-black leading-tight drop-shadow-2xl" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)' }}>
+            <h1
+              className="text-7xl lg:text-8xl font-heading font-black leading-tight drop-shadow-2xl"
+              style={{
+                textShadow:
+                  "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)",
+              }}
+            >
               <span className="text-smart-light-blue">P</span>
               <span className="text-smart-yellow">A</span>
               <span className="text-smart-green">N</span>

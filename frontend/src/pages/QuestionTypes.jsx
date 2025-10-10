@@ -14,7 +14,7 @@ export default function QuestionTypes() {
         onClick={() => navigate(-1)}
         className="absolute left-4 top-4 rounded-lg border px-4 py-2 hover:bg-slate-100"
       >
-        ← Back
+        ← Admin
       </button>
 
       <div className="text-center space-y-6">

@@ -115,6 +115,14 @@ export default function Landing() {
     return <p>No user data available</p>;
   }
 
+  const handleSignOut = () => {
+    // Clear authentication
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("currentUser");
+    // Navigate to login
+    navigate("/");
+  };
+
   return (
     <div
       className="h-screen bg-smart-dark-blue text-smart-white overflow-hidden bg-cover bg-center bg-no-repeat"
