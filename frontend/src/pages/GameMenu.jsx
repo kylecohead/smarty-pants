@@ -44,7 +44,7 @@ export default function GameMenu() {
       <div className="max-w-2xl mx-auto px-4 py-10 text-center">
         {/* Back button */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/landing")}
           className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-smart-white font-button transition-colors"
         >
           ← Back

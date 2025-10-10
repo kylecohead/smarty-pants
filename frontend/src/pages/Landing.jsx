@@ -103,15 +103,23 @@ export default function Landing() {
     return <p>No user data available</p>;
   }
 
+  const handleSignOut = () => {
+    // Clear authentication
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("currentUser");
+    // Navigate to login
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen bg-smart-dark-blue text-smart-white">
       {/* Top Navigation Bar */}
       <div className="flex justify-between items-center p-4">
         <button
-          onClick={() => navigate("/")}
-          className="rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-smart-white font-button transition-colors"
+          onClick={handleSignOut}
+          className="rounded-lg bg-smart-red hover:bg-smart-red/80 border border-white/20 px-4 py-2 text-smart-white font-button transition-colors"
         >
-          ← Back
+          Sign Out
         </button>
 
         <div className="flex items-center gap-4">

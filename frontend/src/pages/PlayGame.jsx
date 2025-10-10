@@ -244,7 +244,7 @@ export default function PlayGame() {
       socket.emit("leaveMatch", { matchId });
       socket.disconnect();
     }
-    navigate("/");
+    navigate("/landing");
   };
 
   // ================== UI RENDERING ==================
@@ -355,7 +355,7 @@ export default function PlayGame() {
             <GameOverModal
               scores={scores}
               currentUser={currentUser}
-              onClose={() => navigate("/")}
+              onClose={() => navigate("/landing")}
             />
           </div>
         </div>
