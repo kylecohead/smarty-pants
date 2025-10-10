@@ -10,6 +10,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import ProfileCard from "../components/ProfileCard.jsx";
+import backgroundLanding from "../assets/background_landing.jpg";
 
 // Mock data for demonstration
 const mockLeaderboard = [
@@ -47,7 +48,12 @@ function Heading() {
     { t: "s", c: "text-smart-light-blue" },
   ];
   return (
-    <h1 className="text-center font-heading text-3xl sm:text-4xl lg:text-5xl font-black leading-none mb-4">
+    <h1
+      className="text-center font-heading text-4xl sm:text-5xl lg:text-6xl font-black leading-none mb-4"
+      style={{
+        textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)",
+      }}
+    >
       {letters.map((l, i) => (
         <span key={i} className={l.c}>
           {String(l.t).toUpperCase()}
@@ -110,7 +116,12 @@ export default function Landing() {
   }
 
   return (
-    <div className="h-screen bg-smart-dark-blue text-smart-white overflow-hidden">
+    <div
+      className="h-screen bg-smart-dark-blue text-smart-white overflow-hidden bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: `url(${backgroundLanding})`,
+      }}
+    >
       {/* Header Section - Title, Notifications, and Settings */}
       <div className="px-4 pt-2 pb-1">
         {/* Top Navigation Bar */}
