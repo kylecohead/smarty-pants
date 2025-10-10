@@ -205,32 +205,33 @@ export default function Lobby() {
       <div className="px-4 flex-1 flex items-start">
         <div className="max-w-7xl mx-auto w-full">
           {/* Panel */}
-          <div className="bg-[#1a237e] border border-[#1a237e] rounded-3xl p-6 shadow-[0_20px_40px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] h-[calc(100vh-180px)]">
-            {/* Join Code Display */}
-            <div className="text-center mb-6">
-              <span className="text-white text-lg block mb-2">
-                Share this join code:
-              </span>
-              <div className="inline-block bg-white/10 border border-white/20 rounded-xl px-8 py-3 text-white text-2xl font-bold tracking-wider select-all">
-                {matchId}
+          <div className="bg-[#1a237e]/70 border border-[#1a237e]/80 rounded-3xl p-6 shadow-[0_20px_40px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] h-[calc(100vh-180px)]">
+            {/* Panel Header - Game Name, Code and Player Count */}
+            <div className="text-center mb-4">
+              <h2 className="text-white text-3xl font-bold mb-3">Game Name</h2>
+              <div className="inline-block bg-smart-pink rounded-lg px-3 py-1 mb-3">
+                <span className="text-white text-sm font-semibold mr-2">
+                  Code:
+                </span>
+                <span className="text-white text-sm font-bold tracking-wider select-all">
+                  {matchId}
+                </span>
+              </div>
+              <div className="text-xl text-white font-semibold">
+                {socketConnected
+                  ? `Players: ${players.length} / 6`
+                  : "Connecting to server..."}
               </div>
             </div>
 
-            {/* Player count */}
-            <div className="text-center mb-6 text-xl text-white font-semibold">
-              {socketConnected
-                ? `Players: ${players.length} / 6`
-                : "Connecting to server..."}
-            </div>
-
             {/* Player grid */}
-            <div className="grid grid-cols-3 gap-6 place-items-center max-w-5xl mx-auto">
+            <div className="grid grid-cols-3 gap-4 max-w-4xl mx-auto">
               {Array.from({ length: 6 }).map((_, i) => {
                 const p = players[i];
                 return (
                   <div
                     key={i}
-                    className={`w-44 h-40 border-2 rounded-xl flex flex-col items-center justify-center ${
+                    className={`w-36 h-40 border-2 rounded-xl flex flex-col items-center justify-center ${
                       p
                         ? "border-emerald-500 bg-white/10"
                         : "border-white/20 bg-white/5"
@@ -241,39 +242,39 @@ export default function Lobby() {
                         <img
                           src={p.avatarUrl || catImage}
                           alt={p.username}
-                          className="w-24 h-24 object-cover rounded-full ring-2 ring-white/20"
+                          className="w-20 h-20 object-cover rounded-full ring-2 ring-white/20"
                         />
-                        <span className="text-base mt-2 text-white font-semibold">
+                        <span className="text-sm mt-2 text-white font-semibold">
                           {p.username}
                         </span>
                       </>
                     ) : (
-                      <span className="text-white text-lg">Waiting...</span>
+                      <span className="text-white text-base">Waiting...</span>
                     )}
                   </div>
                 );
               })}
             </div>
-
-            {/* Host start button */}
-            {isHost && (
-              <div className="mt-6 flex justify-center gap-4">
-                <button
-                  onClick={handleStartGame}
-                  disabled={!isLobbyFull}
-                  className={`rounded-2xl px-10 py-4 text-xl font-bold border-2 border-white text-white transition-opacity ${
-                    isLobbyFull
-                      ? "bg-transparent hover:bg-white/10"
-                      : "bg-transparent border-white/30 text-white/50 cursor-not-allowed"
-                  }`}
-                >
-                  Start Game
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
+
+      {/* Host start button - Below panel */}
+      {isHost && (
+        <div className="px-4 mt-4 flex justify-center">
+          <button
+            onClick={handleStartGame}
+            disabled={!isLobbyFull}
+            className={`rounded-2xl px-10 py-4 text-xl font-bold border-2 border-white text-white transition-opacity ${
+              isLobbyFull
+                ? "bg-transparent hover:bg-white/10"
+                : "bg-transparent border-white/30 text-white/50 cursor-not-allowed"
+            }`}
+          >
+            Start Game
+          </button>
+        </div>
+      )}
 
       <Outlet />
     </div>
