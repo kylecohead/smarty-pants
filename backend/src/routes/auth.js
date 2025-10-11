@@ -17,15 +17,37 @@ router.post("/signup", async (req, res) => {
   try {
     const hashed = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { username, email, password: hashed, role: "USER" },
+      data: { 
+        username, 
+        email, 
+        password: hashed, 
+        role: "USER",
+        gamesPlayed: 0,
+        highScore: 0,
+        wins: 0,
+        memberSince: new Date()
+      },
     });
 
     const payload = { id: user.id, role: user.role };
     const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
     const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
-    res.json({ accessToken, refreshToken, role: user.role, id: user.id });
-    res.json({ accessToken, refreshToken, role: user.role, id: user.id });
+    console.log(`🎉 SIGNUP: Created new tokens for user ${user.username} (ID: ${user.id})`);
+    console.log(`   Access Token: ${accessToken.substring(0, 20)}...`);
+    console.log(`   Refresh Token: ${refreshToken.substring(0, 20)}...`);
+
+    res.json({ 
+      accessToken, 
+      refreshToken, 
+      role: user.role, 
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (err) {
     res.status(400).json({ error: "User already exists" });
   }
@@ -33,38 +55,84 @@ router.post("/signup", async (req, res) => {
 
 // --- LOGIN ---
 router.post("/login", async (req, res) => {
-  const { identifier, password } = req.body;
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [{ email: identifier }, { username: identifier }],
-    },
-  });
+  try {
+    const { identifier, password } = req.body;
+    
+    if (!identifier || !password) {
+      return res.status(400).json({ error: "Missing credentials" });
+    }
 
-  if (!user) return res.status(400).json({ error: "Invalid credentials" });
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: identifier }, { username: identifier }],
+      },
+    });
 
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(400).json({ error: "Invalid credentials" });
+    if (!user) return res.status(400).json({ error: "Invalid credentials" });
 
-  const payload = { id: user.id, role: user.role };
-  const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
-  const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(400).json({ error: "Invalid credentials" });
 
-  res.json({ accessToken, refreshToken, role: user.role, id: user.id });
+    const payload = { id: user.id, role: user.role };
+    const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
+    const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
+
+    console.log(`🔑 LOGIN: Created new tokens for user ${user.username} (ID: ${user.id})`);
+    console.log(`   Access Token: ${accessToken.substring(0, 20)}...`);
+    console.log(`   Refresh Token: ${refreshToken.substring(0, 20)}...`);
+
+    res.json({ 
+      accessToken, 
+      refreshToken, 
+      role: user.role, 
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    console.error("❌ LOGIN error:", err);
+    res.status(500).json({ error: "Internal server error during login" });
+  }
 });
 
 // --- REFRESH ---
 router.post("/refresh", (req, res) => {
   const { token } = req.body;
-  if (!token) return res.status(401).json({ error: "No token" });
+  
+  if (!token) {
+    console.log("❌ REFRESH: No refresh token provided");
+    return res.status(401).json({ error: "No token" });
+  }
+
+  console.log(`🔄 REFRESH: Attempting to verify refresh token: ${token.substring(0, 20)}...`);
 
   jwt.verify(token, REFRESH_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: "Invalid refresh token" });
+    if (err) {
+      console.log(`❌ REFRESH: Token verification failed - ${err.name}: ${err.message}`);
+      
+      if (err.name === 'TokenExpiredError') {
+        console.log(`🕒 REFRESH: Refresh token expired at ${err.expiredAt}`);
+        return res.status(403).json({ error: "Refresh token expired" });
+      } else if (err.name === 'JsonWebTokenError') {
+        console.log(`🔒 REFRESH: Invalid refresh token format`);
+        return res.status(403).json({ error: "Invalid refresh token" });
+      } else {
+        console.log(`🔒 REFRESH: Other JWT error: ${err.name}`);
+        return res.status(403).json({ error: "Invalid refresh token" });
+      }
+    }
 
     const newAccessToken = jwt.sign(
       { id: user.id, role: user.role },
       ACCESS_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "1m" }
     );
+
+    console.log(`✅ REFRESH: Successfully created new access token for user ID ${user.id}`);
+    console.log(`   New Access Token: ${newAccessToken.substring(0, 20)}...`);
 
     res.json({ accessToken: newAccessToken, role: user.role });
   });

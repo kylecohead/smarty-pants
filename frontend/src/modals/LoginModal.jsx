@@ -15,7 +15,7 @@ export default function LoginModal({ mode = "login", onAuth }) {
 
     try {
       let result;
-      
+
       if (mode === "login") {
         result = await login(email, password);
       } else {
@@ -33,17 +33,16 @@ export default function LoginModal({ mode = "login", onAuth }) {
       } else {
         setError(result.error || "Authentication failed");
       }
-    } catch (error) {
-      console.error("Authentication error:", error);
+    } catch (err) {
+      console.error("Authentication error:", err);
       setError("Network error during authentication");
     }
   }
 
-
   return (
     <div className="max-w-md mx-auto rounded-2xl bg-smartie-light-blue p-8 border border-smart-light-blue">
       {/* Heading */}
-      <h2 className="mb-6 text-center font-heading  text-4xl text-white">
+      <h2 className="mb-6 text-center font-heading text-4xl text-white">
         {mode === "login" ? "LOGIN" : "SIGNUP"}
       </h2>
 
@@ -94,10 +93,29 @@ export default function LoginModal({ mode = "login", onAuth }) {
 
       {/* Small footer */}
       <p className="mt-4 text-center text-sm text-gray-100 font-body">
-        {mode === "login"
-          ? "Don’t have an account? Sign up now!"
-          : "Already have an account? Log in instead!"}
+        {mode === "login" ? (
+          <>
+            Don’t have an account?
+            <button
+              onClick={() => navigate("/signup")}
+              className="text-smart-yellow hover:underline ml-1"
+            >
+              Sign up now!
+            </button>
+          </>
+        ) : (
+          <>
+            Already have an account?
+            <button
+              onClick={() => navigate("/login")}
+              className="text-smart-yellow hover:underline ml-1"
+            >
+              Log in instead!
+            </button>
+          </>
+        )}
       </p>
     </div>
   );
 }
+

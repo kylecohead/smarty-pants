@@ -6,6 +6,7 @@ import matchesRouter from "./routes/matches.js";
 import imageRoutes from "./routes/images.js";
 import userRoutes from "./routes/user.js";
 import questionRoutes from "./routes/questions.js";
+import notificationRoutes from "./routes/notifications.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import { PrismaClient } from "@prisma/client";
 import http from "http";
@@ -37,6 +38,7 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api/matches", authMiddleware, matchesRouter);
 app.use("/api/users", userRoutes);
 app.use("/api/questions", questionRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // === SOCKET.IO SETUP ===
 const server = http.createServer(app);
