@@ -11,6 +11,9 @@ import { api } from "../services/api";
 import GameHeader from "../components/GameHeader";
 import QuestionCard from "../components/QuestionCard";
 import GameOverScreen from "../components/GameOverScreen";
+import QuestionRecapModal from "../modals/QuestionRecapModal";
+import GameOverModal from "../modals/GameOverModal";
+import QuitConfirmModal from "../modals/QuitConfirmModal";
 import {
   buildPerQuestionLeaderboard,
   buildFinalLeaderboard,
@@ -31,10 +34,13 @@ export default function PlayGame() {
   const [showRecap, setShowRecap] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [questionStartTime, setQuestionStartTime] = useState(0);
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
 
   const socketRef = useRef(null);
   const timerRef = useRef(null);
   const timeoutGuardRef = useRef(null);
+  const questionStartTimeRef = useRef(0);
+  const timeLeftRef = useRef(0);
   const isAnsweredRef = useRef(isAnswered);
   useEffect(() => {
     isAnsweredRef.current = isAnswered;
@@ -47,7 +53,7 @@ export default function PlayGame() {
         const data = await api.getCurrentUser();
         setCurrentUser(data.user);
       } catch (err) {
-        console.error("❌ Failed to fetch user:", err);
+        console.error(" Failed to fetch user:", err);
       }
     })();
   }, []);
@@ -64,7 +70,7 @@ export default function PlayGame() {
       setTimeout(() => socket.emit("requestCurrentQuestion", { matchId }), 500);
     });
 
-    // 🧠 When new question arrives
+    // When new question arrives
     socket.on("newQuestion", (data) => {
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
@@ -80,26 +86,78 @@ export default function PlayGame() {
       );
     });
 
-    // When answer result received
-    socket.on("answerResult", ({ username, correct, points }) => {
-      if (username === currentUser.username) {
+    // Individual answer confirmation (immediate feedback)
+    socket.on("answerSubmitted", ({ correct, points, correctAnswer }) => {
+      if (!isAnswered) {
         setIsAnswered(true);
-        setShowRecap(true);
+        // DON'T clear the timer - let it keep running for synchronized leaderboard
+        // clearInterval(timerRef.current); // REMOVED
+        clearTimeout(timeoutGuardRef.current);
 
-        // Build per-question leaderboard
-        const leaderboard = buildPerQuestionLeaderboard(
-          Object.entries(scores).reduce((acc, [user, score]) => {
-            acc[user] = { player: { username: user }, score };
-            return acc;
-          }, {}),
-          scores[currentUser.username] || 0,
-          scores
+        // Just show a simple "Answer submitted" state
+        console.log(
+          ` Answer submitted: ${correct ? "Correct" : "Wrong"} (+${points})`
         );
+      }
+    });
 
-        setRecapData({ correct, points });
+    // Question results for all players (after everyone answered or time up)
+    socket.on("questionResults", ({ responses, scores, correctAnswer }) => {
+      setScores(scores);
+
+      // Find your response
+      const yourResponse = responses.find(
+        (r) => r.username === currentUser.username
+      );
+
+      // Build leaderboard with both total and round scores
+      const currentLeaderboard = Object.entries(scores)
+        .sort((a, b) => b[1] - a[1])
+        .map(([playerName, totalScore], index) => {
+          const playerResponse = responses.find(
+            (r) => r.username === playerName
+          );
+          return {
+            id: index,
+            name: playerName,
+            total: totalScore,
+            round: playerResponse ? playerResponse.points : 0,
+            answered: playerResponse ? playerResponse.answered : false,
+            correct: playerResponse ? playerResponse.correct : false,
+            isYou: playerName === currentUser.username,
+          };
+        });
+
+      const recapDataToShow = {
+        correct: yourResponse?.correct || false,
+        points: yourResponse?.points || 0,
+        leaderboard: currentLeaderboard,
+        allResponses: responses, // Include all player responses
+      };
+
+      // WAIT for the visual timer to hit 0 before showing leaderboard
+      // This ensures the timer bar is empty when the leaderboard pops up
+      const timeRemaining = timeLeftRef.current;
+      if (timeRemaining > 100) {
+        // If there's still time on the clock, wait for it
+        setTimeout(() => {
+          setRecapData(recapDataToShow);
+          setShowRecap(true);
+          setTimeLeft(0);
+          timeLeftRef.current = 0;
+          clearInterval(timerRef.current);
+          clearTimeout(timeoutGuardRef.current);
+          setTimeout(() => setShowRecap(false), 4000);
+        }, timeRemaining);
+      } else {
+        // Timer already at 0 or very close, show immediately
+        setRecapData(recapDataToShow);
+        setShowRecap(true);
+        setTimeLeft(0);
+        timeLeftRef.current = 0;
         clearInterval(timerRef.current);
         clearTimeout(timeoutGuardRef.current);
-        setTimeout(() => setShowRecap(false), 3000);
+        setTimeout(() => setShowRecap(false), 4000);
       }
     });
 
@@ -116,6 +174,16 @@ export default function PlayGame() {
       clearTimeout(timeoutGuardRef.current);
     });
 
+    socket.on("hostLeft", ({ message, scores }) => {
+      console.log("👑 Host left the game:", message);
+      setScores(scores || {});
+      setMatchEnded(true);
+      clearInterval(timerRef.current);
+      clearTimeout(timeoutGuardRef.current);
+      // Show message to user
+      alert(message);
+    });
+
     socket.connect();
 
     return () => {
@@ -127,37 +195,43 @@ export default function PlayGame() {
     };
   }, [currentUser, matchId]);
 
-  // Start countdown
+  // Start countdown with smooth updates
   const startTimer = (duration) => {
     clearInterval(timerRef.current);
+    const startTime = Date.now();
+    setQuestionStartTime(startTime);
+    questionStartTimeRef.current = startTime;
     setTimeLeft(duration);
-    setQuestionStartTime(Date.now());
 
+    // Update timer every 100ms for smooth progress bar
     timerRef.current = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1000) {
-          clearInterval(timerRef.current);
-          if (!isAnsweredRef.current) handleAnswer(null);
-          return 0;
-        }
-        return t - 1000;
-      });
-    }, 1000);
+      const elapsed = Date.now() - questionStartTimeRef.current;
+      const remaining = Math.max(0, duration - elapsed);
+
+      setTimeLeft(remaining);
+      timeLeftRef.current = remaining; // Keep ref in sync
+
+      if (remaining <= 0) {
+        clearInterval(timerRef.current);
+        if (!isAnsweredRef.current) handleAnswer(null);
+      }
+    }, 100);
   };
 
   const handleAnswer = (optionLabel) => {
     if (isAnswered || !socketRef.current || !question) return;
     setIsAnswered(true);
-    clearInterval(timerRef.current);
+    // DON'T clear the timer - let it keep running for synchronized display
+    // clearInterval(timerRef.current); // REMOVED
     clearTimeout(timeoutGuardRef.current);
 
-    const elapsedTimeMs = Date.now() - questionStartTime;
+    const elapsedTimeMs = Date.now() - questionStartTimeRef.current;
 
     // Handle the case where no answer was selected (timer ran out)
     const finalAnswer = optionLabel || ""; // Convert null/undefined to empty string
 
-    // console.log("🔍 Submitting answer:", finalAnswer);
-    // console.log("🔍 Current question:", question);
+    // console.log(" Submitting answer:", finalAnswer);
+    // console.log(" Current question:", question);
 
     socketRef.current.emit("submitAnswer", {
       matchId,
@@ -167,12 +241,21 @@ export default function PlayGame() {
   };
 
   const handleQuitGame = () => {
+    // Show confirmation modal before quitting
+    setShowQuitConfirm(true);
+  };
+
+  const confirmQuitGame = () => {
     const socket = socketRef.current;
     if (socket && socket.connected) {
       socket.emit("leaveMatch", { matchId });
       socket.disconnect();
     }
-    navigate("/");
+    navigate("/landing");
+  };
+
+  const cancelQuit = () => {
+    setShowQuitConfirm(false);
   };
 
   // ================== UI RENDERING ==================
@@ -181,7 +264,7 @@ export default function PlayGame() {
     // Create properly sorted leaderboard
     const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
     const winner = sorted[0];
-    
+
     // Format leaderboard for GameOverScreen component
     const formattedLeaderboard = sorted.map(([username, score], index) => ({
       id: index,
@@ -228,44 +311,17 @@ export default function PlayGame() {
     );
   }
 
-  if (showRecap && recapData) {
-    return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center text-white text-center relative overflow-hidden"
-        style={{ backgroundColor: colors.darkBlue }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0A2442] via-[#123E68] to-[#0A2442] opacity-50 animate-pulse" />
-        <div className="relative z-10">
-          <h1
-            className={`text-5xl font-black mb-6 drop-shadow-lg ${
-              recapData.correct ? "text-smart-green" : "text-red-400"
-            }`}
-          >
-            {recapData.correct ? "✔ Correct!" : "✖ Wrong!"}
-          </h1>
-          <p className="text-xl mb-2">
-            {recapData.correct ? "Nice work!" : "Better luck next time."}
-          </p>
-          <p className="text-lg mb-6">+{recapData.points} points earned</p>
-          <div className="text-sm text-blue-300 animate-pulse">
-            Next question starting...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // ================== QUESTION DISPLAY ==================
   return (
     <div
-      className="min-h-screen text-white"
+      className="min-h-screen text-white relative"
       style={{ backgroundColor: colors.darkBlue }}
     >
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8">
         <GameHeader
           score={scores[currentUser?.username] || 0}
-          currentQuestion={question.index + 1}
-          totalQuestions={undefined}
+          currentQuestion={question.index}
+          totalQuestions={question.total || 5}
           onQuit={handleQuitGame}
         />
 
@@ -281,12 +337,52 @@ export default function PlayGame() {
             timeLeftMs={timeLeft}
             questionDurationMs={question.timeLimit || 10000}
             youAnswered={isAnswered}
-            questionResolved={false}
-            waitingOnOthers={false}
-            onAnswer={(optionText) => handleAnswer(optionText)} // Direct string, no .label needed
+            questionResolved={showRecap}
+            waitingOnOthers={isAnswered && !showRecap} // NEW: show waiting state
+            onAnswer={(optionText) => handleAnswer(optionText)}
           />
         </main>
       </div>
+
+      {/* Question Recap Modal Overlay */}
+      {showRecap && recapData && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-4xl">
+            <QuestionRecapModal
+              correct={recapData.correct}
+              points={recapData.points}
+              leaderboard={recapData.leaderboard}
+              allResponses={recapData.allResponses} // Pass this as a prop
+              onClose={() => setShowRecap(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Quit Confirmation Modal */}
+      {showQuitConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-md">
+            <QuitConfirmModal
+              onConfirm={confirmQuitGame}
+              onCancel={cancelQuit}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Game Over Modal Overlay */}
+      {matchEnded && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-4xl">
+            <GameOverModal
+              scores={scores}
+              currentUser={currentUser}
+              onClose={() => navigate("/landing")}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

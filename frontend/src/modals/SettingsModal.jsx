@@ -3,10 +3,34 @@ import { useState, useEffect } from "react";
 import ProfileCard from "../components/ProfileCard";
 
 const tabs = [
-  { id: "1", label: "Account" },
-  { id: "2", label: "Stats" },
-  { id: "3", label: "History" },
-  { id: "4", label: "Other" },
+  {
+    id: "1",
+    label: "Account",
+    color: "smart-pink",
+    bgColor: "bg-smart-pink/20",
+    borderColor: "border-smart-pink",
+  },
+  {
+    id: "2",
+    label: "Avatar",
+    color: "smart-orange",
+    bgColor: "bg-smart-orange/20",
+    borderColor: "border-smart-orange",
+  },
+  {
+    id: "3",
+    label: "Stats",
+    color: "smart-light-blue",
+    bgColor: "bg-smart-light-blue/20",
+    borderColor: "border-smart-light-blue",
+  },
+  {
+    id: "4",
+    label: "History",
+    color: "smart-purple",
+    bgColor: "bg-smart-purple/20",
+    borderColor: "border-smart-purple",
+  },
 ];
 
 export default function SettingsModal() {
@@ -23,7 +47,22 @@ export default function SettingsModal() {
   const [avatar, setAvatar] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Logout modal state
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  // Stick man settings
+  const [stickmanStrokeWidth, setStickmanStrokeWidth] = useState(() => {
+    return parseInt(localStorage.getItem("stickmanStrokeWidth")) || 3;
+  });
+  const [stickmanHeight, setStickmanHeight] = useState(() => {
+    return parseInt(localStorage.getItem("stickmanHeight")) || 120;
+  });
+  const [stickmanWidth, setStickmanWidth] = useState(() => {
+    return parseInt(localStorage.getItem("stickmanWidth")) || 80;
+  });
+  const [stickmanColor, setStickmanColor] = useState(() => {
+    return localStorage.getItem("stickmanColor") || "smart-light-blue";
+  });
 
   //MOCK DATA======================================
   // Dummy stats for now
@@ -34,12 +73,22 @@ export default function SettingsModal() {
 
   // Match history (mock)
   const [matchHistory] = useState([
-    { id: 1, date: "2025-09-18T19:30:00Z", category: "Science", score: 1800, placement: 2 },
-    { id: 2, date: "2025-09-20T20:00:00Z", category: "Geography", score: 2450, placement: 1 },
+    {
+      id: 1,
+      date: "2025-09-18T19:30:00Z",
+      category: "Science",
+      score: 1800,
+      placement: 2,
+    },
+    {
+      id: 2,
+      date: "2025-09-20T20:00:00Z",
+      category: "Geography",
+      score: 2450,
+      placement: 1,
+    },
   ]);
-//===============================================
-
-
+  //===============================================
 
   // Fetch current user on mount
   useEffect(() => {
@@ -69,13 +118,25 @@ export default function SettingsModal() {
     fetchUser();
   }, []);
 
+  // Logout functions
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    setShowLogoutModal(false);
+    navigate("/"); // Navigate to home page
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
+  };
+
   // Upload avatar
   async function handleAvatarUpload(file) {
     const formData = new FormData();
     formData.append("image", file);
 
     try {
-      const res = await fetch(`/api/images/upload`, {   
+      const res = await fetch(`/api/images/upload`, {
         method: "POST",
         body: formData,
       });
@@ -124,247 +185,563 @@ export default function SettingsModal() {
   }
 
   if (loading) {
-    return <p className="p-6 text-slate-400">Loading profile...</p>;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-smart-black/60 p-4">
+        <p className="p-6 text-slate-400">Loading profile...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="flex gap-4">
-      {/* Sidebar */}
-      <aside className="w-24 shrink-0 rounded-xl border border-smart-light-blue bg-smart-black/60 backdrop-blur-md shadow-lg shadow-smart-light-blue/30 p-3">
-        <nav className="flex flex-col gap-3">
-          {tabs.map((t) => (
-            <NavLink
-              key={t.id}
-              to={`/landing/settings/${t.id}`}
-              className={({ isActive }) =>
-                `rounded-lg px-3 py-2 text-xs font-semibold tracking-wide transition 
-                border-2 
-                ${
-                  isActive
-                    ? "bg-gradient-to-r from-smart-purple via-smart-pink to-smart-orange text-smart-white border-smart-pink shadow-lg shadow-smart-pink/40"
-                    : "text-smart-light-blue border-transparent hover:border-smart-purple hover:text-smart-yellow hover:bg-smart-dark-blue/40"
-                }`
-              }
-            >
-              {t.label}
-            </NavLink>
-          ))}
-        </nav>
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-smart-black/60 p-4">
+      <div
+        className={`relative w-full max-w-4xl rounded-2xl border-2 bg-smart-dark-navy p-6 shadow-xl ${
+          active === "1"
+            ? "border-smart-pink"
+            : active === "2"
+            ? "border-smart-orange"
+            : active === "3"
+            ? "border-smart-light-blue"
+            : active === "4"
+            ? "border-smart-purple"
+            : "border-smart-white"
+        }`}
+      >
+        {/* Close Button */}
         <button
           onClick={() => navigate("/landing")}
-          className="mt-4 w-full rounded-lg border-2 border-smart-red px-3 py-2 text-xs font-semibold text-smart-red transition hover:bg-smart-red hover:text-smart-white hover:shadow-lg hover:shadow-smart-red/40"
+          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-lg flex items-center justify-center transition-colors duration-200 border-2 border-red-600 hover:border-red-700"
+          title="Close Settings"
         >
-          ✕ Close
+          ×
         </button>
-      </aside>
 
-
-      {/* Content */}
-      <section className="flex-1 rounded-xl border border-smart-light-blue 
-        bg-smart-black/40 backdrop-blur-md shadow-lg shadow-smart-light-blue/30 
-        p-6 min-h-[450px]">
-
-
-        {active === "1" && (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-            {/* Left: Form */}
-            <form
-              className="flex flex-col gap-4 md:col-span-1 p-4 rounded-xl border-2 border-smart-purple bg-smart-black/60 backdrop-blur-md shadow-lg shadow-smart-purple/30"
-              onSubmit={handleSave}
-            >
-              <h3 className="text-base font-semibold text-smart-light-blue">⚙️ Update Profile</h3>
-
-              {/* Username */}
-              <label className="flex flex-col text-xs text-smart-light-blue">
-                Username
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="rounded-md border border-smart-light-blue bg-smart-black/60 px-2 py-1 text-smart-white focus:ring-2 focus:ring-smart-purple"
-                />
-              </label>
-
-              {/* Password */}
-              <label className="flex flex-col text-xs text-smart-light-blue">
-                Password
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-md border border-smart-light-blue bg-smart-black/60 px-2 py-1 pr-10 text-smart-white focus:ring-2 focus:ring-smart-pink"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((p) => !p)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-smart-light-pink hover:text-smart-pink"
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
-                </div>
-              </label>
-
-              {/* Avatar Upload */}
-              <label className="flex flex-col text-xs text-smart-light-blue">
-                Upload Avatar
-                <div className="mt-2 flex items-center gap-4">
-                  {/* Hidden input */}
-                  <input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        // Show preview instantly
-                        const previewUrl = URL.createObjectURL(file);
-                        setAvatar(previewUrl); // show preview
-                        handleAvatarUpload(file); // still upload to backend
-                      }
-                    }}
-                  />
-
-                  {/* Custom neon button */}
-                  <label
-                    htmlFor="avatar-upload"
-                    className="cursor-pointer rounded-lg border-2 border-smart-light-blue 
-                              bg-gradient-to-r from-smart-purple via-smart-pink to-smart-orange 
-                              px-3 py-2 text-xs font-bold text-smart-white shadow-md 
-                              hover:shadow-lg hover:shadow-smart-pink/40 transition"
-                  >
-                    📷 
-                  </label>
-
-        
-                </div>
-              </label>
-
-
-              <button
-                type="submit"
-                className="mt-2 rounded-lg bg-gradient-to-r from-smart-purple via-smart-pink to-smart-orange px-3 py-2 text-sm font-bold text-smart-white shadow-md hover:shadow-lg hover:shadow-smart-pink/40"
-              >
-                Save
-              </button>
-            </form>
-
-            {/* Right: ProfileCard */}
-            <div className="md:col-span-3 flex items-center justify-center">
-              <ProfileCard
-                user={{
-                  username,
-                  avatar,
-                  gamesPlayed,
-                  highScore,
-                  wins,
-                  memberSince,
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {active === "2" && (
-          <div className="p-6 rounded-xl border-2 border-smart-light-blue bg-smart-black/60 shadow-lg shadow-smart-light-blue/30">
-            <h3 className="mb-6 text-xl font-bold text-smart-yellow">🚀 Your Epic Stats</h3>
-
-            <div className="space-y-4">
-              {/* Core Stats */}
-              <div className="flex items-center justify-between text-sm text-smart-white">
-                <span>Games Played</span>
-                <span className="font-bold text-smart-green">{gamesPlayed}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm text-smart-white">
-                <span>High Score</span>
-                <span className="font-bold text-smart-pink">{highScore}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm text-smart-white">
-                <span>Win Rate</span>
-                <span className="font-bold text-smart-light-blue">
-                  {((wins / gamesPlayed) * 100).toFixed(1)}%
-                </span>
-              </div>
-
-              {/* Fun Bars */}
-              <div>
-                <p className="mb-1 text-sm font-semibold text-smart-light-pink">😎 Aura</p>
-                <div className="h-3 w-full rounded-full bg-smart-black/40 overflow-hidden">
-                  <div
-                    className="h-3 rounded-full bg-gradient-to-r from-smart-pink via-smart-purple to-smart-orange animate-pulse"
-                    style={{ width: `${Math.min(100, wins * 8)}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-1 text-sm font-semibold text-smart-green">🧠 Brain Power</p>
-                <div className="h-3 w-full rounded-full bg-smart-black/40 overflow-hidden">
-                  <div
-                    className="h-3 rounded-full bg-gradient-to-r from-smart-light-blue via-smart-dark-blue to-smart-green animate-pulse"
-                    style={{ width: `${Math.min(100, (highScore / 3000) * 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-1 text-sm font-semibold text-smart-orange">🔥 Dedication</p>
-                <div className="h-3 w-full rounded-full bg-smart-black/40 overflow-hidden">
-                  <div
-                    className="h-3 rounded-full bg-gradient-to-r from-smart-orange to-smart-red animate-pulse"
-                    style={{ width: `${Math.min(100, gamesPlayed * 2)}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {active === "3" && (
-          <div>
-            <h3 className="mb-6 text-xl font-bold text-smart-purple">🎯 Match History</h3>
-            <div className="grid gap-4 md:grid-cols-2">
-              {matchHistory.map((m) => (
-                <div
-                  key={m.id}
-                  className="rounded-xl border-2 border-smart-light-blue bg-smart-black/50 p-4 shadow-lg hover:shadow-smart-light-blue/40 transition"
+        <div
+          className={`flex rounded-xl border-4 bg-smart-dark-navy overflow-hidden ${
+            active === "1"
+              ? "border-smart-pink"
+              : active === "2"
+              ? "border-smart-orange"
+              : active === "3"
+              ? "border-smart-light-blue"
+              : active === "4"
+              ? "border-smart-purple"
+              : "border-smart-white"
+          }`}
+        >
+          {/* Sidebar */}
+          <aside
+            className={`w-48 shrink-0 border-r-4 bg-smart-dark-navy p-4 ${
+              active === "1"
+                ? "border-smart-pink"
+                : active === "2"
+                ? "border-smart-orange"
+                : active === "3"
+                ? "border-smart-light-blue"
+                : active === "4"
+                ? "border-smart-purple"
+                : "border-smart-white"
+            }`}
+          >
+            <nav className="flex flex-col gap-3">
+              {tabs.map((t) => (
+                <NavLink
+                  key={t.id}
+                  to={`/landing/settings/${t.id}`}
+                  className={({ isActive }) =>
+                    `rounded-lg px-6 py-6 font-heading text-sm tracking-wide transition 
+                border-2 text-center w-full block
+                ${
+                  isActive
+                    ? `bg-${t.color} text-smart-white border-${t.color}`
+                    : `text-${t.color} border-${t.color} hover:bg-${t.color}/20`
+                }`
+                  }
                 >
-                  <div className="flex items-center justify-between text-xs text-smart-light-blue">
-                    <span>{new Date(m.date).toLocaleDateString()}</span>
-                    <span className="uppercase text-smart-yellow">{m.category}</span>
-                  </div>
+                  {t.label.toUpperCase()}
+                </NavLink>
+              ))}
+            </nav>
 
-                  <p className="mt-2 text-lg font-bold text-smart-white">Score: {m.score}</p>
-                  <p className="text-sm text-smart-light-pink">Placement: #{m.placement}</p>
+            {/* Logout Button */}
+            <div className="mt-6">
+              <button
+                onClick={() => setShowLogoutModal(true)}
+                className="rounded-lg border-2 border-smart-red bg-smart-red/20 hover:bg-smart-red/30 px-6 py-4 font-heading text-sm tracking-wide text-smart-red transition-colors w-full text-center"
+              >
+                LOG OUT
+              </button>
+            </div>
+          </aside>
 
-                  <div className="mt-3 h-2 w-full rounded-full bg-smart-black/30 overflow-hidden">
-                    <div
-                      className={`h-2 rounded-full ${
-                        m.placement === 1
-                          ? "bg-gradient-to-r from-smart-yellow to-smart-green"
-                          : "bg-gradient-to-r from-smart-purple to-smart-pink"
-                      }`}
-                      style={{ width: `${Math.min(100, (m.score / highScore) * 100)}%` }}
-                    ></div>
+          {/* Content */}
+          <section className="flex-1 p-6 min-h-[450px] bg-smart-dark-navy">
+            {active === "1" && (
+              <div>
+                <h3 className="text-2xl font-heading text-smart-pink mb-4">
+                  ⚙️ UPDATE PROFILE
+                </h3>
+                <div className="h-px bg-smart-pink/30 mb-6"></div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Left: Form */}
+                  <form className="flex flex-col gap-4" onSubmit={handleSave}>
+                    {/* Username */}
+                    <label className="flex flex-col text-lg font-body text-smart-pink">
+                      Username
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="mt-2 rounded-lg border border-smart-pink bg-[#2d2d3a] px-4 py-3 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink text-lg"
+                      />
+                    </label>
+
+                    {/* Password */}
+                    <label className="flex flex-col text-lg font-body text-smart-pink">
+                      Password
+                      <div className="relative mt-2">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full rounded-lg border border-smart-pink bg-[#2d2d3a] px-4 py-3 pr-12 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink text-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((p) => !p)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-lg font-body text-smart-light-pink hover:text-smart-pink"
+                        >
+                          {showPassword ? "Hide" : "Show"}
+                        </button>
+                      </div>
+                    </label>
+
+                    <button
+                      type="submit"
+                      className="mt-4 rounded-xl bg-smart-pink px-4 py-3 font-button text-black hover:bg-smart-light-pink transition"
+                    >
+                      Save Profile
+                    </button>
+                  </form>
+
+                  {/* Right: ProfileCard */}
+                  <div className="flex items-center justify-center">
+                    <ProfileCard
+                      user={{
+                        username,
+                        avatar,
+                        gamesPlayed,
+                        highScore,
+                        wins,
+                        memberSince,
+                      }}
+                      stickmanStrokeWidth={stickmanStrokeWidth}
+                      stickmanColor={stickmanColor}
+                      stickmanHeight={stickmanHeight}
+                      stickmanWidth={stickmanWidth}
+                    />
                   </div>
                 </div>
-              ))}
+              </div>
+            )}
+
+            {active === "2" && (
+              <div>
+                <h3 className="text-2xl font-heading text-smart-orange mb-4">
+                  🎨 AVATAR CUSTOMIZATION
+                </h3>
+                <div className="h-px bg-smart-orange/30 mb-6"></div>
+
+                <div className="flex gap-8">
+                  {/* Left: Controls */}
+                  <div className="flex-1 space-y-6">
+                    {/* Stroke Width */}
+                    <div>
+                      <h4 className="mb-3 text-xl font-body text-smart-orange">
+                        Line Width
+                      </h4>
+                      <div className="flex items-center gap-4">
+                        <span className="text-lg font-body text-smart-orange/60">
+                          Thin
+                        </span>
+                        <input
+                          type="range"
+                          min="1"
+                          max="8"
+                          value={stickmanStrokeWidth}
+                          onChange={(e) => {
+                            const newWidth = parseInt(e.target.value);
+                            setStickmanStrokeWidth(newWidth);
+                            localStorage.setItem(
+                              "stickmanStrokeWidth",
+                              newWidth.toString()
+                            );
+                          }}
+                          className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-lg font-body text-smart-orange/60">
+                          Thick
+                        </span>
+                        <span className="text-lg font-body text-smart-orange font-bold min-w-[2rem]">
+                          {stickmanStrokeWidth}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Height */}
+                    <div>
+                      <h4 className="mb-3 text-xl font-body text-smart-orange">
+                        Height
+                      </h4>
+                      <div className="flex items-center gap-4">
+                        <span className="text-lg font-body text-smart-orange/60">
+                          Short
+                        </span>
+                        <input
+                          type="range"
+                          min="80"
+                          max="160"
+                          value={stickmanHeight}
+                          onChange={(e) => {
+                            const newHeight = parseInt(e.target.value);
+                            setStickmanHeight(newHeight);
+                            localStorage.setItem(
+                              "stickmanHeight",
+                              newHeight.toString()
+                            );
+                          }}
+                          className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-lg font-body text-smart-orange/60">
+                          Tall
+                        </span>
+                        <span className="text-lg font-body text-smart-orange font-bold min-w-[2rem]">
+                          {stickmanHeight}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Width */}
+                    <div>
+                      <h4 className="mb-3 text-xl font-body text-smart-orange">
+                        Width
+                      </h4>
+                      <div className="flex items-center gap-4">
+                        <span className="text-lg font-body text-smart-orange/60">
+                          Narrow
+                        </span>
+                        <input
+                          type="range"
+                          min="60"
+                          max="120"
+                          value={stickmanWidth}
+                          onChange={(e) => {
+                            const newWidth = parseInt(e.target.value);
+                            setStickmanWidth(newWidth);
+                            localStorage.setItem(
+                              "stickmanWidth",
+                              newWidth.toString()
+                            );
+                          }}
+                          className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
+                        />
+                        <span className="text-lg font-body text-smart-orange/60">
+                          Wide
+                        </span>
+                        <span className="text-lg font-body text-smart-orange font-bold min-w-[2rem]">
+                          {stickmanWidth}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Color */}
+                    <div>
+                      <h4 className="mb-3 text-xl font-body text-smart-orange">
+                        Color
+                      </h4>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          {
+                            name: "smart-light-blue",
+                            label: "Blue",
+                            bgClass: "bg-smart-light-blue",
+                            textClass: "text-smart-light-blue",
+                            borderClass: "border-smart-light-blue",
+                            hoverClass: "hover:bg-smart-light-blue/20",
+                          },
+                          {
+                            name: "smart-green",
+                            label: "Green",
+                            bgClass: "bg-smart-green",
+                            textClass: "text-smart-green",
+                            borderClass: "border-smart-green",
+                            hoverClass: "hover:bg-smart-green/20",
+                          },
+                          {
+                            name: "smart-yellow",
+                            label: "Yellow",
+                            bgClass: "bg-smart-yellow",
+                            textClass: "text-smart-yellow",
+                            borderClass: "border-smart-yellow",
+                            hoverClass: "hover:bg-smart-yellow/20",
+                          },
+                          {
+                            name: "smart-orange",
+                            label: "Orange",
+                            bgClass: "bg-smart-orange",
+                            textClass: "text-smart-orange",
+                            borderClass: "border-smart-orange",
+                            hoverClass: "hover:bg-smart-orange/20",
+                          },
+                          {
+                            name: "smart-red",
+                            label: "Red",
+                            bgClass: "bg-smart-red",
+                            textClass: "text-smart-red",
+                            borderClass: "border-smart-red",
+                            hoverClass: "hover:bg-smart-red/20",
+                          },
+                          {
+                            name: "smart-purple",
+                            label: "Purple",
+                            bgClass: "bg-smart-purple",
+                            textClass: "text-smart-purple",
+                            borderClass: "border-smart-purple",
+                            hoverClass: "hover:bg-smart-purple/20",
+                          },
+                          {
+                            name: "smart-light-pink",
+                            label: "Pink",
+                            bgClass: "bg-smart-light-pink",
+                            textClass: "text-smart-light-pink",
+                            borderClass: "border-smart-light-pink",
+                            hoverClass: "hover:bg-smart-light-pink/20",
+                          },
+                          {
+                            name: "smart-white",
+                            label: "White",
+                            bgClass: "bg-smart-white",
+                            textClass: "text-smart-white",
+                            borderClass: "border-smart-white",
+                            hoverClass: "hover:bg-smart-white/20",
+                          },
+                        ].map((color) => (
+                          <button
+                            key={color.name}
+                            onClick={() => {
+                              setStickmanColor(color.name);
+                              localStorage.setItem("stickmanColor", color.name);
+                            }}
+                            className={`rounded-lg p-3 text-lg font-body transition border-2 ${
+                              stickmanColor === color.name
+                                ? `${color.bgClass} text-smart-black ${color.borderClass}`
+                                : `${color.textClass} ${color.borderClass} ${color.hoverClass}`
+                            }`}
+                          >
+                            {color.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Stickman Preview */}
+                  <div className="flex flex-col items-center justify-start pt-8">
+                    <div className="flex flex-col items-center">
+                      {/* Preview Label */}
+                      <div className="text-smart-white text-lg font-heading mb-2">
+                        PREVIEW
+                      </div>
+
+                      <svg
+                        width="140"
+                        height="180"
+                        viewBox="0 0 140 180"
+                        className={`text-${stickmanColor} opacity-80 mb-4`}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={stickmanStrokeWidth}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{
+                          transform: `scale(${stickmanWidth / 140}, ${
+                            stickmanHeight / 180
+                          })`,
+                        }}
+                      >
+                        <circle cx="70" cy="22" r="18" />
+                        <line x1="70" y1="40" x2="70" y2="115" />
+                        <line x1="70" y1="70" x2="35" y2="52" />
+                        <line x1="70" y1="70" x2="105" y2="52" />
+                        <line x1="70" y1="115" x2="43" y2="160" />
+                        <line x1="70" y1="115" x2="97" y2="160" />
+                      </svg>
+
+                      {/* Arrow pointing up */}
+                      <div className={`text-${stickmanColor} text-3xl mb-2`}>
+                        ↑
+                      </div>
+
+                      {/* Username */}
+                      <div
+                        className={`text-${stickmanColor} text-2xl font-heading`}
+                      >
+                        {(username || "Player").toUpperCase()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {active === "3" && (
+              <div>
+                <h3 className="mb-4 text-2xl font-heading text-smart-light-blue">
+                  🚀 YOUR EPIC STATS
+                </h3>
+                <div className="h-px bg-smart-light-blue/30 mb-6"></div>
+
+                <div className="space-y-4">
+                  {/* Core Stats */}
+                  <div className="flex items-center justify-between text-lg font-body text-smart-light-blue">
+                    <span>Games Played</span>
+                    <span className="font-bold text-smart-light-blue">
+                      {gamesPlayed}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-lg font-body text-smart-light-blue">
+                    <span>High Score</span>
+                    <span className="font-bold text-smart-light-blue">
+                      {highScore}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-lg font-body text-smart-light-blue">
+                    <span>Win Rate</span>
+                    <span className="font-bold text-smart-light-blue">
+                      {((wins / gamesPlayed) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+
+                  {/* Fun Bars */}
+                  <div>
+                    <p className="mb-1 text-lg font-body font-semibold text-smart-light-blue">
+                      😎 Aura
+                    </p>
+                    <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
+                      <div
+                        className="h-3 rounded-full bg-smart-light-blue"
+                        style={{ width: `${Math.min(100, wins * 8)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-1 text-lg font-body font-semibold text-smart-light-blue">
+                      🧠 Brain Power
+                    </p>
+                    <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
+                      <div
+                        className="h-3 rounded-full bg-smart-light-blue"
+                        style={{
+                          width: `${Math.min(100, (highScore / 3000) * 100)}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-1 text-lg font-body font-semibold text-smart-light-blue">
+                      🔥 Dedication
+                    </p>
+                    <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
+                      <div
+                        className="h-3 rounded-full bg-smart-light-blue"
+                        style={{ width: `${Math.min(100, gamesPlayed * 2)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {active === "4" && (
+              <div>
+                <h3 className="mb-4 text-2xl font-heading text-smart-purple">
+                  🎯 MATCH HISTORY
+                </h3>
+                <div className="h-px bg-smart-purple/30 mb-6"></div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {matchHistory.map((m) => (
+                    <div
+                      key={m.id}
+                      className="rounded-xl border-2 border-smart-purple bg-smart-black/30 p-4 hover:border-smart-light-blue transition"
+                    >
+                      <div className="flex items-center justify-between text-lg font-body text-smart-purple">
+                        <span>{new Date(m.date).toLocaleDateString()}</span>
+                        <span className="uppercase text-smart-purple">
+                          {m.category}
+                        </span>
+                      </div>
+
+                      <p className="mt-2 text-xl font-body font-bold text-smart-purple">
+                        Score: {m.score}
+                      </p>
+                      <p className="text-lg font-body text-smart-purple">
+                        Placement: #{m.placement}
+                      </p>
+
+                      <div className="mt-3 h-2 w-full rounded-full bg-smart-black overflow-hidden">
+                        <div
+                          className={`h-2 rounded-full ${
+                            m.placement === 1
+                              ? "bg-smart-yellow"
+                              : "bg-smart-purple"
+                          }`}
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              (m.score / highScore) * 100
+                            )}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="max-w-md mx-4 rounded-2xl bg-smart-dark-blue border-2 border-smart-red p-6 shadow-xl">
+            <h3 className="mb-4 text-2xl font-heading text-smart-red text-center">
+              LOGOUT
+            </h3>
+            <p className="mb-6 text-center text-smart-white font-body">
+              Are you sure you want to log out?
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={handleLogoutCancel}
+                className="rounded-xl border-2 border-smart-white/30 bg-smart-white/10 hover:bg-smart-white/20 px-6 py-2 font-button text-smart-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="rounded-xl border-2 border-smart-red bg-smart-red hover:bg-smart-red/80 px-6 py-2 font-button text-smart-white transition-colors"
+              >
+                LOGOUT
+              </button>
             </div>
           </div>
-        )}
-
-        {active === "4" && (
-          <div className="p-6 rounded-xl border-2 border-smart-orange bg-smart-black/60 shadow-lg shadow-smart-orange/30">
-            <h3 className="mb-2 text-lg font-bold text-smart-orange">⚡ Other Settings</h3>
-            <p className="text-sm text-smart-white/70">
-              Placeholder for extra settings. Add more neon toggles here!
-            </p>
-          </div>
-        )}
-
-      </section>
+        </div>
+      )}
     </div>
   );
 }

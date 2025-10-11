@@ -28,7 +28,11 @@ const MODES = [
   { key: "science", label: "Science", backgroundImage: backScience },
   { key: "history", label: "History", backgroundImage: backHistory },
   { key: "sports", label: "Sports", backgroundImage: backSports },
-  { key: "culture", label: "Pop Culture", backgroundImage: backCulture },
+  {
+    key: "entertainment",
+    label: "Entertainment",
+    backgroundImage: backCulture,
+  },
 ];
 
 /**
@@ -126,7 +130,7 @@ export default function CreateGame() {
     }
   }, [secPerQ]);
   const [scoring, setScoring] = useState(scoringModels[0].key); // Selected scoring model
-  const [requireCorrectAll, setRequireCorrectAll] = useState(false); // Whether all answers must be correct to advance
+  const [numQuestions, setNumQuestions] = useState(5); // Number of questions per game (5-10)
 
   // Current selected game mode object
   const mode = MODES[modeIndex];
@@ -200,8 +204,6 @@ export default function CreateGame() {
 
   const API_URL = "/api/users";
 
-
-
   // Create match in database ==============================
   async function handleCreateGame() {
     try {
@@ -238,8 +240,10 @@ export default function CreateGame() {
           title: title || "Untitled Match",
           category: mode.label,
           difficulty: "Easy",
-          isPublic: isPublic,    
+          isPublic: isPublic,
           maxPlayers: maxPlayers,
+          numQuestions: numQuestions,
+          timeLimit: secPerQ, // seconds per question
         }),
       });
 
@@ -256,16 +260,15 @@ export default function CreateGame() {
   }
   //=============================================================
 
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
       <div className="max-w-3xl mx-auto px-4 py-10">
-        {/* Back button */}
+        {/* Back to Game Menu button */}
         <button
           onClick={() => navigate(-1)}
           className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-white font-button transition-colors"
         >
-          ← Back
+          ← Game Menu
         </button>
 
         {/* Card substitute */}
@@ -491,6 +494,28 @@ export default function CreateGame() {
 
               <div>
                 <label className="block text-white/90 text-sm">
+                  Number of questions per round
+                </label>
+                <div className="flex items-center gap-4 mt-1">
+                  <input
+                    type="range"
+                    min={3}
+                    max={7}
+                    step={1}
+                    value={numQuestions}
+                    onChange={(e) =>
+                      setNumQuestions(parseInt(e.target.value, 10))
+                    }
+                    className="w-full accent-white"
+                  />
+                  <span className="inline-block rounded-xl border border-white/20 bg-white/10 text-white text-xs px-2 py-1">
+                    {numQuestions}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-white/90 text-sm">
                   Scoring model
                 </label>
                 <div className="relative mt-1">
@@ -514,35 +539,13 @@ export default function CreateGame() {
                   </span>
                 </div>
               </div>
-
-              <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3">
-                <div>
-                  <label className="block text-white/90 text-sm">
-                    Require all answers correct to advance
-                  </label>
-                  <p className="text-xs text-white/60">
-                    Toggle for stricter progression.
-                  </p>
-                </div>
-                <label className="inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={requireCorrectAll}
-                    onChange={(e) => setRequireCorrectAll(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-white/20 rounded-full peer peer-checked:bg-emerald-500 transition-colors relative">
-                    <span className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5" />
-                  </div>
-                </label>
-              </div>
             </div>
           </div>
 
           {/* Send Invite */}
           <div className="mt-8 flex justify-center">
             <button
-              onClick={handleCreateGame}//Create game button
+              onClick={handleCreateGame} //Create game button
               className="rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg bg-smart-red hover:opacity-80 text-smart-white font-button transition-opacity"
             >
               Create Game

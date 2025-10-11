@@ -9,6 +9,7 @@
  * Flow: GameMenu -> JoinGameLobby -> JoinGame (for specific game details)
  */
 import { Link, useNavigate } from "react-router-dom";
+import gameMenuBackground from "../assets/gameMenu_background.jpg";
 
 function Heading() {
   const letters = [
@@ -27,7 +28,7 @@ function Heading() {
     { t: "s", c: "text-smart-light-pink" },
   ];
   return (
-    <h1 className="text-center font-heading text-4xl sm:text-6xl font-black leading-none mb-8">
+    <h1 className="text-center font-heading text-4xl sm:text-6xl font-black leading-none mb-8" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)' }}>
       {letters.map((l, i) => (
         <span key={i} className={l.c}>
           {String(l.t).toUpperCase()}
@@ -40,14 +41,19 @@ function Heading() {
 export default function GameMenu() {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-smart-dark-blue flex items-center justify-center">
+    <div
+      className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: `url(${gameMenuBackground})`,
+      }}
+    >
       <div className="max-w-2xl mx-auto px-4 py-10 text-center">
-        {/* Back button */}
+        {/* Back to Dashboard button */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/landing")}
           className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-smart-white font-button transition-colors"
         >
-          ← Back
+          ← Dashboard
         </button>
 
         {/* Main content */}

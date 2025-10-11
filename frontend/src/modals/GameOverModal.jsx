@@ -82,13 +82,13 @@ export default function GameOverModal() {
         </table>
       </section>
 
-      {/* Return Home Button */}
+      {/* Return to Dashboard Button */}
       <div className="mt-10 text-center">
         <button
           className="inline-flex items-center justify-center rounded-lg border border-white/20 bg-white/10 px-6 py-3 text-lg font-semibold text-white transition hover:bg-white/20"
-          onClick={() => navigate("/", { replace: true })}
+          onClick={() => navigate("/landing", { replace: true })}
         >
-          Return Home
+          Return to Dashboard
         </button>
       </div>
     </div>

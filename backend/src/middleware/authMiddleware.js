@@ -1,17 +1,20 @@
-// Session-based authentication middleware
+import jwt from "jsonwebtoken";
+
 export default function authMiddleware(req, res, next) {
-  // Check if user is logged in via session
-  if (!req.session || !req.session.user) {
-    return res.status(401).json({ error: "Not authenticated" });
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: "No token provided" });
   }
 
-  // Add user info to request object for downstream routes
-  req.user = {
-    id: req.session.user.id,
-    role: req.session.user.role,
-    username: req.session.user.username,
-    email: req.session.user.email
-  };
-  
-  next();
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.ACCESS_TOKEN_SECRET || "secret"
+    );
+    req.user = decoded; // { id, role }
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
 }

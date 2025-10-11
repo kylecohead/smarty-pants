@@ -4,20 +4,35 @@
  * Close with ✕ in modal chrome
  *
  */
-export default function AboutModal() {
-  return (
-    <div className="space-y-3">
-      <h2 className="text-xl font-semibold text-slate-200">About SMARTIE PANTS</h2>
-      <p className="text-sm text-slate-400">
-        Conrad is a cool dude who likes to build web apps and play games. He
-        made this game for fun and to learn more about web development. Hope you
-        enjoy it!
-      </p>
-      <p className="text-sm text-slate-400">
-        Contact: conrad@gmail.com 
-      </p>
-      <img src="/uploads/conrad.jpg" alt="User avatar" />
+import { useNavigate } from "react-router-dom";
+import aboutBackground from "../assets/about_background.jpg";
 
+export default function AboutModal() {
+  const navigate = useNavigate();
+
+  const handleClose = () => {
+    navigate("/");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-smart-black/60 p-4">
+      <div className="relative w-full max-w-4xl max-h-[80vh] rounded-xl overflow-hidden shadow-2xl border-4 border-smart-green">
+        {/* Close Button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-xl flex items-center justify-center transition-colors duration-200 border-2 border-red-600 hover:border-red-700 shadow-lg"
+          title="Close About"
+        >
+          ×
+        </button>
+
+        {/* Background Image */}
+        <img
+          src={aboutBackground}
+          alt="About Smartie Pants Game"
+          className="w-full h-full object-cover"
+        />
+      </div>
     </div>
   );
 }

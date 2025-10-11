@@ -1,16 +1,52 @@
-// Utility functions for authenticated API requests with session cookies
+// Utility functions for JWT token authentication
 
 /**
- * Make an authenticated fetch request with session cookies
+ * Get access token from localStorage
+ * @returns {string|null} - Access token or null if not found
+ */
+export function getAccessToken() {
+  return localStorage.getItem("accessToken");
+}
+
+/**
+ * Get refresh token from localStorage
+ * @returns {string|null} - Refresh token or null if not found
+ */
+export function getRefreshToken() {
+  return localStorage.getItem("refreshToken");
+}
+
+/**
+ * Store tokens in localStorage
+ * @param {string} accessToken - Access token
+ * @param {string} refreshToken - Refresh token
+ */
+export function storeTokens(accessToken, refreshToken) {
+  localStorage.setItem("accessToken", accessToken);
+  localStorage.setItem("refreshToken", refreshToken);
+}
+
+/**
+ * Clear tokens from localStorage
+ */
+export function clearTokens() {
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+}
+
+/**
+ * Make an authenticated fetch request with JWT token
  * @param {string} url - The API endpoint
  * @param {Object} options - Fetch options
  * @returns {Promise<Response>} - The fetch response
  */
 export async function authenticatedFetch(url, options = {}) {
+  const token = getAccessToken();
+  
   const defaultOptions = {
-    credentials: "include", // Always include cookies
     headers: {
       "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     },
   };
@@ -19,22 +55,35 @@ export async function authenticatedFetch(url, options = {}) {
 }
 
 /**
- * Check if user is currently authenticated
- * @returns {Promise<Object|null>} - User object if authenticated, null otherwise
+ * Refresh access token using refresh token
+ * @returns {Promise<boolean>} - True if refresh successful, false otherwise
  */
-export async function checkAuth() {
+export async function refreshToken() {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return false;
+
   try {
-    const response = await authenticatedFetch("/api/auth/me");
-    
+    const response = await fetch("/api/auth/refresh", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token: refreshToken }),
+    });
+
     if (response.ok) {
       const data = await response.json();
-      return data.user;
+      localStorage.setItem("accessToken", data.accessToken);
+      return true;
     }
     
-    return null;
+    // Refresh failed, clear tokens
+    clearTokens();
+    return false;
   } catch (error) {
-    console.error("Auth check failed:", error);
-    return null;
+    console.error("Token refresh failed:", error);
+    clearTokens();
+    return false;
   }
 }
 
@@ -42,14 +91,16 @@ export async function checkAuth() {
  * Login user with credentials
  * @param {string} identifier - Username or email
  * @param {string} password - User password
- * @param {boolean} rememberMe - Whether to extend session duration
  * @returns {Promise<Object>} - Login response
  */
-export async function login(identifier, password, rememberMe = false) {
+export async function login(identifier, password) {
   try {
-    const response = await authenticatedFetch("/api/auth/login", {
+    const response = await fetch("/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ identifier, password, rememberMe }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ identifier, password }),
     });
 
     const data = await response.json();
@@ -59,7 +110,10 @@ export async function login(identifier, password, rememberMe = false) {
       return { success: false, error: data.error || "Login failed" };
     }
     
-    return data;
+    // Store tokens
+    storeTokens(data.accessToken, data.refreshToken);
+    
+    return { success: true, user: data.user, role: data.role };
   } catch (error) {
     console.error("Login error:", error);
     return { success: false, error: "Network error during login" };
@@ -75,8 +129,11 @@ export async function login(identifier, password, rememberMe = false) {
  */
 export async function signup(username, email, password) {
   try {
-    const response = await authenticatedFetch("/api/auth/signup", {
+    const response = await fetch("/api/auth/signup", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ username, email, password }),
     });
 
@@ -87,7 +144,10 @@ export async function signup(username, email, password) {
       return { success: false, error: data.error || "Signup failed" };
     }
     
-    return data;
+    // Store tokens
+    storeTokens(data.accessToken, data.refreshToken);
+    
+    return { success: true, user: data.user, role: data.role };
   } catch (error) {
     console.error("Signup error:", error);
     return { success: false, error: "Network error during signup" };
@@ -96,12 +156,16 @@ export async function signup(username, email, password) {
 
 /**
  * Logout current user
- * @returns {Promise<Object>} - Logout response
  */
-export async function logout() {
-  const response = await authenticatedFetch("/api/auth/logout", {
-    method: "POST",
-  });
+export function logout() {
+  clearTokens();
+  window.location.href = "/";
+}
 
-  return response.json();
+/**
+ * Check if user is currently authenticated
+ * @returns {boolean} - True if authenticated, false otherwise
+ */
+export function isAuthenticated() {
+  return !!getAccessToken();
 }

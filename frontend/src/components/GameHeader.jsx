@@ -14,13 +14,7 @@ export default function GameHeader({
 
   return (
     <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <Link
-        to="/lobby"
-        className="w-fit rounded-lg border border-white/20 bg-white/10 px-4 py-2 font-semibold tracking-wide text-white transition hover:bg-white/20"
-      >
-        ← Back to Lobby
-      </Link>
-      <div className="flex flex-col items-start sm:items-end">
+      <div className="flex flex-col items-start">
         <p className="text-xs uppercase tracking-[0.35em] text-white/50">
           Score
         </p>
@@ -32,14 +26,14 @@ export default function GameHeader({
             Question {currentQuestion + 1} / {totalQuestions}
           </p>
         )}
-        <button
-          type="button"
-          onClick={onQuit}
-          className="mt-4 w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20 sm:w-auto"
-        >
-          Quit
-        </button>
       </div>
+      <button
+        type="button"
+        onClick={onQuit}
+        className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20 sm:w-auto"
+      >
+        Quit Game
+      </button>
     </header>
   );
 }

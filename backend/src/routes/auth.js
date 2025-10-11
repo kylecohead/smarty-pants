@@ -1,10 +1,13 @@
 import express from "express";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
-import authMiddleware from "../middleware/authMiddleware.js";
 
 const prisma = new PrismaClient();
 const router = express.Router();
+
+const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET || "secret";
+const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET || "refreshsecret";
 
 // --- SIGNUP ---
 router.post("/signup", async (req, res) => {
@@ -16,23 +19,11 @@ router.post("/signup", async (req, res) => {
       data: { username, email, password: hashed, role: "USER" },
     });
 
-    // Store user info in session
-    req.session.user = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-    };
+    const payload = { id: user.id, role: user.role };
+    const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
+    const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
-    res.json({ 
-      success: true, 
-      user: { 
-        id: user.id, 
-        username: user.username, 
-        email: user.email, 
-        role: user.role 
-      } 
-    });
+    res.json({ accessToken, refreshToken, role: user.role, id: user.id });
   } catch (err) {
     res.status(400).json({ error: "User already exists" });
   }
@@ -40,7 +31,7 @@ router.post("/signup", async (req, res) => {
 
 // --- LOGIN ---
 router.post("/login", async (req, res) => {
-  const { identifier, password, rememberMe } = req.body;
+  const { identifier, password } = req.body;
 
   const user = await prisma.user.findFirst({
     where: {
@@ -53,54 +44,28 @@ router.post("/login", async (req, res) => {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) return res.status(400).json({ error: "Invalid credentials" });
 
-  // Store user info in session
-  req.session.user = {
-    id: user.id,
-    username: user.username,
-    email: user.email,
-    role: user.role,
-  };
+  const payload = { id: user.id, role: user.role };
+  const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
+  const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
-  // Extend session duration if "Remember me" is checked
-  if (rememberMe) {
-    req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-  } else {
-    req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours (default)
-  }
-
-  res.json({ 
-    success: true, 
-    user: { 
-      id: user.id, 
-      username: user.username, 
-      email: user.email, 
-      role: user.role 
-    },
-    rememberMe: rememberMe || false
-  });
+  res.json({ accessToken, refreshToken, role: user.role, id: user.id });
 });
 
-// --- LOGOUT ---
-router.post("/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: "Could not log out" });
-    }
-    
-    res.clearCookie("smartie.sid"); // Clear the session cookie
-    res.json({ success: true, message: "Logged out successfully" });
-  });
-});
+// --- REFRESH ---
+router.post("/refresh", (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.status(401).json({ error: "No token" });
 
-// --- GET CURRENT USER ---
-router.get("/me", authMiddleware, (req, res) => {
-  res.json({ 
-    user: {
-      id: req.user.id,
-      username: req.user.username,
-      email: req.user.email,
-      role: req.user.role,
-    }
+  jwt.verify(token, REFRESH_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: "Invalid refresh token" });
+
+    const newAccessToken = jwt.sign(
+      { id: user.id, role: user.role },
+      ACCESS_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    res.json({ accessToken: newAccessToken, role: user.role });
   });
 });
 

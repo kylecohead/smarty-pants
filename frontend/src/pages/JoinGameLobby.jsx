@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 // 🎨 Brand heading
@@ -39,30 +39,6 @@ const colors = {
   muted: "#94A3B8",
 };
 
-// 🧠 Mock public games (temporary)
-const mockPublicGames = [
-  {
-    matchId: "1",
-    title: "Quick Quiz Lobby",
-    hostName: "alex_host",
-    startsAtISO: null,
-    categories: ["General", "Sports"],
-    players: 3,
-    maxPlayers: 6,
-    difficulty: "Easy",
-  },
-  {
-    matchId: "2",
-    title: "Science Champions",
-    hostName: "dr_quiz",
-    startsAtISO: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-    categories: ["Science", "Technology"],
-    players: 2,
-    maxPlayers: 4,
-    difficulty: "Hard",
-  },
-];
-
 export default function JoinGameLobby() {
   const navigate = useNavigate();
 
@@ -71,9 +47,54 @@ export default function JoinGameLobby() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
+  const [publicGames, setPublicGames] = useState([]);
+  const [loadingGames, setLoadingGames] = useState(true);
 
   // ✅ Correct API base (notice the /api suffix)
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+
+  // 🔄 Fetch public games from API
+  const fetchPublicGames = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        setLoadingGames(false);
+        return;
+      }
+      const res = await fetch(`${API_URL}/matches?isPublic=true&status=LOBBY`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPublicGames(data);
+      }
+    } catch (err) {
+      console.error("❌ Failed to fetch public games:", err);
+    } finally {
+      setLoadingGames(false);
+    }
+  };
+
+  // 🔄 Initial fetch + polling for real-time updates
+  useEffect(() => {
+    fetchPublicGames();
+
+    // Poll every 2 seconds for updates
+    const pollInterval = setInterval(() => {
+      fetchPublicGames();
+    }, 2000);
+
+    // Also refresh when window regains focus
+    const handleFocus = () => {
+      fetchPublicGames();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [API_URL]);
 
   // 🔍 Validate + clean join code
   const extractJoinCode = (input) => {
@@ -130,27 +151,25 @@ export default function JoinGameLobby() {
     if (inputError) setInputError("");
   };
 
-  // 🔎 Filter public mock games
+  // 🔎 Filter public games
   const filteredGames = useMemo(() => {
-    return mockPublicGames.filter((game) => {
+    return publicGames.filter((game) => {
       const matchesSearch =
         !searchQuery ||
-        game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        game.hostName.toLowerCase().includes(searchQuery.toLowerCase());
+        game.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        game.host?.username?.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesCategory =
         !categoryFilter ||
-        game.categories.some((c) =>
-          c.toLowerCase().includes(categoryFilter.toLowerCase())
-        );
+        game.category?.toLowerCase().includes(categoryFilter.toLowerCase());
 
       const matchesDifficulty =
         !difficultyFilter ||
-        game.difficulty.toLowerCase() === difficultyFilter.toLowerCase();
+        game.difficulty?.toLowerCase() === difficultyFilter.toLowerCase();
 
       return matchesSearch && matchesCategory && matchesDifficulty;
     });
-  }, [searchQuery, categoryFilter, difficultyFilter]);
+  }, [publicGames, searchQuery, categoryFilter, difficultyFilter]);
 
   const formatStartTime = (isoString) => {
     if (!isoString) return "Starting now";
@@ -166,12 +185,12 @@ export default function JoinGameLobby() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
       <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
-        {/* Back */}
+        {/* Back to Game Menu */}
         <button
           onClick={() => navigate(-1)}
           className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-white transition-colors"
         >
-          ← Back
+          ← Game Menu
         </button>
 
         {/* Heading */}
@@ -211,31 +230,25 @@ export default function JoinGameLobby() {
         </div>
 
         {/* Public Games */}
-        <div className="rounded-3xl border border-pink-400/30 bg-pink-500/10 shadow-xl backdrop-blur-sm p-8">
-          <h2 className="text-2xl font-bold text-smart-pink mb-6 text-center">
+        <div className="rounded-3xl border border-pink-400/30 bg-pink-500/10 shadow-xl backdrop-blur-sm p-8 space-y-6">
+          <h2 className="text-2xl font-bold text-smart-pink mb-4 text-center">
             Public Games
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <input
-              type="text"
-              placeholder="Search games..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white placeholder:text-pink-200/70 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 md:col-span-2"
-            />
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400"
-            >
-              <option value="">All Categories</option>
-              <option value="Science">Science</option>
-              <option value="Sports">Sports</option>
-              <option value="Movies">Movies</option>
-            </select>
-          </div>
 
-          {filteredGames.length === 0 ? (
+          {/* Search Filter */}
+          <input
+            type="text"
+            placeholder="Search games..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white placeholder:text-pink-200/70 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
+          />
+
+          {loadingGames ? (
+            <p className="text-center text-pink-200/80 text-lg">
+              Loading public games...
+            </p>
+          ) : filteredGames.length === 0 ? (
             <p className="text-center text-pink-200/80 text-lg">
               No public games available.
             </p>
@@ -243,7 +256,7 @@ export default function JoinGameLobby() {
             <div className="space-y-4">
               {filteredGames.map((g) => (
                 <div
-                  key={g.matchId}
+                  key={g.id}
                   className="rounded-xl border-2 border-pink-400/30 bg-pink-500/20 p-6 hover:border-pink-400/50 transition"
                 >
                   <div className="flex justify-between items-start">
@@ -252,18 +265,18 @@ export default function JoinGameLobby() {
                         {g.title}
                       </h3>
                       <p className="text-sm text-pink-200/70 mb-1">
-                        Host: @{g.hostName}
+                        Host: @{g.host?.username || "unknown"}
                       </p>
                       <p className="text-sm text-pink-200/70 mb-1">
-                        {formatStartTime(g.startsAtISO)} •{" "}
-                        {g.categories.join(", ")}
+                        {g.category || "General"} • {g.timeLimit || 10}s per
+                        question
                       </p>
                       <p className="text-sm text-pink-200/60">
-                        {g.players}/{g.maxPlayers} players
+                        {g.players?.length || 0}/{g.maxPlayers || 5} players
                       </p>
                     </div>
                     <button
-                      onClick={() => navigate(`/game/join/${g.matchId}`)}
+                      onClick={() => navigate(`/lobby/${g.id}`)}
                       className="rounded-xl px-5 py-3 bg-smart-pink text-white text-base font-bold hover:opacity-90 transition shadow-lg"
                     >
                       Join
