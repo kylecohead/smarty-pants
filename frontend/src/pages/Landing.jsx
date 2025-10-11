@@ -11,6 +11,7 @@ import React, { useState, useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import ProfileCard from "../components/ProfileCard.jsx";
 import backgroundLanding from "../assets/background_landing.jpg";
+import { isAuthenticated, authenticatedFetch } from "../utils/auth.js";
 
 // Mock data for demonstration
 const mockLeaderboard = [
@@ -75,22 +76,21 @@ export default function Landing() {
   // Fetch user data
   useEffect(() => {
     async function fetchUser() {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
       try {
-        const res = await fetch("/api/users/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // Check if user is authenticated
+        if (!isAuthenticated()) {
+          setError("Not authenticated");
+          navigate("/");
+          return;
+        }
 
-        const data = await res.json();
-        if (res.ok && data.user) {
+        // Fetch user profile using JWT token
+        const response = await authenticatedFetch("/api/users/me");
+        if (response.ok) {
+          const data = await response.json();
           setUser(data.user);
         } else {
-          setError(data.error || "Failed to fetch user");
+          setError("Failed to fetch user profile");
         }
       } catch (err) {
         setError(err.message);

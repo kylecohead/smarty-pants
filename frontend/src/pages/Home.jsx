@@ -5,38 +5,22 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import backgroundImg from "../assets/home-background.jpg";
+import { isAuthenticated, logout } from "../utils/auth.js";
 
 export default function Home() {
   //This handles the login login rendering (if user is logged in it shows sign out button)
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
 
   //This is for when the user refreshes the page, it checks if there is a token in localStorage
   useEffect(() => {
-    // check localStorage on mount
-    const token = localStorage.getItem("accessToken");
-    setIsLoggedIn(!!token);
-
-    //Get the actual user data if logged in
-    if (token) {
-      fetch("/api/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then((res) => res.json())
-        .then((data) => setUser(data.user))
-        .catch(() => setUser(null));
-    }
+    setIsLoggedIn(isAuthenticated());
   }, []);
 
   //Signs the user out by removing the tokens from localStorage and redirecting to home page
   function handleSignOut() {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    logout();
     setIsLoggedIn(false);
-    navigate("/"); // back to home
   }
 
   return (

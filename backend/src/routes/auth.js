@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -24,6 +25,7 @@ router.post("/signup", async (req, res) => {
     const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
     res.json({ accessToken, refreshToken, role: user.role, id: user.id });
+    res.json({ accessToken, refreshToken, role: user.role, id: user.id });
   } catch (err) {
     res.status(400).json({ error: "User already exists" });
   }
@@ -32,7 +34,6 @@ router.post("/signup", async (req, res) => {
 // --- LOGIN ---
 router.post("/login", async (req, res) => {
   const { identifier, password } = req.body;
-
   const user = await prisma.user.findFirst({
     where: {
       OR: [{ email: identifier }, { username: identifier }],
@@ -44,7 +45,7 @@ router.post("/login", async (req, res) => {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) return res.status(400).json({ error: "Invalid credentials" });
 
-  const payload = { id: user.id, role: user.role };  // ✅ fixed
+  const payload = { id: user.id, role: user.role };
   const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
   const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
@@ -60,7 +61,7 @@ router.post("/refresh", (req, res) => {
     if (err) return res.status(403).json({ error: "Invalid refresh token" });
 
     const newAccessToken = jwt.sign(
-      { id: user.id, role: user.role },  // ✅ fixed
+      { id: user.id, role: user.role },
       ACCESS_SECRET,
       { expiresIn: "15m" }
     );
