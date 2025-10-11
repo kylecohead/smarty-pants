@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { sendGameInvite } from "../utils/notifications.js";
+import { authenticatedFetch } from "../utils/auth.js";
 
 // "Smart" palette — tweak freely to match your design system
 const colors = {
@@ -108,7 +110,7 @@ export default function CreateGame() {
   const [title, setTitle] = useState(""); // Game title/name
   const [maxPlayers, setMaxPlayers] = useState(6); // Maximum number of players allowed
   const [usernameQuery, setUsernameQuery] = useState(""); // Search query for finding users to invite
-  const [invited, setInvited] = useState([]); // Array of invited usernames
+  const [invited, setInvited] = useState([]); // Array of invited user objects {id, username}
   const [modeIndex, setModeIndex] = useState(0); // Currently selected game mode index
   const [username, setUsername] = useState(""); // Current user's username
 
@@ -136,32 +138,49 @@ export default function CreateGame() {
   const mode = MODES[modeIndex];
   const navigate = useNavigate();
 
-  // Mock user directory for demonstration (in production, this would come from an API)
-  const fakeDirectory = useMemo(
-    () => [
-      "nina",
-      "alex",
-      "mason",
-      "sara",
-      "jo",
-      "lee",
-      "dani",
-      "jules",
-      "sam",
-    ],
-    []
-  );
+  // State for user search
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   /**
-   * Filters users based on search query and excludes already invited users
-   * @returns {string[]} Array of matching usernames
+   * Search for users by username
+   * @param {string} query - Search query
    */
-  const filteredUsers = useMemo(() => {
-    const q = usernameQuery.toLowerCase().trim();
-    return !q
-      ? [] // Return empty array if no search query
-      : fakeDirectory.filter((u) => u.includes(q) && !invited.includes(u));
-  }, [usernameQuery, fakeDirectory, invited]);
+  const searchUsers = async (query) => {
+    if (!query || query.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const response = await authenticatedFetch(`/api/users/search?q=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const data = await response.json();
+        // Filter out already invited users
+        const filteredResults = data.users.filter(user => 
+          !invited.some(invitedUser => invitedUser.id === user.id)
+        );
+        setSearchResults(filteredResults);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('❌ User search error:', error);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Debounce search to avoid too many API calls
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchUsers(usernameQuery);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [usernameQuery, invited]);
 
   /**
    * Copies the game invitation link to clipboard
@@ -178,16 +197,16 @@ export default function CreateGame() {
 
   /**
    * Adds a user to the invited players list if not already present
-   * @param {string} u - Username to invite
+   * @param {Object} user - User object to invite {id, username}
    */
-  const addInvite = (u) =>
-    setInvited((xs) => (xs.includes(u) ? xs : [...xs, u]));
+  const addInvite = (user) =>
+    setInvited((xs) => (xs.some(x => x.id === user.id) ? xs : [...xs, user]));
 
   /**
    * Removes a user from the invited players list
-   * @param {string} u - Username to remove
+   * @param {number} userId - User ID to remove
    */
-  const removeInvite = (u) => setInvited((xs) => xs.filter((x) => x !== u));
+  const removeInvite = (userId) => setInvited((xs) => xs.filter((x) => x.id !== userId));
 
   /**
    * Navigate to previous game mode in carousel
@@ -251,6 +270,23 @@ export default function CreateGame() {
       if (!res.ok) throw new Error(match.error || "Failed to create match!");
 
       console.log("✅ Created match:", match.id, match);
+
+      // 🔹 Send invites to invited users if any
+      if (invited.length > 0) {
+        console.log(`📤 Sending invites to ${invited.length} user(s)...`);
+        
+        for (const user of invited) {
+          try {
+            const matchName = title || "Untitled Match";
+            const message = `${currentUsername} invited you to join "${matchName}" (${mode.label})`;
+            
+            await sendGameInvite(user.id, match.id, message);
+            console.log(`✅ Invite sent to ${user.username}`);
+          } catch (inviteError) {
+            console.error(`❌ Failed to send invite to ${user.username}:`, inviteError);
+          }
+        }
+      }
 
       navigate(`/lobby/${match.id}`);
     } catch (err) {
@@ -361,20 +397,21 @@ export default function CreateGame() {
                       className="pl-9 pr-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 w-full sm:w-64 outline-none"
                     />
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white/60">
-                      🔎
+                      {searchLoading ? "⟳" : "🔎"}
                     </span>
-                    {filteredUsers.length > 0 && (
+                    {searchResults.length > 0 && (
                       <div className="absolute z-10 mt-1 w-full rounded-xl border border-white/10 bg-[#0f2b53] shadow-lg">
-                        {filteredUsers.map((u) => (
+                        {searchResults.map((user) => (
                           <button
-                            key={u}
+                            key={user.id}
                             onClick={() => {
-                              addInvite(u);
+                              addInvite(user);
                               setUsernameQuery("");
+                              setSearchResults([]);
                             }}
                             className="w-full text-left px-3 py-2 hover:bg-white/10 text-white text-sm"
                           >
-                            @{u}
+                            @{user.username}
                           </button>
                         ))}
                       </div>
@@ -392,17 +429,17 @@ export default function CreateGame() {
                       </p>
                     )}
                     <div className="flex -space-x-3">
-                      {invited.map((u) => {
-                        const initials = u.slice(0, 2).toUpperCase();
+                      {invited.map((user) => {
+                        const initials = user.username.slice(0, 2).toUpperCase();
                         return (
-                          <div key={u} className="relative">
+                          <div key={user.id} className="relative">
                             <div className="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center text-xs ring-2 ring-[#0A2442] shadow">
                               {initials}
                             </div>
                             <button
-                              onClick={() => removeInvite(u)}
+                              onClick={() => removeInvite(user.id)}
                               className="absolute -top-1 -right-1 text-xs bg-white/20 hover:bg-white/30 rounded-full px-1"
-                              aria-label={`Remove ${u}`}
+                              aria-label={`Remove ${user.username}`}
                             >
                               ×
                             </button>

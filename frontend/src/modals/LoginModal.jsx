@@ -94,10 +94,29 @@ export default function LoginModal({ mode = "login", onAuth }) {
 
       {/* Small footer */}
       <p className="mt-4 text-center text-sm text-gray-100 font-body">
-        {mode === "login"
-          ? "Don’t have an account? Sign up now!"
-          : "Already have an account? Log in instead!"}
+        {mode === "login" ? (
+          <>
+            Don’t have an account?
+            <button
+              onClick={() => navigate("/signup")}
+              className="text-smart-yellow hover:underline ml-1"
+            >
+              Sign up now!
+            </button>
+          </>
+        ) : (
+          <>
+            Already have an account?
+            <button
+              onClick={() => navigate("/login")}
+              className="text-smart-yellow hover:underline ml-1"
+            >
+              Log in instead!
+            </button>
+          </>
+        )}
       </p>
+
     </div>
   );
 }
