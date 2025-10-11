@@ -245,15 +245,7 @@ export default function Lobby() {
                       {p ? (
                         <div className="w-full h-full flex flex-col">
                           {/* Player photo block with color overlay */}
-                          <div 
-                            className="flex-1 relative overflow-hidden rounded-lg border-8"
-                            style={{
-                              borderColor:
-                                p.stickmanColor ||
-                                localStorage.getItem("stickmanColor") ||
-                                "#FF69B4", // default pink
-                            }}
-                          >
+                          <div className="flex-1 relative overflow-hidden rounded-lg border-8 border-white">
                             <img
                               src={lobbyPhoto}
                               alt={`${p.username}'s lobby`}
@@ -265,12 +257,12 @@ export default function Lobby() {
                             />
                             {/* Color overlay based on user's stickman color - more visible */}
                             <div
-                              className="absolute inset-0 opacity-60 mix-blend-overlay"
+                              className="absolute inset-0 opacity-40"
                               style={{
                                 backgroundColor:
                                   p.stickmanColor ||
                                   localStorage.getItem("stickmanColor") ||
-                                  "#FF69B4", // default pink
+                                  "#6EC5FF", // default smart-light-blue
                               }}
                             />
                           </div>
@@ -282,7 +274,7 @@ export default function Lobby() {
                                 color:
                                   p.stickmanColor ||
                                   localStorage.getItem("stickmanColor") ||
-                                  "#FF69B4", // default pink
+                                  "#6EC5FF", // default smart-light-blue
                               }}
                             >
                               {p.username.toUpperCase()}

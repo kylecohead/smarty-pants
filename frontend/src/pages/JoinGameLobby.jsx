@@ -20,7 +20,7 @@ function Heading() {
   ];
 
   return (
-    <h1 className="text-center font-heading text-4xl sm:text-5xl font-black leading-none mb-2">
+    <h1 className="text-center font-heading text-5xl sm:text-6xl font-black leading-none mb-2" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)' }}>
       {letters.map((l, i) => (
         <span key={i} className={l.c}>
           {String(l.t).toUpperCase()}
@@ -183,7 +183,7 @@ export default function JoinGameLobby() {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
+    <div className="min-h-screen bg-smart-light-blue">
       <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
         {/* Back to Game Menu */}
         <button
@@ -196,13 +196,15 @@ export default function JoinGameLobby() {
         {/* Heading */}
         <div className="text-center mb-8">
           <Heading />
-          <h2 className="text-smart-orange font-heading text-2xl font-bold tracking-wider">
-            ~JOIN A GAME~
-          </h2>
+          <div className="inline-block rounded-2xl bg-smart-orange px-6 py-3 mt-4">
+            <h2 className="text-white font-heading text-2xl font-bold tracking-wider">
+              ~JOIN A GAME~
+            </h2>
+          </div>
         </div>
 
         {/* Join by Code */}
-        <div className="rounded-3xl border border-orange-400/30 bg-orange-500/10 shadow-xl backdrop-blur-sm p-8">
+        <div className="rounded-3xl border border-orange-400/50 bg-orange-500/40 shadow-xl backdrop-blur-sm p-8">
           <h2 className="text-2xl font-bold text-smart-orange mb-6 text-center">
             Join with Code
           </h2>
@@ -230,7 +232,7 @@ export default function JoinGameLobby() {
         </div>
 
         {/* Public Games */}
-        <div className="rounded-3xl border border-pink-400/30 bg-pink-500/10 shadow-xl backdrop-blur-sm p-8 space-y-6">
+        <div className="rounded-3xl border border-pink-400/50 bg-pink-500/40 shadow-xl backdrop-blur-sm p-8 space-y-6">
           <h2 className="text-2xl font-bold text-smart-pink mb-4 text-center">
             Public Games
           </h2>
