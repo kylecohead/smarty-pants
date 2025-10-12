@@ -240,8 +240,9 @@ export default function setupSocket(server) {
 
         // ✅ Allow localhost + any Cloudflare quick tunnel
         const allowed = origin.match(
-          /^(http:\/\/localhost(:\d+)?|http:\/\/127\.0\.0\.1(:\d+)?|https:\/\/.*\.trycloudflare\.com)$/
+          /^(http:\/\/localhost(:\d+)?|http:\/\/127\.0\.0\.1(:\d+)?|https:\/\/.*\.trycloudflare\.com|https:\/\/(www\.)?smartiepants\.art|https:\/\/play\.smartiepants\.art)$/
         );
+
 
         if (allowed) {
           callback(null, true);
