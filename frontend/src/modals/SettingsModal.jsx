@@ -64,12 +64,12 @@ export default function SettingsModal() {
     return localStorage.getItem("stickmanColor") || "smart-light-blue";
   });
 
-  //MOCK DATA======================================
-  // Dummy stats for now
-  const [gamesPlayed] = useState(42);
-  const [highScore] = useState(2450);
-  const [wins] = useState(12);
-  const [memberSince] = useState("2024-01-12T00:00:00Z");
+  const [userStats, setUserStats] = useState({
+    gamesPlayed: 0,
+    highScore: 0,
+    wins: 0,
+    memberSince: null
+  });
 
   // Match history (mock)
   const [matchHistory] = useState([
@@ -106,6 +106,13 @@ export default function SettingsModal() {
         if (res.ok && data.user) {
           setUsername(data.user.username || "");
           setAvatar(data.user.avatarUrl || "");
+          // Set current user stats
+          setUserStats({
+            gamesPlayed: data.user.gamesPlayed || 0,
+            highScore: data.user.highScore || 0,
+            wins: data.user.wins || 0,
+            memberSince: data.user.memberSince || data.user.createdAt
+          });
         } else {
           console.error("Fetch user error:", data.error);
         }
@@ -331,10 +338,10 @@ export default function SettingsModal() {
                       user={{
                         username,
                         avatar,
-                        gamesPlayed,
-                        highScore,
-                        wins,
-                        memberSince,
+                        gamesPlayed: userStats.gamesPlayed,
+                        highScore: userStats.highScore,
+                        wins: userStats.wins,
+                        memberSince: userStats.memberSince,
                       }}
                       stickmanStrokeWidth={stickmanStrokeWidth}
                       stickmanColor={stickmanColor}
@@ -607,19 +614,21 @@ export default function SettingsModal() {
                   <div className="flex items-center justify-between text-lg font-body text-smart-light-blue">
                     <span>Games Played</span>
                     <span className="font-bold text-smart-light-blue">
-                      {gamesPlayed}
+                      {userStats.gamesPlayed || 0}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-lg font-body text-smart-light-blue">
                     <span>High Score</span>
                     <span className="font-bold text-smart-light-blue">
-                      {highScore}
+                      {userStats.highScore || 0}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-lg font-body text-smart-light-blue">
                     <span>Win Rate</span>
                     <span className="font-bold text-smart-light-blue">
-                      {((wins / gamesPlayed) * 100).toFixed(1)}%
+                      {userStats.gamesPlayed > 0
+                        ? ((userStats.wins / userStats.gamesPlayed) * 100).toFixed(1)
+                        : "0"}%
                     </span>
                   </div>
 
@@ -631,7 +640,7 @@ export default function SettingsModal() {
                     <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
                       <div
                         className="h-3 rounded-full bg-smart-light-blue"
-                        style={{ width: `${Math.min(100, wins * 8)}%` }}
+                        style={{ width: `${Math.min(100, (userStats.wins || 0) * 8)}%` }}
                       ></div>
                     </div>
                   </div>
@@ -644,7 +653,7 @@ export default function SettingsModal() {
                       <div
                         className="h-3 rounded-full bg-smart-light-blue"
                         style={{
-                          width: `${Math.min(100, (highScore / 3000) * 100)}%`,
+                          width: `${Math.min(100, ((userStats.highScore || 0) / 3000) * 100)}%`,
                         }}
                       ></div>
                     </div>
@@ -657,7 +666,7 @@ export default function SettingsModal() {
                     <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
                       <div
                         className="h-3 rounded-full bg-smart-light-blue"
-                        style={{ width: `${Math.min(100, gamesPlayed * 2)}%` }}
+                        style={{ width: `${Math.min(100, (userStats.gamesPlayed || 0) * 2)}%` }}
                       ></div>
                     </div>
                   </div>
