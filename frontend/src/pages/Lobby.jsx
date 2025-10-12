@@ -236,7 +236,10 @@ export default function Lobby() {
               <div
                 className="grid gap-3 w-full max-w-4xl px-4"
                 style={{
-                  gridTemplateColumns: `repeat(${Math.min(maxPlayers, 6)}, minmax(0,1fr))`,
+                  gridTemplateColumns: `repeat(${Math.min(
+                    maxPlayers,
+                    6
+                  )}, minmax(0,1fr))`,
                 }}
               >
                 {Array.from({ length: maxPlayers }).map((_, i) => {
