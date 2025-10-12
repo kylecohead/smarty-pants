@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import backgroundCreate from "../assets/background_create.jpg";
 import { sendGameInvite } from "../utils/notifications.js";
 import { authenticatedFetch } from "../utils/auth.js";
 
@@ -86,7 +87,12 @@ function Heading() {
   ];
 
   return (
-    <h1 className="text-center font-heading text-4xl sm:text-5xl font-black leading-none">
+    <h1
+      className="text-center font-heading text-4xl sm:text-6xl font-black leading-none"
+      style={{
+        textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)",
+      }}
+    >
       {letters.map((l, i) => (
         <span key={i} className={l.c}>
           {String(l.t).toUpperCase()}
@@ -154,19 +160,21 @@ export default function CreateGame() {
 
     setSearchLoading(true);
     try {
-      const response = await authenticatedFetch(`/api/users/search?q=${encodeURIComponent(query)}`);
+      const response = await authenticatedFetch(
+        `/api/users/search?q=${encodeURIComponent(query)}`
+      );
       if (response.ok) {
         const data = await response.json();
         // Filter out already invited users
-        const filteredResults = data.users.filter(user => 
-          !invited.some(invitedUser => invitedUser.id === user.id)
+        const filteredResults = data.users.filter(
+          (user) => !invited.some((invitedUser) => invitedUser.id === user.id)
         );
         setSearchResults(filteredResults);
       } else {
         setSearchResults([]);
       }
     } catch (error) {
-      console.error('❌ User search error:', error);
+      console.error("❌ User search error:", error);
       setSearchResults([]);
     } finally {
       setSearchLoading(false);
@@ -200,13 +208,14 @@ export default function CreateGame() {
    * @param {Object} user - User object to invite {id, username}
    */
   const addInvite = (user) =>
-    setInvited((xs) => (xs.some(x => x.id === user.id) ? xs : [...xs, user]));
+    setInvited((xs) => (xs.some((x) => x.id === user.id) ? xs : [...xs, user]));
 
   /**
    * Removes a user from the invited players list
    * @param {number} userId - User ID to remove
    */
-  const removeInvite = (userId) => setInvited((xs) => xs.filter((x) => x.id !== userId));
+  const removeInvite = (userId) =>
+    setInvited((xs) => xs.filter((x) => x.id !== userId));
 
   /**
    * Navigate to previous game mode in carousel
@@ -274,16 +283,19 @@ export default function CreateGame() {
       // 🔹 Send invites to invited users if any
       if (invited.length > 0) {
         console.log(`📤 Sending invites to ${invited.length} user(s)...`);
-        
+
         for (const user of invited) {
           try {
             const matchName = title || "Untitled Match";
             const message = `${currentUsername} invited you to join "${matchName}" (${mode.label})`;
-            
+
             await sendGameInvite(user.id, match.id, message);
             console.log(`✅ Invite sent to ${user.username}`);
           } catch (inviteError) {
-            console.error(`❌ Failed to send invite to ${user.username}:`, inviteError);
+            console.error(
+              `❌ Failed to send invite to ${user.username}:`,
+              inviteError
+            );
           }
         }
       }
@@ -297,28 +309,26 @@ export default function CreateGame() {
   //=============================================================
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
-      <div className="max-w-3xl mx-auto px-4 py-10">
-        {/* Back to Game Menu button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-white font-button transition-colors"
-        >
-          ← Game Menu
-        </button>
+    <div
+      className="min-h-screen bg-smart-dark-blue text-smart-white overflow-hidden bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: `url(${backgroundCreate})`,
+      }}
+    >
+      {/* Back to Game Menu */}
+      <button
+        onClick={() => navigate(-1)}
+        className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-white transition-colors z-10"
+      >
+        ← Game Menu
+      </button>
 
-        {/* Card substitute */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-sm p-6 sm:p-8">
+      {/* Main Content Panel */}
+      <div className="px-4 py-10 flex items-center justify-center min-h-screen">
+        <div className="bg-smart-light-pink/90 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/20 max-w-3xl w-full">
           {/* Header */}
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center mb-6">
             <Heading />
-          </div>
-
-          {/* Subtitle */}
-          <div className="flex items-center justify-center mt-2">
-            <h2 className="text-smart-red font-heading text-xl font-bold tracking-wider">
-              ~CREATE GAME~
-            </h2>
           </div>
 
           {/* Game Title Input */}
@@ -333,27 +343,27 @@ export default function CreateGame() {
 
           {/* Visibility */}
           <div className="mt-6">
-            <SectionTitle color={colors.accentA}>Visibility</SectionTitle>
+            <SectionTitle color="#1740d1ff">Visibility</SectionTitle>
             <div className="flex flex-wrap items-center gap-3">
               <button
-                className={`rounded-2xl px-4 py-2 text-sm font-medium ${
+                className={`rounded-2xl px-6 py-3 text-sm font-bold border-2 transition-all ${
                   isPublic
-                    ? "bg-emerald-500 hover:bg-emerald-600 text-black"
-                    : "bg-white/10 hover:bg-white/20 text-white"
+                    ? "bg-smart-pink text-black border-smart-pink"
+                    : "bg-transparent text-white border-white hover:bg-white/10"
                 }`}
                 onClick={() => setIsPublic(true)}
               >
-                🌍 Public
+                Public
               </button>
               <button
-                className={`rounded-2xl px-4 py-2 text-sm font-medium ${
+                className={`rounded-2xl px-6 py-3 text-sm font-bold border-2 transition-all ${
                   !isPublic
-                    ? "bg-amber-500 hover:bg-amber-600 text-black"
-                    : "bg-white/10 hover:bg-white/20 text-white"
+                    ? "bg-smart-yellow text-black border-smart-yellow"
+                    : "bg-transparent text-white border-white hover:bg-white/10"
                 }`}
                 onClick={() => setIsPublic(false)}
               >
-                🔒 Private
+                Private
               </button>
             </div>
 
@@ -430,7 +440,9 @@ export default function CreateGame() {
                     )}
                     <div className="flex -space-x-3">
                       {invited.map((user) => {
-                        const initials = user.username.slice(0, 2).toUpperCase();
+                        const initials = user.username
+                          .slice(0, 2)
+                          .toUpperCase();
                         return (
                           <div key={user.id} className="relative">
                             <div className="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center text-xs ring-2 ring-[#0A2442] shadow">
@@ -455,8 +467,8 @@ export default function CreateGame() {
 
           {/* Game Mode carousel */}
           <div className="mt-8">
-            <SectionTitle color={colors.accentB}>Choose Game Mode</SectionTitle>
-            <div className="relative mt-3 rounded-2xl border border-white/10 bg-white/5 p-6 h-32">
+            <SectionTitle color="#FF1493">Choose Game Mode</SectionTitle>
+            <div className="relative mt-3 rounded-2xl border-2 border-white bg-white/5 p-6 h-32">
               {/* Background image for current mode */}
               <div
                 className="absolute inset-0 rounded-2xl bg-cover bg-center opacity-20"
@@ -589,11 +601,6 @@ export default function CreateGame() {
             </button>
           </div>
         </div>
-
-        {/* Footer helper */}
-        <p className="mt-4 text-center text-xs" style={{ color: colors.muted }}>
-          Tip: You can swap modes with the arrow buttons.
-        </p>
       </div>
     </div>
   );
