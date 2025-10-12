@@ -22,10 +22,10 @@ app.use(
       // Allow requests with no origin (like mobile apps, curl, or same-origin)
       if (!origin) return callback(null, true);
 
-      // ✅ Allow local dev + any Cloudflare quick tunnel URL
-      const allowed =
-        origin.match(/^(http:\/\/localhost(:\d+)?|http:\/\/127\.0\.0\.1(:\d+)?|https:\/\/.*\.trycloudflare\.com)$/);
-
+      // Allow local dev + any Cloudflare quick tunnel URL
+      const allowed = origin.match(
+        /^(http:\/\/localhost(:\d+)?|http:\/\/127\.0\.0\.1(:\d+)?|https:\/\/.*\.trycloudflare\.com|https:\/\/(www\.)?smartiepants\.art|https:\/\/play\.smartiepants\.art)$/
+      );
       if (allowed) {
         callback(null, true);
       } else {
