@@ -188,9 +188,22 @@ export const api = {
     });
     if (!response.ok) throw new Error('Failed to update wins count');
     return response.json();
-  }
+  },
 
+  updateHighScore: async (userId, newScore) => {
+    const response = await fetch(`/api/users/${userId}/update-highscore`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ highScore: newScore })
+    });
+    if (!response.ok) throw new Error('Failed to update high score');
+    return response.json();
+  }
 };
+
 
 /**
  * Export API base URL for direct use if needed

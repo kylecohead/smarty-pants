@@ -175,6 +175,9 @@ export default function PlayGame() {
 
       try {
         if (currentUser) {
+          // Get current user's score from the scores object
+          const userScore = scores[currentUser.username];
+
           // Increment games played once the match has ended
           await api.incrementGamesPlayed(currentUser.id);
 
@@ -185,6 +188,13 @@ export default function PlayGame() {
           // If current user is the winner, increment their wins count
           if (winner && winner[0] === currentUser.username) {
             await api.incrementUserWins(currentUser.id);
+          }
+
+          // Update high score if applicable
+          const highScoreResult = await api.updateHighScore(currentUser.id, userScore);
+          if (highScoreResult.isNewRecord) {
+            // TO-DO: Optionally show a notification or celebration animation
+            console.log('New personal best!', highScoreResult.highScore);
           }
         }
       } catch (error) {

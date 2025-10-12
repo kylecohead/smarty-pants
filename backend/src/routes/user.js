@@ -98,4 +98,43 @@ router.post('/:id/increment-wins', authMiddleware, async (req, res) => {
   }
 });
 
+// Update high score when a new high score is achieved
+router.post('/:id/update-highscore', authMiddleware, async (req, res) => {
+  const userId = parseInt(req.params.id);
+  const newScore = parseInt(req.body.score);
+
+  try {
+    // First get the current user to check existing high score
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { highScore: true }
+    });
+
+    // Update if a new high score has been achieved
+    if (!user.highScore || newScore > user.highScore) {
+      const updatedUser = await prisma.user.update({
+        where : { id: userId },
+        data: {
+          highScore: newScore
+        }
+      });
+
+      res.json({
+        success: true,
+        highScore: updatedUser.highScore,
+        isNewRecord: true
+      });
+    } else {
+      res.json({
+        success: true,
+        highScore: user.highScore,
+        isNewRecord: false
+      });
+    }
+  } catch (error) {
+    console.error("Failed to update high score:", error); 
+    res.status(500).json({ error: 'Failed to update high score' });
+  }
+});
+
 export default router;
