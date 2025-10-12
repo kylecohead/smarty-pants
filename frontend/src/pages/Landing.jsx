@@ -11,6 +11,17 @@ import React, { useState, useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import ProfileCard from "../components/ProfileCard.jsx";
 import backgroundLanding from "../assets/background_landing.jpg";
+import { isAuthenticated, authenticatedFetch } from "../utils/auth.js";
+import { 
+  fetchNotifications, 
+  acceptGameInvite, 
+  declineGameInvite, 
+  dismissNotification,
+  formatNotificationTime,
+  getNotificationColor,
+  isNotificationActionable,
+  sendGameInvite
+} from "../utils/notifications.js";
 
 // Mock data for demonstration
 const mockLeaderboard = [
@@ -26,10 +37,7 @@ const mockLeaderboard = [
   { rank: 10, name: "leo", highScore: 1350, avatar: "L" },
 ];
 
-const mockNotifications = [
-  { id: 1, message: "alex invited you to join their game!", time: "2 min ago" },
-  { id: 2, message: "mason started a new trivia game", time: "5 min ago" },
-];
+// Removed mock notifications - now using real data
 
 function Heading() {
   const letters = [
@@ -71,36 +79,118 @@ export default function Landing() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [leaderboardStart, setLeaderboardStart] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   // Fetch user data
   useEffect(() => {
     async function fetchUser() {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
+      console.log("🏠 Landing page: Fetching user data...");
+      
       try {
-        const res = await fetch("/api/users/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // Check if user is authenticated
+        if (!isAuthenticated()) {
+          console.log("❌ User not authenticated, redirecting...");
+          setError("Not authenticated");
+          navigate("/");
+          return;
+        }
 
-        const data = await res.json();
-        if (res.ok && data.user) {
+        console.log("✅ User is authenticated, fetching profile...");
+        
+        // Fetch user profile using JWT token
+        const response = await authenticatedFetch("/api/users/me");
+        if (response.ok) {
+          const data = await response.json();
+          console.log("✅ User profile fetched successfully:", data.user);
           setUser(data.user);
         } else {
-          setError(data.error || "Failed to fetch user");
+          console.log("❌ Failed to fetch user profile:", response.status);
+          setError("Failed to fetch user profile");
         }
       } catch (err) {
-        setError(err.message);
+        console.log("❌ Error fetching user:", err);
+        setError(err.message || "Authentication error");
       } finally {
         setLoading(false);
       }
     }
 
     fetchUser();
+    loadNotifications();
   }, []);
+
+  // Load notifications
+  async function loadNotifications() {
+    setLoadingNotifications(true);
+    try {
+      const result = await fetchNotifications();
+      if (result.success) {
+        setNotifications(result.notifications);
+      } else {
+        console.error("Failed to load notifications:", result.error);
+      }
+    } catch (error) {
+      console.error("Error loading notifications:", error);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  }
+
+  // Handle notification actions
+  async function handleAcceptInvite(notificationId) {
+    const result = await acceptGameInvite(notificationId);
+    if (result.success) {
+      // Refresh notifications
+      loadNotifications();
+      // Navigate to the lobby
+      navigate(`/lobby/${result.matchId}`);
+    } else {
+      alert(result.error || "Failed to accept invite");
+    }
+  }
+
+  async function handleDeclineInvite(notificationId) {
+    const result = await declineGameInvite(notificationId);
+    if (result.success) {
+      // Refresh notifications
+      loadNotifications();
+    } else {
+      alert(result.error || "Failed to decline invite");
+    }
+  }
+
+  async function handleDismissNotification(notificationId) {
+    const result = await dismissNotification(notificationId);
+    if (result.success) {
+      // Remove from local state
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    } else {
+      alert(result.error || "Failed to dismiss notification");
+    }
+  }
+
+  // Handle sending invites to leaderboard users
+  async function handleInviteUser(userId, userName) {
+    try {
+      // For simplicity, we'll create a basic match invitation
+      // In a full implementation, you'd let the user select from their existing matches
+      const matchName = `Game with ${userName}`;
+      const message = `${user.username} invited you to play a trivia game!`;
+      
+      console.log(`🎮 Sending game invite to ${userName} (${userId})`);
+      
+      await sendGameInvite(userId, matchName, message);
+      
+      // Show success message
+      alert(`Invite sent to ${userName}!`);
+      
+      console.log(`✅ Game invite sent successfully to ${userName}`);
+    } catch (error) {
+      console.error('❌ Failed to send game invite:', error);
+      alert(`Failed to send invite to ${userName}. Please try again.`);
+    }
+  }
 
   // Handle loading and error states
   if (loading) {
@@ -142,9 +232,9 @@ export default function Landing() {
                 className="relative p-3 rounded-lg border-2 border-white hover:bg-white/10 text-white transition-colors text-xl"
               >
                 🔔
-                {mockNotifications.length > 0 && (
+                {notifications.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-smart-red text-smart-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {mockNotifications.length}
+                    {notifications.filter(n => n.status === 'PENDING').length || notifications.length}
                   </span>
                 )}
               </button>
@@ -153,20 +243,57 @@ export default function Landing() {
               {showNotifications && (
                 <div className="absolute right-0 top-12 w-80 bg-white/10 border border-white/20 rounded-xl backdrop-blur-sm shadow-xl z-50">
                   <div className="p-4">
-                    <h3 className="font-button font-bold mb-3">
-                      Notifications
-                    </h3>
-                    {mockNotifications.map((notif) => (
-                      <div
-                        key={notif.id}
-                        className="mb-3 p-3 bg-white/5 rounded-lg"
-                      >
-                        <p className="text-sm">{notif.message}</p>
-                        <p className="text-xs text-white/60 mt-1">
-                          {notif.time}
-                        </p>
-                      </div>
-                    ))}
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="font-button font-bold">
+                        Notifications
+                      </h3>
+                      {loadingNotifications && (
+                        <span className="text-xs text-white/60">Loading...</span>
+                      )}
+                    </div>
+                    
+                    {notifications.length === 0 ? (
+                      <p className="text-sm text-white/60">No notifications</p>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          className={`mb-3 p-3 rounded-lg border ${getNotificationColor(notif.type)}`}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <p className="text-sm flex-1">{notif.message}</p>
+                            <button
+                              onClick={() => handleDismissNotification(notif.id)}
+                              className="text-white/40 hover:text-white/80 ml-2"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          
+                          <p className="text-xs text-white/60 mb-2">
+                            {formatNotificationTime(notif.createdAt)}
+                          </p>
+
+                          {/* Action buttons for game invites */}
+                          {isNotificationActionable(notif) && (
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() => handleAcceptInvite(notif.id)}
+                                className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white text-xs rounded-lg transition-colors"
+                              >
+                                Accept
+                              </button>
+                              <button
+                                onClick={() => handleDeclineInvite(notif.id)}
+                                className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white text-xs rounded-lg transition-colors"
+                              >
+                                Decline
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
@@ -229,8 +356,20 @@ export default function Landing() {
                                 {player.name}
                               </span>
                             </div>
-                            <div className="ml-auto font-button font-bold text-smart-black text-base">
-                              {player.highScore.toLocaleString()}
+                            <div className="flex items-center gap-2">
+                              <div className="font-button font-bold text-smart-black text-base">
+                                {player.highScore.toLocaleString()}
+                              </div>
+                              {/* Invite button */}
+                              {player.name !== user?.username && (
+                                <button
+                                  onClick={() => handleInviteUser(player.id || player.rank, player.name)}
+                                  className="bg-smart-green hover:bg-smart-light-blue text-white text-xs px-2 py-1 rounded-lg transition-colors"
+                                  title={`Invite ${player.name} to a game`}
+                                >
+                                  📤
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}

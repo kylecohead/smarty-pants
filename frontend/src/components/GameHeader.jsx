@@ -14,15 +14,15 @@ export default function GameHeader({
 
   return (
     <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-col items-start">
-        <p className="text-xs uppercase tracking-[0.35em] text-white/50">
+      <div className="flex flex-col items-start ml-8">
+        <p className="text-sm uppercase tracking-[0.35em] text-white/70 font-bold">
           Score
         </p>
-        <span className="font-heading text-3xl font-black text-smart-green">
+        <span className="font-heading text-5xl font-black text-smart-green drop-shadow-lg">
           {score}
         </span>
         {!isFinished && (
-          <p className="mt-1 text-xs uppercase tracking-[0.35em] text-white/40">
+          <p className="mt-2 text-sm uppercase tracking-[0.35em] text-white/60 font-semibold">
             Question {currentQuestion + 1} / {totalQuestions}
           </p>
         )}

@@ -8,6 +8,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getSocket } from "../services/socket";
 import { api } from "../services/api";
+import backgroundGamePlay from "../assets/background_gamePlay.jpg";
 import GameHeader from "../components/GameHeader";
 import QuestionCard from "../components/QuestionCard";
 import GameOverScreen from "../components/GameOverScreen";
@@ -314,8 +315,8 @@ export default function PlayGame() {
   // ================== QUESTION DISPLAY ==================
   return (
     <div
-      className="min-h-screen text-white relative"
-      style={{ backgroundColor: colors.darkBlue }}
+      className="min-h-screen text-white relative bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${backgroundGamePlay})` }}
     >
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8">
         <GameHeader
