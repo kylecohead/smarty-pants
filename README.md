@@ -148,3 +148,6 @@ Smartie-Pants
 ├── nginx.conf
 └── README.md
 ```
+
+## Deploy
+https://play.smartiepants.art
