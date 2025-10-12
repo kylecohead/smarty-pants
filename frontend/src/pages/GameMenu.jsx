@@ -28,7 +28,12 @@ function Heading() {
     { t: "s", c: "text-smart-light-pink" },
   ];
   return (
-    <h1 className="text-center font-heading text-4xl sm:text-6xl font-black leading-none mb-8" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)' }}>
+    <h1
+      className="text-center font-heading text-4xl sm:text-6xl font-black leading-none mb-8"
+      style={{
+        textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)",
+      }}
+    >
       {letters.map((l, i) => (
         <span key={i} className={l.c}>
           {String(l.t).toUpperCase()}
