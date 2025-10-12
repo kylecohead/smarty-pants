@@ -191,11 +191,7 @@ export default function PlayGame() {
           }
 
           // Update high score if applicable
-          const highScoreResult = await api.updateHighScore(currentUser.id, userScore);
-          if (highScoreResult.isNewRecord) {
-            // TO-DO: Optionally show a notification or celebration animation
-            console.log('New personal best!', highScoreResult.highScore);
-          }
+          await api.updateHighScore(currentUser.id, userScore);
         }
       } catch (error) {
         console.error("Failed to update user stats:", error);

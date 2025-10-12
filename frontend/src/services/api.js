@@ -190,6 +190,12 @@ export const api = {
     return response.json();
   },
 
+  /**
+   * Update the user's high score when a high score is achieved
+   * @param {number} userId - user ID
+   * @param {number} newScore - new scores 
+   * @returns {Promise<object>} - Updated user object
+   */
   updateHighScore: async (userId, newScore) => {
     const response = await fetch(`/api/users/${userId}/update-highscore`, {
       method: 'POST',
@@ -197,7 +203,7 @@ export const api = {
         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ highScore: newScore })
+      body: JSON.stringify({ score: newScore })
     });
     if (!response.ok) throw new Error('Failed to update high score');
     return response.json();
