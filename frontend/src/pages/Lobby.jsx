@@ -30,6 +30,7 @@ export default function Lobby() {
   const [currentUser, setCurrentUser] = useState(null);
   const [players, setPlayers] = useState([]);
   const [isHost, setIsHost] = useState(false);
+  const [maxPlayers, setMaxPlayers] = useState(6);
   const [socketConnected, setSocketConnected] = useState(false);
 
   const socketRef = useRef(null);
@@ -152,6 +153,8 @@ export default function Lobby() {
     (async () => {
       try {
         const res = await api.getMatch(matchId);
+        // Save match settings (maxPlayers) and determine host
+        setMaxPlayers(res.maxPlayers || 6);
         if (res.hostId && currentUser?.id) {
           setIsHost(res.hostId === currentUser.id);
         }
@@ -161,7 +164,7 @@ export default function Lobby() {
     })();
   }, [matchId, currentUser]);
 
-  const isLobbyFull = players.length >= 1;
+  const isLobbyFull = players.length >= (maxPlayers || 6);
 
   const handleStartGame = () => {
     const socket = socketRef.current;
@@ -215,7 +218,7 @@ export default function Lobby() {
             <div className="relative flex justify-center items-center mb-3 flex-shrink-0">
               <div className="text-2xl text-white font-bold">
                 {socketConnected
-                  ? `Game name's Players: ${players.length} / 6`
+                  ? `Game name's Players: ${players.length} / ${maxPlayers}`
                   : "Connecting to server..."}
               </div>
               <div className="absolute right-0 inline-block bg-smart-pink rounded-lg px-3 py-1">
@@ -230,8 +233,16 @@ export default function Lobby() {
 
             {/* Player grid */}
             <div className="flex-1 flex items-center justify-center py-2">
-              <div className="grid grid-cols-3 gap-3 w-full max-w-4xl px-4">
-                {Array.from({ length: 6 }).map((_, i) => {
+              <div
+                className="grid gap-3 w-full max-w-4xl px-4"
+                style={{
+                  gridTemplateColumns: `repeat(${Math.min(
+                    maxPlayers,
+                    6
+                  )}, minmax(0,1fr))`,
+                }}
+              >
+                {Array.from({ length: maxPlayers }).map((_, i) => {
                   const p = players[i];
                   return (
                     <div

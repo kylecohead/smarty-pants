@@ -32,6 +32,7 @@ export default function PlayGame() {
   const [scores, setScores] = useState({});
   const [matchEnded, setMatchEnded] = useState(false);
   const [isAnswered, setIsAnswered] = useState(false);
+  const [currentCorrectAnswer, setCurrentCorrectAnswer] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [recapData, setRecapData] = useState(null);
   const [showRecap, setShowRecap] = useState(false);
@@ -79,6 +80,8 @@ export default function PlayGame() {
       clearTimeout(timeoutGuardRef.current);
 
       setQuestion(data);
+      // Clear any previously revealed correct answer
+      setCurrentCorrectAnswer(null);
       setIsAnswered(false);
       setShowRecap(false);
       setRecapData(null);
@@ -107,6 +110,8 @@ export default function PlayGame() {
     // Question results for all players (after everyone answered or time up)
     socket.on("questionResults", ({ responses, scores, correctAnswer }) => {
       setScores(scores);
+      // Keep the correct answer so the UI can highlight it
+      setCurrentCorrectAnswer(correctAnswer || null);
 
       // Find your response
       const yourResponse = responses.find(
@@ -135,6 +140,7 @@ export default function PlayGame() {
         correct: yourResponse?.correct || false,
         points: yourResponse?.points || 0,
         leaderboard: currentLeaderboard,
+        correctAnswer: correctAnswer || null,
         allResponses: responses, // Include all player responses
       };
 
@@ -345,6 +351,7 @@ export default function PlayGame() {
             questionResolved={showRecap}
             waitingOnOthers={isAnswered && !showRecap} // NEW: show waiting state
             onAnswer={(optionText) => handleAnswer(optionText)}
+            correctAnswer={currentCorrectAnswer}
           />
         </main>
       </div>
@@ -360,6 +367,7 @@ export default function PlayGame() {
               allResponses={recapData.allResponses} // Pass this as a prop
               questionIndex={question.index}
               onClose={() => setShowRecap(false)}
+              correctAnswer={recapData.correctAnswer}
             />
           </div>
         </div>
