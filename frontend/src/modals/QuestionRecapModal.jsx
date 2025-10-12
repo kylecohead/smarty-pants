@@ -140,20 +140,19 @@ export default function QuestionRecapModal({
 
         {/* Overall Standings Sidebar */}
         <aside
-          className="w-full rounded-3xl shadow-lg lg:w-80 p-8"
+          className="w-full rounded-3xl shadow-lg lg:w-80 p-8 bg-smart-orange"
           style={{
-            backgroundColor: "rgba(255, 255, 0, 0.7)",
             boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
           }}
         >
-          <h3 className="text-lg uppercase tracking-[0.35em] font-bold text-black">
+          <h3 className="text-lg uppercase tracking-[0.35em] font-bold text-white">
             OVERALL WINNERS
           </h3>
           <div className="mt-4 max-h-72 space-y-3 overflow-y-auto pr-1">
             {overall.map((row, i) => (
               <div
                 key={row.id ?? i}
-                className="flex items-center justify-between rounded-2xl border border-black/20 px-4 py-3 font-semibold shadow-sm text-black"
+                className="flex items-center justify-between rounded-2xl border border-white/20 px-4 py-3 font-semibold shadow-sm text-white"
                 style={{ backgroundColor: "rgba(0, 0, 0, 0.1)" }}
               >
                 <span className="flex items-center gap-3">
@@ -169,7 +168,7 @@ export default function QuestionRecapModal({
                     )}
                   </span>
                 </span>
-                <span className="text-lg font-bold text-black drop-shadow-sm">
+                <span className="text-lg font-bold text-white drop-shadow-sm">
                   {row.total}
                 </span>
               </div>

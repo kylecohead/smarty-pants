@@ -5,14 +5,28 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import backgroundFinalScore from "../assets/background_finalScore.jpg";
 
-export default function GameOverModal() {
+export default function GameOverModal({ scores, currentUser, onClose }) {
   const { state } = useLocation();
   const navigate = useNavigate();
 
-  const leaderboard = Array.isArray(state?.leaderboard)
-    ? state.leaderboard
-    : [];
-  const yourScore = state?.yourScore;
+  // Use props if available, otherwise fall back to navigation state
+  const finalScores = scores || state?.scores || {};
+  const user = currentUser || state?.currentUser;
+
+  // Convert scores object to leaderboard array if needed
+  const leaderboard =
+    state?.leaderboard ||
+    (finalScores
+      ? Object.entries(finalScores)
+          .map(([name, score]) => ({
+            name,
+            total: score,
+            isYou: name === user?.username,
+          }))
+          .sort((a, b) => b.total - a.total)
+      : []);
+
+  const yourScore = user ? finalScores[user.username] : state?.yourScore;
   const winner = leaderboard[0];
 
   const titleLetters = [
@@ -139,7 +153,7 @@ export default function GameOverModal() {
         <div className="mt-10 text-center">
           <button
             className="inline-flex items-center justify-center rounded-lg border border-white/20 bg-white/10 px-6 py-3 text-lg font-semibold text-white transition hover:bg-white/20"
-            onClick={() => navigate("/landing", { replace: true })}
+            onClick={onClose || (() => navigate("/landing", { replace: true }))}
           >
             Return to Dashboard
           </button>
