@@ -30,8 +30,8 @@ services:
       - "3000:3000"
     volumes:
       - ./backend:/app
-      - /app/node_modules    # keep container-installed deps
-    command: ["sh", "/app/entrypoint.sh"]   # use script 
+      - /app/node_modules
+    command: ["sh", "/app/entrypoint.sh"]
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
       interval: 5s
@@ -46,11 +46,13 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/app
-      - /app/node_modules    # keep container-installed deps
+      - /app/node_modules
     command: npm run dev -- --host 0.0.0.0
-    # environment:
-    #   VITE_API_URL: http://localhost:3000
-
+    environment:
+      VITE_API_URL: ""
+      # Optional: force rebuild cache refresh each compose up
+      FORCE_COLOR: "1"
+      NODE_ENV: development
 
 volumes:
   db_data:

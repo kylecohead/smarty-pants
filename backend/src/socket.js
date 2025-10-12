@@ -234,7 +234,24 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
 // =============================================================
 export default function setupSocket(server) {
   const io = new Server(server, {
-    cors: { origin: process.env.FRONTEND_ORIGIN || "*", credentials: true },
+    cors: {
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+
+        // ✅ Allow localhost + any Cloudflare quick tunnel
+        const allowed = origin.match(
+          /^(http:\/\/localhost(:\d+)?|http:\/\/127\.0\.0\.1(:\d+)?|https:\/\/.*\.trycloudflare\.com)$/
+        );
+
+        if (allowed) {
+          callback(null, true);
+        } else {
+          console.warn("🚫 [Socket.IO] Blocked origin:", origin);
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      credentials: true,
+    },
     path: "/socket.io",
   });
 

@@ -12,7 +12,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_ROOT = "http://localhost:3000/api/questions";
+const base =
+  import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim() !== ""
+    ? import.meta.env.VITE_API_URL.replace(/\/$/, "")
+    : window.location.origin.replace(/\/$/, "");
+const API_ROOT = `${base}/api/questions`;
+
+// const API_ROOT = "http://localhost:3000/api/questions";
 
 const initialStats = { total: 0, byCategory: [] };
 

@@ -18,11 +18,21 @@ const app = express();
 // === GLOBAL MIDDLEWARE ===
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-      process.env.FRONTEND_ORIGIN || "*",
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or same-origin)
+      if (!origin) return callback(null, true);
+
+      // ✅ Allow local dev + any Cloudflare quick tunnel URL
+      const allowed =
+        origin.match(/^(http:\/\/localhost(:\d+)?|http:\/\/127\.0\.0\.1(:\d+)?|https:\/\/.*\.trycloudflare\.com)$/);
+
+      if (allowed) {
+        callback(null, true);
+      } else {
+        console.warn("🚫 Blocked by CORS:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );

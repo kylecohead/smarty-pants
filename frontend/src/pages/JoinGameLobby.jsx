@@ -50,8 +50,14 @@ export default function JoinGameLobby() {
   const [publicGames, setPublicGames] = useState([]);
   const [loadingGames, setLoadingGames] = useState(true);
 
-  // ✅ Correct API base (notice the /api suffix)
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+
+  // const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  const base =
+  import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim() !== ""
+    ? import.meta.env.VITE_API_URL.replace(/\/$/, "")
+    : window.location.origin.replace(/\/$/, "");
+  const API_URL = `${base}/api`;
+  
 
   // 🔄 Fetch public games from API
   const fetchPublicGames = async () => {
