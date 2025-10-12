@@ -7,6 +7,7 @@ export default function QuestionCard({
   timeLeftMs,
   questionDurationMs,
   youAnswered,
+  selectedAnswer,
   questionResolved,
   waitingOnOthers,
   onAnswer,
@@ -47,9 +48,14 @@ export default function QuestionCard({
       <div className="mt-10 grid gap-4 sm:grid-cols-2">
         {question?.options.map((opt, i) => {
           const baseClass = colorClasses[i % colorClasses.length];
+          const isSelected = selectedAnswer === opt.id;
           const disabledClass =
             youAnswered || questionResolved
               ? "opacity-60 cursor-not-allowed"
+              : "";
+          const selectedClass =
+            isSelected && youAnswered && !questionResolved
+              ? "ring-4 ring-white ring-opacity-80 shadow-2xl scale-105"
               : "";
 
           return (
@@ -57,7 +63,7 @@ export default function QuestionCard({
               key={opt.id}
               onClick={() => onAnswer(opt.id)}
               disabled={youAnswered || questionResolved}
-              className={`group relative overflow-hidden rounded-2xl border border-white/10 px-6 py-8 text-xl font-bold text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${baseClass} ${disabledClass}`}
+              className={`group relative overflow-hidden rounded-2xl border border-white/10 px-6 py-8 text-xl font-bold text-white transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${baseClass} ${disabledClass} ${selectedClass}`}
             >
               <span className="relative z-10 block drop-shadow-sm">
                 {opt.label}
@@ -70,7 +76,7 @@ export default function QuestionCard({
 
       {/* Waiting Message */}
       {waitingOnOthers && (
-        <p className="mt-6 text-sm font-medium text-white/70">
+        <p className="mt-6 text-lg font-bold text-smart-red">
           Waiting for other players to finish…
         </p>
       )}

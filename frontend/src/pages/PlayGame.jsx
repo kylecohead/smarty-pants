@@ -32,6 +32,7 @@ export default function PlayGame() {
   const [scores, setScores] = useState({});
   const [matchEnded, setMatchEnded] = useState(false);
   const [isAnswered, setIsAnswered] = useState(false);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [recapData, setRecapData] = useState(null);
   const [showRecap, setShowRecap] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -223,6 +224,7 @@ export default function PlayGame() {
   const handleAnswer = (optionLabel) => {
     if (isAnswered || !socketRef.current || !question) return;
     setIsAnswered(true);
+    setSelectedAnswer(optionLabel); // Track the selected answer
     // DON'T clear the timer - let it keep running for synchronized display
     // clearInterval(timerRef.current); // REMOVED
     clearTimeout(timeoutGuardRef.current);
@@ -339,6 +341,7 @@ export default function PlayGame() {
             timeLeftMs={timeLeft}
             questionDurationMs={question.timeLimit || 10000}
             youAnswered={isAnswered}
+            selectedAnswer={selectedAnswer}
             questionResolved={showRecap}
             waitingOnOthers={isAnswered && !showRecap} // NEW: show waiting state
             onAnswer={(optionText) => handleAnswer(optionText)}
@@ -375,14 +378,12 @@ export default function PlayGame() {
 
       {/* Game Over Modal Overlay */}
       {matchEnded && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-4xl">
-            <GameOverModal
-              scores={scores}
-              currentUser={currentUser}
-              onClose={() => navigate("/landing")}
-            />
-          </div>
+        <div className="fixed inset-0 z-50">
+          <GameOverModal
+            scores={scores}
+            currentUser={currentUser}
+            onClose={() => navigate("/landing")}
+          />
         </div>
       )}
     </div>

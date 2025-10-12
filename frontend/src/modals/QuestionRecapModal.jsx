@@ -10,7 +10,12 @@ const colors = {
   accentD: "#FF8FAB",
 };
 
-export default function QuestionRecapModal({ correct, points, leaderboard, onClose }) {
+export default function QuestionRecapModal({
+  correct,
+  points,
+  leaderboard,
+  onClose,
+}) {
   const [countdown, setCountdown] = useState(5);
 
   // Auto-advance countdown
@@ -53,32 +58,44 @@ export default function QuestionRecapModal({ correct, points, leaderboard, onClo
   }, [leaderboardArray]);
 
   return (
-    <div className="w-full text-white">
+    <div
+      className="w-full max-w-5xl mx-auto overflow-hidden rounded-3xl border-2 border-white p-6 text-center shadow-2xl backdrop-blur-sm sm:p-10 text-white"
+      style={{ backgroundColor: "rgba(23, 64, 209, 0.7)" }}
+    >
       {/* Header */}
       <header className="text-center">
-        <p className="text-xs uppercase tracking-[0.35em] text-white/50">
-          Round {questionIndex + 1}
+        <p className="text-4xl uppercase tracking-[0.35em] font-heading font-black mb-4 mt-4 text-white/60">
+          ROUND {questionIndex + 1}
         </p>
-        <h2 className="mt-2 font-heading text-4xl font-black text-smart-light-blue drop-shadow">
-          {correct ? "Victory Pulse" : "Comeback Time"}
+        <h2
+          className="font-heading text-4xl font-black drop-shadow mb-1"
+          style={{ color: correct ? "#39FF14" : "#FF073A" }}
+        >
+          {correct ? "You Smartie!" : '"Comeback Time"'}
         </h2>
         <p
-          className="mt-3 inline-flex items-center justify-center rounded-full px-4 py-1 text-sm font-semibold uppercase tracking-[0.2em]"
+          className="inline-flex items-center justify-center rounded-full px-4 py-1 text-sm font-semibold uppercase tracking-[0.2em]"
           style={{
-            background: correct ? colors.accentA : colors.accentD,
-            color: correct ? "#092C1F" : "#460017",
+            background: correct ? "#39FF14" : "#FF073A",
+            color: "#000000",
           }}
         >
-          {correct ? "Correct" : "Incorrect"} · +{points}
+          {correct ? "CORRECT" : "INCORRECT"} +{points}
         </p>
       </header>
 
       {/* Leaderboard Section */}
       <section className="mt-10 flex flex-col items-stretch gap-6 lg:flex-row">
         {/* Top Performers Card */}
-        <div className="flex-1 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl backdrop-blur-sm sm:p-8">
-          <h3 className="text-left text-xs uppercase tracking-[0.35em] text-white/50">
-            Top Performers This Round
+        <div
+          className="flex-1 rounded-3xl shadow-lg sm:p-10 p-8"
+          style={{
+            backgroundColor: "rgba(0, 207, 255, 0.3)",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+          }}
+        >
+          <h3 className="text-left text-lg uppercase tracking-[0.35em] font-bold text-white">
+            WINNERS OF ROUND {questionIndex + 1}
           </h3>
           <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:items-start">
             {(() => {
@@ -92,17 +109,11 @@ export default function QuestionRecapModal({ correct, points, leaderboard, onClo
 
             <div className="flex-1 space-y-3">
               {top3ThisQuestion.map((row, i) => {
-                const gradients = [
-                  "from-[#FFC857] to-[#FFAE42] text-slate-900",
-                  "from-[#6EC5FF] to-[#4F8CFF] text-white",
-                  "from-[#32D399] to-[#0FB57D] text-white",
-                ];
-                const gradient =
-                  gradients[i] ?? "from-[#1A3155] to-[#102743] text-white";
                 return (
                   <div
                     key={row.id ?? i}
-                    className={`flex items-center justify-between rounded-2xl border border-white/10 bg-gradient-to-r px-4 py-3 font-semibold shadow-sm ${gradient}`}
+                    className="flex items-center justify-between rounded-2xl border border-white/20 px-4 py-3 font-semibold shadow-sm text-white"
+                    style={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
                   >
                     <span className="flex items-center gap-3">
                       <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white">
@@ -128,27 +139,37 @@ export default function QuestionRecapModal({ correct, points, leaderboard, onClo
         </div>
 
         {/* Overall Standings Sidebar */}
-        <aside className="w-full rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl backdrop-blur-sm lg:w-80">
-          <h3 className="text-xs uppercase tracking-[0.35em] text-white/50">
-            Overall Standings
+        <aside
+          className="w-full rounded-3xl shadow-lg lg:w-80 p-8"
+          style={{
+            backgroundColor: "rgba(255, 255, 0, 0.7)",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+          }}
+        >
+          <h3 className="text-lg uppercase tracking-[0.35em] font-bold text-black">
+            OVERALL WINNERS
           </h3>
-          <div className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1">
+          <div className="mt-4 max-h-72 space-y-3 overflow-y-auto pr-1">
             {overall.map((row, i) => (
               <div
                 key={row.id ?? i}
-                className={`flex items-center justify-between rounded-xl border border-white/10 px-3 py-2 text-white ${
-                  row.isYou ? "bg-white/20" : "bg-white/10"
-                }`}
+                className="flex items-center justify-between rounded-2xl border border-black/20 px-4 py-3 font-semibold shadow-sm text-black"
+                style={{ backgroundColor: "rgba(0, 0, 0, 0.1)" }}
               >
-                <span className="font-medium">
-                  #{i + 1} {row.name}
-                  {row.isYou && (
-                    <span className="ml-2 rounded-full bg-white/30 px-2 py-0.5 text-xs font-semibold text-white">
-                      You
-                    </span>
-                  )}
+                <span className="flex items-center gap-3">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/20 text-sm font-bold text-white">
+                    #{i + 1}
+                  </span>
+                  <span className="text-inherit">
+                    {row.name}
+                    {row.isYou && (
+                      <span className="ml-2 rounded-full bg-smart-green px-2 py-0.5 text-xs font-semibold text-white">
+                        You
+                      </span>
+                    )}
+                  </span>
                 </span>
-                <span className="text-sm font-bold text-white/90">
+                <span className="text-lg font-bold text-black drop-shadow-sm">
                   {row.total}
                 </span>
               </div>
@@ -159,7 +180,7 @@ export default function QuestionRecapModal({ correct, points, leaderboard, onClo
 
       {/* Countdown */}
       {countdown > 0 && (
-        <div className="mt-8 text-center text-sm uppercase tracking-[0.3em] text-white/60">
+        <div className="mt-8 text-center text-base uppercase tracking-[0.3em] text-white/60 font-semibold">
           Next question in {countdown}s…
         </div>
       )}
