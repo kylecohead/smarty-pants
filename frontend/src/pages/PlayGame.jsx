@@ -173,13 +173,22 @@ export default function PlayGame() {
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
 
-      // Increment games played once the match has ended
       try {
         if (currentUser) {
+          // Increment games played once the match has ended
           await api.incrementGamesPlayed(currentUser.id);
+
+          // Check is the current user is the winner
+          const sortedScores = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+          const winner = sortedScores[0];
+
+          // If current user is the winner, increment their wins count
+          if (winner && winner[0] === currentUser.username) {
+            await api.incrementUserWins(currentUser.id);
+          }
         }
       } catch (error) {
-        console.error("Failed to update games played count:", error);
+        console.error("Failed to update user stats:", error);
       }
     });
 

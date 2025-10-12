@@ -77,4 +77,25 @@ router.post('/:id/increment-games', authMiddleware, async (req, res) => {
   }
 });
 
+// Increment wins when a user wins a match
+router.post('/:id/increment-wins', authMiddleware, async (req, res) => {
+  const userId = parseInt(req.params.id);
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        wins: {
+          increment: 1
+        }
+      }
+    });
+
+    res.json({ success: true, wins: updatedUser.wins });
+  } catch (error) {
+    console.error("Failed to increment wins:", error);
+    res.status(500).json({ error: 'Failed to update wins count' });
+  }
+});
+
 export default router;

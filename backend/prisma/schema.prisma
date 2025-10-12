@@ -35,9 +35,9 @@ model User {
   email       String        @unique
   password    String
   avatarUrl   String?
-  gamesPlayed Int?          @default(0)
-  highScore   Int?
-  wins        Int?
+  gamesPlayed Int?          @default(0) 
+  highScore   Int?          @default(0) 
+  wins        Int?          @default(0)
   memberSince DateTime?
   createdAt DateTime      @default(now())
   role      Role          @default(USER)
