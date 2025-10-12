@@ -106,8 +106,8 @@ prod-logs:
 
 # -------- DEPLOY WITH CLOUDFLARE --------
 tunnel:
- 	- pkill cloudflared  
-	- cloudflared tunnel --url http://localhost:5173/
+	- pkill cloudflared  # ignore if no process
+	cloudflared tunnel --url http://localhost:5173/
 
 # -------- CLEAN UP --------
 free-ports:
