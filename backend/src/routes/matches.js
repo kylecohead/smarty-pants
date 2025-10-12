@@ -18,9 +18,9 @@ router.post("/", authMiddleware, async (req, res) => {
   const userId = req.user.id;
 
   try {
-    // Validate numQuestions (5-10 range, default to 5)
-    const questionsCount = numQuestions && numQuestions >= 5 && numQuestions <= 10 
-      ? numQuestions 
+    // Validate numQuestions (3-10 range, default to 5)
+    const questionsCount = numQuestions && numQuestions >= 3 && numQuestions <= 10
+      ? numQuestions
       : 5;
 
     // Validate timeLimit (5-60 seconds, default to 10)
