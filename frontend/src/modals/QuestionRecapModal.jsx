@@ -15,6 +15,7 @@ export default function QuestionRecapModal({
   points,
   leaderboard,
   onClose,
+  questionIndex = 0,
 }) {
   const [countdown, setCountdown] = useState(5);
 
@@ -37,7 +38,6 @@ export default function QuestionRecapModal({
   }, [onClose]);
 
   // Use the props directly instead of state
-  const questionIndex = 0; // You can pass this as a prop too if needed
   const leaderboardArray = Array.isArray(leaderboard) ? leaderboard : [];
 
   // Top 3 performers this question (by round score)

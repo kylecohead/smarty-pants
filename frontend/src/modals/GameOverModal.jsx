@@ -76,7 +76,7 @@ export default function GameOverModal({ scores, currentUser, onClose }) {
             className="mt-2 font-heading text-4xl font-black drop-shadow"
             style={{
               textShadow:
-                "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)",
+                "2px 2px 4px rgba(255,255,255,0.8), 0 0 8px rgba(255,255,255,0.6)",
             }}
           >
             {titleLetters.map((l, i) => (

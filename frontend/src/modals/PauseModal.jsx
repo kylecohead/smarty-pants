@@ -21,7 +21,16 @@ export default function PauseModal() {
 
   // Route to question recap screen
   if (mode === "recap") {
-    return <QuestionRecapModal />;
+    return (
+      <QuestionRecapModal
+        correct={state?.correct}
+        points={state?.points}
+        leaderboard={state?.leaderboard}
+        allResponses={state?.allResponses}
+        questionIndex={state?.questionIndex}
+        onClose={state?.onClose}
+      />
+    );
   }
 
   // Fallback for generic pause state

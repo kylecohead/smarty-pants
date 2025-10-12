@@ -358,6 +358,7 @@ export default function PlayGame() {
               points={recapData.points}
               leaderboard={recapData.leaderboard}
               allResponses={recapData.allResponses} // Pass this as a prop
+              questionIndex={question.index}
               onClose={() => setShowRecap(false)}
             />
           </div>
