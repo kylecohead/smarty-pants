@@ -9,6 +9,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getSocket } from "../services/socket";
 import { api } from "../services/api";
 import backgroundGamePlay from "../assets/background_gamePlay.jpg";
+import backgroundWaitHost from "../assets/background_waitHost.jpg";
 import GameHeader from "../components/GameHeader";
 import QuestionCard from "../components/QuestionCard";
 import GameOverScreen from "../components/GameOverScreen";
@@ -295,17 +296,17 @@ export default function PlayGame() {
   if (!question) {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center text-white relative overflow-hidden"
-        style={{ backgroundColor: colors.darkBlue }}
+        className="min-h-screen flex flex-col items-center justify-center text-white relative overflow-hidden bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${backgroundWaitHost})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0A2442] via-[#143B6E] to-[#0A2442] opacity-60 animate-[pulse_3s_infinite]" />
+        <div className="absolute inset-0 bg-black/30 animate-[pulse_3s_infinite]" />
         <div className="relative z-10 flex flex-col items-center">
-          <div className="w-16 h-16 border-4 border-t-transparent border-[#6EC5FF] rounded-full animate-spin mb-8"></div>
-          <h1 className="text-3xl font-heading font-semibold mb-3 tracking-wide">
-            Waiting for Host...
+          <div className="w-20 h-20 border-4 border-t-transparent border-[#6EC5FF] rounded-full animate-spin mb-8"></div>
+          <h1 className="text-4xl font-heading font-black mb-4 tracking-wide drop-shadow-lg">
+            WAITING FOR HOST...
           </h1>
-          <p className="text-[#6EC5FF] text-lg animate-pulse">
-            The game will begin shortly
+          <p className="text-[#6EC5FF] text-xl font-heading animate-pulse drop-shadow-md">
+            THE GAME WILL BEGIN SHORTLY
           </p>
         </div>
       </div>
