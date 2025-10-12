@@ -56,4 +56,25 @@ router.put("/me", authMiddleware, async (req, res) => {
   }
 });
 
+// Increment games played once a match has ended
+router.post('/:id/increment-games', authMiddleware, async (req, res) => {
+  const userId = parseInt(req.params.id);
+  
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        gamesPlayed: {
+          increment: 1
+        }
+      }
+    });
+    
+    res.json({ success: true, gamesPlayed: updatedUser.gamesPlayed });
+  } catch (error) {
+    console.error('Failed to increment games played:', error);
+    res.status(500).json({ error: 'Failed to update games played count' });
+  }
+});
+
 export default router;

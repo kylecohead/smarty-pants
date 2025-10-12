@@ -155,6 +155,23 @@ export const api = {
       method: "POST",
     });
   },
+
+  /**
+   * Increment games played for a user once a match ends
+   * @param {number} userId  - user ID
+   * @returns {Promise<object>} - Updated user object
+   */
+  incrementGamesPlayed: async (userId) => {
+    const response = await fetch(`/api/users/${userId}/increment-games`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!response.ok) throw new Error('Failed to update games played');
+    return response.json();
+  }
 };
 
 /**

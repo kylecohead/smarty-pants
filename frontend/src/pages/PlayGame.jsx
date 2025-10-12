@@ -167,11 +167,20 @@ export default function PlayGame() {
       setScores(map);
     });
 
-    socket.on("matchEnded", ({ scores }) => {
+    socket.on("matchEnded", async ({ scores }) => {
       setScores(scores);
       setMatchEnded(true);
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
+
+      // Increment games played once the match has ended
+      try {
+        if (currentUser) {
+          await api.incrementGamesPlayed(currentUser.id);
+        }
+      } catch (error) {
+        console.error("Failed to update games played count:", error);
+      }
     });
 
     socket.on("hostLeft", ({ message, scores }) => {

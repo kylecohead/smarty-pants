@@ -12,6 +12,7 @@ datasource db {
 //
 // Enums
 //
+
 enum Role {
   USER
   ADMIN
@@ -24,8 +25,6 @@ enum MatchStatus {
   FINISHED
 }
 
-
-
 //
 // Models
 //
@@ -36,7 +35,7 @@ model User {
   email       String        @unique
   password    String
   avatarUrl   String?
-  gamesPlayed Int?
+  gamesPlayed Int?          @default(0)
   highScore   Int?
   wins        Int?
   memberSince DateTime?
