@@ -11,6 +11,7 @@ export default function QuestionCard({
   questionResolved,
   waitingOnOthers,
   onAnswer,
+  correctAnswer,
 }) {
   const colorClasses = [
     "bg-gradient-to-br from-[#FF8FAB] to-[#FF5F87]",
@@ -58,12 +59,27 @@ export default function QuestionCard({
               ? "ring-4 ring-white ring-opacity-80 shadow-2xl scale-105"
               : "";
 
+          // Result-time highlighting
+          let resultHighlight = "";
+          if (questionResolved && correctAnswer != null) {
+            if (opt.id === correctAnswer) {
+              // Bright green highlight for correct answer
+              resultHighlight =
+                "bg-emerald-300 text-black ring-8 ring-emerald-100 shadow-2xl";
+            } else if (isSelected && opt.id !== correctAnswer) {
+              // Dim incorrect selection
+              resultHighlight = "opacity-60 line-through ring-1 ring-white/10";
+            } else {
+              resultHighlight = "opacity-60";
+            }
+          }
+
           return (
             <button
               key={opt.id}
               onClick={() => onAnswer(opt.id)}
               disabled={youAnswered || questionResolved}
-              className={`group relative overflow-hidden rounded-2xl border border-white/10 px-6 py-8 text-xl font-bold text-white transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${baseClass} ${disabledClass} ${selectedClass}`}
+              className={`group relative overflow-hidden rounded-2xl border border-white/10 px-6 py-8 text-xl font-bold text-white transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${baseClass} ${disabledClass} ${selectedClass} ${resultHighlight}`}
             >
               <span className="relative z-10 block drop-shadow-sm">
                 {opt.label}
