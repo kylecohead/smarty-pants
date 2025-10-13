@@ -207,7 +207,22 @@ export const api = {
     });
     if (!response.ok) throw new Error('Failed to update high score');
     return response.json();
-  }
+  },
+
+  /**
+   * Get the current leaderboard 
+   * @param {number} limit - number of leaders to display
+   */
+  getLeaderboard: async (limit = 10) => {
+    const headers = {};
+    const token = localStorage.getItem('accessToken');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`/api/users/leaderboard?limit=${limit}`, { headers });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch leaderboard');
+    return data;
+  },
 };
 
 

@@ -12,20 +12,6 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 import ProfileCard from "../components/ProfileCard.jsx";
 import backgroundLanding from "../assets/background_landing.jpg";
 
-// Mock data for demonstration
-const mockLeaderboard = [
-  { rank: 1, name: "nina", highScore: 2450, avatar: "N" },
-  { rank: 2, name: "alex", highScore: 2350, avatar: "A" },
-  { rank: 3, name: "mason", highScore: 2100, avatar: "M" },
-  { rank: 4, name: "sara", highScore: 1950, avatar: "S" },
-  { rank: 5, name: "jo", highScore: 1850, avatar: "J" },
-  { rank: 6, name: "kai", highScore: 1750, avatar: "K" },
-  { rank: 7, name: "zoe", highScore: 1650, avatar: "Z" },
-  { rank: 8, name: "ben", highScore: 1550, avatar: "B" },
-  { rank: 9, name: "mia", highScore: 1450, avatar: "M" },
-  { rank: 10, name: "leo", highScore: 1350, avatar: "L" },
-];
-
 const mockNotifications = [
   { id: 1, message: "alex invited you to join their game!", time: "2 min ago" },
   { id: 2, message: "mason started a new trivia game", time: "5 min ago" },
@@ -70,6 +56,9 @@ export default function Landing() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const [leaderboardError, setLeaderboardError] = useState(null);
   const [leaderboardStart, setLeaderboardStart] = useState(0);
 
   // Fetch user data
@@ -100,6 +89,33 @@ export default function Landing() {
     }
 
     fetchUser();
+  }, []);
+
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        setLeaderboardLoading(true);
+
+        const token = localStorage.getItem("accessToken");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        const res = await fetch("/api/users/leaderboard?limit=10", { headers });
+        const data = await res.json();
+
+        if (res.ok && Array.isArray(data.leaderboard)) {
+          setLeaderboard(data.leaderboard);
+          setLeaderboardStart(0);
+        } else {
+          setLeaderboardError(data.error || "Failed to fetch leaderboard");
+        }
+      } catch (err) {
+        setLeaderboardError(err.message);
+      } finally {
+        setLeaderboardLoading(false);
+      }
+    }
+
+    fetchLeaderboard();
   }, []);
 
   // Handle loading and error states
@@ -213,27 +229,37 @@ export default function Landing() {
                           transform: `translateY(-${leaderboardStart * 64}px)`, // 64px per item (height + margin)
                         }}
                       >
-                        {mockLeaderboard.map((player) => (
-                          <div
-                            key={player.rank}
-                            className="flex items-center gap-3 bg-smart-yellow/20 rounded-lg p-3 h-14 ml-4 mr-2"
+                        {leaderboardLoading ? (
+                          <div className="p-4 text-smart-black">Loading leaderboard…</div>
+                        ) : leaderboardError ? (
+                          <div className="p-4 text-smart-black">Error: {leaderboardError}</div>
+                        ) : leaderboard.length === 0 ? (
+                          <div className="p-4 text-smart-black">No scores yet. Be the first!</div>
+                        ) : (
+                          <div 
+                            className="space-y-2 transition-transform duration-300 ease-in-out"
+                            style={{ transform: `translateY(-${leaderboardStart * 64}px)` }}
                           >
-                            <div className="flex items-center gap-2">
-                              <span className="font-heading text-xl font-bold text-smart-black">
-                                #{player.rank}
-                              </span>
-                              <div className="w-10 h-10 rounded-full bg-smart-white text-smart-black flex items-center justify-center font-bold text-base">
-                                {player.avatar}
+                            {leaderboard.map((player) => (
+                              <div
+                                key={player.rank}
+                                className="flex items-center gap-3 bg-smart-yellow/20 rounded-lg p-3 h-14 ml-4 mr-2"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="font-heading text-xl font-bold text-smart-black">
+                                    #{player.rank}
+                                  </span>
+                                  <span className="font-button font-bold text-smart-black text-base">
+                                    {player.name}
+                                  </span>
+                                </div>
+                                <div className="ml-auto font-button font-bold text-smart-black text-base">
+                                  {(player.highScore ?? 0).toLocaleString()}
+                                </div>
                               </div>
-                              <span className="font-button font-bold text-smart-black text-base">
-                                {player.name}
-                              </span>
-                            </div>
-                            <div className="ml-auto font-button font-bold text-smart-black text-base">
-                              {player.highScore.toLocaleString()}
-                            </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
                       </div>
                     </div>
 
@@ -246,12 +272,12 @@ export default function Landing() {
                           const clickY = e.clientY - rect.top;
                           const percentage = clickY / rect.height;
                           const newStart = Math.round(
-                            percentage * Math.max(0, mockLeaderboard.length - 5)
+                            percentage * Math.max(0, leaderboard.length - 5)
                           );
                           setLeaderboardStart(
                             Math.min(
                               Math.max(0, newStart),
-                              mockLeaderboard.length - 5
+                              leaderboard.length - 5
                             )
                           );
                         }}
@@ -262,7 +288,7 @@ export default function Landing() {
                           style={{
                             top: `${
                               (leaderboardStart /
-                                Math.max(1, mockLeaderboard.length - 5)) *
+                                Math.max(1, leaderboard.length - 5)) *
                               (100 - 7.5)
                             }%`,
                           }}
@@ -275,7 +301,7 @@ export default function Landing() {
                               slider.getBoundingClientRect().height;
                             const maxPos = Math.max(
                               0,
-                              mockLeaderboard.length - 5
+                              leaderboard.length - 5
                             );
 
                             const handleMouseMove = (moveEvent) => {

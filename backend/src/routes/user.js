@@ -137,4 +137,37 @@ router.post('/:id/update-highscore', authMiddleware, async (req, res) => {
   }
 });
 
+// Determine leaderboard for the top best players in the database
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 50); // Limit the number of best players to return
+
+    const players = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        highScore: true,
+      },
+      orderBy: [
+        { highScore: 'desc' }, // Initially sort using best score
+        { createdAt: 'asc' },  // Earlier account first as a tiebreaker
+      ],
+      take: limit,             // Select only the top 'limit' number of players
+    });
+
+    // Determine the leaders 
+    const leaderboard = players.map((p, i) => ({
+      rank: i + 1,
+      id: p.id,
+      name: p.username,
+      highScore: p.highScore ?? 0, 
+    }));
+
+    res.json({ leaderboard });
+  } catch (error) {
+    console.error('Failed to load leaderboard', error);
+    res.status(500).json({ error: 'Failed to load leaderboard' })
+  }
+});
+
 export default router;
