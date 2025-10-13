@@ -10,7 +10,13 @@ const colors = {
   accentD: "#FF8FAB",
 };
 
-export default function QuestionRecapModal({ correct, points, leaderboard, onClose }) {
+export default function QuestionRecapModal({
+  correct,
+  points,
+  leaderboard,
+  onClose,
+  correctAnswer,
+}) {
   const [countdown, setCountdown] = useState(5);
 
   // Auto-advance countdown
@@ -74,6 +80,15 @@ export default function QuestionRecapModal({ correct, points, leaderboard, onClo
       </header>
 
       {/* Leaderboard Section */}
+      {/* Correct Answer Display */}
+      {correctAnswer != null && (
+        <div className="mt-6 text-center" aria-live="polite">
+          <p className="text-xs text-white/60 uppercase">Correct Answer</p>
+          <div className="mx-auto mt-2 inline-block rounded-xl bg-emerald-300 px-4 py-2 font-semibold text-black shadow-2xl ring-4 ring-emerald-100 text-lg">
+            {correctAnswer}
+          </div>
+        </div>
+      )}
       <section className="mt-10 flex flex-col items-stretch gap-6 lg:flex-row">
         {/* Top Performers Card */}
         <div className="flex-1 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl backdrop-blur-sm sm:p-8">

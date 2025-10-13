@@ -6,6 +6,7 @@ import matchesRouter from "./routes/matches.js";
 import imageRoutes from "./routes/images.js";
 import userRoutes from "./routes/user.js";
 import questionRoutes from "./routes/questions.js";
+import notificationRoutes from "./routes/notifications.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import { PrismaClient } from "@prisma/client";
 import http from "http";
@@ -17,11 +18,21 @@ const app = express();
 // === GLOBAL MIDDLEWARE ===
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-      process.env.FRONTEND_ORIGIN || "*",
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or same-origin)
+      if (!origin) return callback(null, true);
+
+      // Allow local dev + any Cloudflare quick tunnel URL
+      const allowed = origin.match(
+        /^(http:\/\/localhost(:\d+)?|http:\/\/127\.0\.0\.1(:\d+)?|https:\/\/.*\.trycloudflare\.com|https:\/\/(www\.)?smartiepants\.art|https:\/\/play\.smartiepants\.art)$/
+      );
+      if (allowed) {
+        callback(null, true);
+      } else {
+        console.warn("🚫 Blocked by CORS:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
@@ -37,6 +48,7 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api/matches", authMiddleware, matchesRouter);
 app.use("/api/users", userRoutes);
 app.use("/api/questions", questionRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // === SOCKET.IO SETUP ===
 const server = http.createServer(app);

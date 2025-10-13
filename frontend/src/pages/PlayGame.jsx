@@ -8,6 +8,8 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getSocket } from "../services/socket";
 import { api } from "../services/api";
+import backgroundGamePlay from "../assets/background_gamePlay.jpg";
+import backgroundWaitHost from "../assets/background_waitHost.jpg";
 import GameHeader from "../components/GameHeader";
 import QuestionCard from "../components/QuestionCard";
 import GameOverScreen from "../components/GameOverScreen";
@@ -30,6 +32,8 @@ export default function PlayGame() {
   const [scores, setScores] = useState({});
   const [matchEnded, setMatchEnded] = useState(false);
   const [isAnswered, setIsAnswered] = useState(false);
+  const [currentCorrectAnswer, setCurrentCorrectAnswer] = useState(null);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [recapData, setRecapData] = useState(null);
   const [showRecap, setShowRecap] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -76,6 +80,8 @@ export default function PlayGame() {
       clearTimeout(timeoutGuardRef.current);
 
       setQuestion(data);
+      // Clear any previously revealed correct answer
+      setCurrentCorrectAnswer(null);
       setIsAnswered(false);
       setShowRecap(false);
       setRecapData(null);
@@ -104,6 +110,8 @@ export default function PlayGame() {
     // Question results for all players (after everyone answered or time up)
     socket.on("questionResults", ({ responses, scores, correctAnswer }) => {
       setScores(scores);
+      // Keep the correct answer so the UI can highlight it
+      setCurrentCorrectAnswer(correctAnswer || null);
 
       // Find your response
       const yourResponse = responses.find(
@@ -132,6 +140,7 @@ export default function PlayGame() {
         correct: yourResponse?.correct || false,
         points: yourResponse?.points || 0,
         leaderboard: currentLeaderboard,
+        correctAnswer: correctAnswer || null,
         allResponses: responses, // Include all player responses
       };
 
@@ -245,6 +254,7 @@ export default function PlayGame() {
   const handleAnswer = (optionLabel) => {
     if (isAnswered || !socketRef.current || !question) return;
     setIsAnswered(true);
+    setSelectedAnswer(optionLabel); // Track the selected answer
     // DON'T clear the timer - let it keep running for synchronized display
     // clearInterval(timerRef.current); // REMOVED
     clearTimeout(timeoutGuardRef.current);
@@ -318,17 +328,17 @@ export default function PlayGame() {
   if (!question) {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center text-white relative overflow-hidden"
-        style={{ backgroundColor: colors.darkBlue }}
+        className="min-h-screen flex flex-col items-center justify-center text-white relative overflow-hidden bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${backgroundWaitHost})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0A2442] via-[#143B6E] to-[#0A2442] opacity-60 animate-[pulse_3s_infinite]" />
+        <div className="absolute inset-0 bg-black/30 animate-[pulse_3s_infinite]" />
         <div className="relative z-10 flex flex-col items-center">
-          <div className="w-16 h-16 border-4 border-t-transparent border-[#6EC5FF] rounded-full animate-spin mb-8"></div>
-          <h1 className="text-3xl font-heading font-semibold mb-3 tracking-wide">
-            Waiting for Host...
+          <div className="w-20 h-20 border-4 border-t-transparent border-[#6EC5FF] rounded-full animate-spin mb-8"></div>
+          <h1 className="text-4xl font-heading font-black mb-4 tracking-wide drop-shadow-lg">
+            WAITING FOR HOST...
           </h1>
-          <p className="text-[#6EC5FF] text-lg animate-pulse">
-            The game will begin shortly
+          <p className="text-[#6EC5FF] text-xl font-heading animate-pulse drop-shadow-md">
+            THE GAME WILL BEGIN SHORTLY
           </p>
         </div>
       </div>
@@ -338,8 +348,8 @@ export default function PlayGame() {
   // ================== QUESTION DISPLAY ==================
   return (
     <div
-      className="min-h-screen text-white relative"
-      style={{ backgroundColor: colors.darkBlue }}
+      className="min-h-screen text-white relative bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${backgroundGamePlay})` }}
     >
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8">
         <GameHeader
@@ -361,9 +371,11 @@ export default function PlayGame() {
             timeLeftMs={timeLeft}
             questionDurationMs={question.timeLimit || 10000}
             youAnswered={isAnswered}
+            selectedAnswer={selectedAnswer}
             questionResolved={showRecap}
             waitingOnOthers={isAnswered && !showRecap} // NEW: show waiting state
             onAnswer={(optionText) => handleAnswer(optionText)}
+            correctAnswer={currentCorrectAnswer}
           />
         </main>
       </div>
@@ -377,7 +389,9 @@ export default function PlayGame() {
               points={recapData.points}
               leaderboard={recapData.leaderboard}
               allResponses={recapData.allResponses} // Pass this as a prop
+              questionIndex={question.index}
               onClose={() => setShowRecap(false)}
+              correctAnswer={recapData.correctAnswer}
             />
           </div>
         </div>
@@ -397,14 +411,12 @@ export default function PlayGame() {
 
       {/* Game Over Modal Overlay */}
       {matchEnded && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-4xl">
-            <GameOverModal
-              scores={scores}
-              currentUser={currentUser}
-              onClose={() => navigate("/landing")}
-            />
-          </div>
+        <div className="fixed inset-0 z-50">
+          <GameOverModal
+            scores={scores}
+            currentUser={currentUser}
+            onClose={() => navigate("/landing")}
+          />
         </div>
       )}
     </div>

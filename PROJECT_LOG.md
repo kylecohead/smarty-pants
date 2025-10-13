@@ -9,13 +9,13 @@
 
 ## 🧑‍💻 Team Members & Roles
 
-| Name                 | Student Number   | Primary Role       | Primary Responsibilities                                  |
-| -------------------- | ---------------- | ------------------ | --------------------------------------------------------- |
-| [Your Name]          | [Your Student #] | Frontend Developer | React components, styling, UI improvements, profile pages |
-| **Nina Swart**       | **26970341**     | Frontend Developer | Styling, landing page, create & join game frontend        |
-| [Teammate 2]         | [Student #]      | Database Engineer  | PostgreSQL schema, normalization (3NF), Prisma setup      |
-| **Kyle Cohead**      | **25964917**     | Real-time Systems  | Socket.IO setup, live gameplay logic                      |
-| **Wikus van Biljon** | **26927543**     | authentication     | Login and signup, Docker, Socket.IO, version control      |
+| Name                 | Student Number | Primary Role                    | Primary Responsibilities                                                                          |
+| -------------------- | -------------- | ------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Conrad Joubert**   | 26989581       | Game invites and authentication | Send, receive, accept and decline invitations to games to and from players, Refresh token control |
+| **Nina Swart**       | **26970341**   | Frontend Developer              | Styling, landing page, create & join game frontend                                                |
+| [Teammate 2]         | [Student #]    | Database Engineer               | PostgreSQL schema, normalization (3NF), Prisma setup                                              |
+| **Kyle Cohead**      | **25964917**   | Real-time Systems               | Socket.IO setup, live gameplay logic                                                              |
+| **Wikus van Biljon** | **26927543**   | authentication                  | Login and signup, Docker, Socket.IO, version control                                              |
 
 ---
 
@@ -75,10 +75,15 @@
 | **2025-10-10** | Kyle   | `feature/public-games`         | Removed hard coded public games                                                        | ✅ Merged             |
 | **2025-10-10** | Kyle   | `feature/public-games`         | Fixed navigation, ensure descriptive button labels                                     | ✅ Merged             |
 | **2025-10-10** | Kyle   | `feature/public-games`         | Implemented complete/incomplete game validation (stats discarded for incomplete games) | ✅ Merged             |
+| **2025-10-11** | Conrad | `feature/conrad-admin`         | Implemented refresh tokens and the send, receive, accept and decline of game invites.  | ✅ Merged             |
+| **2025-10-12** | Kyle   | `feature/correct`              | Added correct answer viewing after each question and lobby max players                 | ✅ Merged             |
 
 ---
 
 ## 🕒 Last Updated
+
+**Timestamp:** 2025-10-11 15:30
+**Updated by:** Conrad Joubert
 
 **Timestamp:** 2025-10-10 07:37
 **Updated by:** Kyle Cohead

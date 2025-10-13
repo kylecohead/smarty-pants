@@ -64,7 +64,12 @@ export default function JoinGame() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  // const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  const base =
+  import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim() !== ""
+    ? import.meta.env.VITE_API_URL.replace(/\/$/, "")
+    : window.location.origin.replace(/\/$/, "");
+  const API_URL = `${base}/api`;
 
   useEffect(() => {
     const fetchPublicGames = async () => {

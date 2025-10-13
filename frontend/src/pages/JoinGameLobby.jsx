@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import backgroundJoin from "../assets/background_join.jpg";
 
 // 🎨 Brand heading
 function Heading() {
@@ -20,7 +21,12 @@ function Heading() {
   ];
 
   return (
-    <h1 className="text-center font-heading text-4xl sm:text-5xl font-black leading-none mb-2">
+    <h1
+      className="text-center font-heading text-5xl sm:text-6xl font-black leading-none mb-2"
+      style={{
+        textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)",
+      }}
+    >
       {letters.map((l, i) => (
         <span key={i} className={l.c}>
           {String(l.t).toUpperCase()}
@@ -50,8 +56,14 @@ export default function JoinGameLobby() {
   const [publicGames, setPublicGames] = useState([]);
   const [loadingGames, setLoadingGames] = useState(true);
 
-  // ✅ Correct API base (notice the /api suffix)
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+
+  // const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  const base =
+  import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim() !== ""
+    ? import.meta.env.VITE_API_URL.replace(/\/$/, "")
+    : window.location.origin.replace(/\/$/, "");
+  const API_URL = `${base}/api`;
+  
 
   // 🔄 Fetch public games from API
   const fetchPublicGames = async () => {
@@ -183,109 +195,114 @@ export default function JoinGameLobby() {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: colors.darkBlue }}>
-      <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
-        {/* Back to Game Menu */}
-        <button
-          onClick={() => navigate(-1)}
-          className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-white transition-colors"
-        >
-          ← Game Menu
-        </button>
+    <div
+      className="min-h-screen bg-smart-dark-blue text-smart-white overflow-hidden bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: `url(${backgroundJoin})`,
+      }}
+    >
+      {/* Back to Game Menu */}
+      <button
+        onClick={() => navigate(-1)}
+        className="absolute left-4 top-4 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-white transition-colors z-10"
+      >
+        ← Game Menu
+      </button>
 
-        {/* Heading */}
-        <div className="text-center mb-8">
-          <Heading />
-          <h2 className="text-smart-orange font-heading text-2xl font-bold tracking-wider">
-            ~JOIN A GAME~
-          </h2>
-        </div>
+      {/* Main Content Panel */}
+      <div className="px-4 py-10 flex items-center justify-center min-h-screen">
+        <div className="bg-smart-light-blue/90 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/20 max-w-3xl w-full space-y-8">
+          {/* Heading */}
+          <div className="text-center mb-8">
+            <Heading />
+          </div>
 
-        {/* Join by Code */}
-        <div className="rounded-3xl border border-orange-400/30 bg-orange-500/10 shadow-xl backdrop-blur-sm p-8">
-          <h2 className="text-2xl font-bold text-smart-orange mb-6 text-center">
-            Join with Code
-          </h2>
-          <form onSubmit={handleJoinSubmit} className="space-y-4">
+          {/* Join by Code */}
+          <div className="rounded-3xl border border-orange-400/50 bg-orange-500/70 shadow-xl backdrop-blur-sm p-8">
+            <h2 className="text-2xl font-bold text-white mb-6 text-center">
+              Join with Code
+            </h2>
+            <form onSubmit={handleJoinSubmit} className="space-y-4">
+              <input
+                id="joinInput"
+                type="text"
+                value={joinInput}
+                onChange={handleInputChange}
+                placeholder="Enter match ID (e.g., 12)"
+                className="w-full rounded-xl bg-orange-500/20 border-2 border-orange-400/40 text-white placeholder:text-orange-200/70 px-6 py-4 text-lg outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+              />
+              {inputError && (
+                <p className="text-sm text-red-400 mt-2 font-medium">
+                  {inputError}
+                </p>
+              )}
+              <button
+                type="submit"
+                className="w-full rounded-xl px-6 py-4 bg-smart-orange text-white text-lg font-bold hover:opacity-90 transition shadow-lg"
+              >
+                Join Game
+              </button>
+            </form>
+          </div>
+
+          {/* Public Games */}
+          <div className="rounded-3xl border border-pink-400/50 bg-pink-500/70 shadow-xl backdrop-blur-sm p-8 space-y-6">
+            <h2 className="text-2xl font-bold text-white mb-4 text-center">
+              Public Games
+            </h2>
+
+            {/* Search Filter */}
             <input
-              id="joinInput"
               type="text"
-              value={joinInput}
-              onChange={handleInputChange}
-              placeholder="Enter match ID (e.g., 12)"
-              className="w-full rounded-xl bg-orange-500/20 border-2 border-orange-400/40 text-white placeholder:text-orange-200/70 px-6 py-4 text-lg outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+              placeholder="Search games..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white placeholder:text-pink-200/70 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
             />
-            {inputError && (
-              <p className="text-sm text-red-400 mt-2 font-medium">
-                {inputError}
+
+            {loadingGames ? (
+              <p className="text-center text-pink-200/80 text-lg">
+                Loading public games...
               </p>
-            )}
-            <button
-              type="submit"
-              className="w-full rounded-xl px-6 py-4 bg-smart-orange text-white text-lg font-bold hover:opacity-90 transition shadow-lg"
-            >
-              Join Game
-            </button>
-          </form>
-        </div>
-
-        {/* Public Games */}
-        <div className="rounded-3xl border border-pink-400/30 bg-pink-500/10 shadow-xl backdrop-blur-sm p-8 space-y-6">
-          <h2 className="text-2xl font-bold text-smart-pink mb-4 text-center">
-            Public Games
-          </h2>
-
-          {/* Search Filter */}
-          <input
-            type="text"
-            placeholder="Search games..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white placeholder:text-pink-200/70 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-          />
-
-          {loadingGames ? (
-            <p className="text-center text-pink-200/80 text-lg">
-              Loading public games...
-            </p>
-          ) : filteredGames.length === 0 ? (
-            <p className="text-center text-pink-200/80 text-lg">
-              No public games available.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {filteredGames.map((g) => (
-                <div
-                  key={g.id}
-                  className="rounded-xl border-2 border-pink-400/30 bg-pink-500/20 p-6 hover:border-pink-400/50 transition"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-smart-pink text-lg mb-2">
-                        {g.title}
-                      </h3>
-                      <p className="text-sm text-pink-200/70 mb-1">
-                        Host: @{g.host?.username || "unknown"}
-                      </p>
-                      <p className="text-sm text-pink-200/70 mb-1">
-                        {g.category || "General"} • {g.timeLimit || 10}s per
-                        question
-                      </p>
-                      <p className="text-sm text-pink-200/60">
-                        {g.players?.length || 0}/{g.maxPlayers || 5} players
-                      </p>
+            ) : filteredGames.length === 0 ? (
+              <p className="text-center text-white text-lg">
+                No public games available.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {filteredGames.map((g) => (
+                  <div
+                    key={g.id}
+                    className="rounded-xl border-2 border-pink-400/30 bg-pink-500/20 p-6 hover:border-pink-400/50 transition"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-smart-pink text-lg mb-2">
+                          {g.title}
+                        </h3>
+                        <p className="text-sm text-pink-200/70 mb-1">
+                          Host: @{g.host?.username || "unknown"}
+                        </p>
+                        <p className="text-sm text-pink-200/70 mb-1">
+                          {g.category || "General"} • {g.timeLimit || 10}s per
+                          question
+                        </p>
+                        <p className="text-sm text-pink-200/60">
+                          {g.players?.length || 0}/{g.maxPlayers || 5} players
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate(`/lobby/${g.id}`)}
+                        className="rounded-xl px-5 py-3 bg-smart-pink text-white text-base font-bold hover:opacity-90 transition shadow-lg"
+                      >
+                        Join
+                      </button>
                     </div>
-                    <button
-                      onClick={() => navigate(`/lobby/${g.id}`)}
-                      className="rounded-xl px-5 py-3 bg-smart-pink text-white text-base font-bold hover:opacity-90 transition shadow-lg"
-                    >
-                      Join
-                    </button>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

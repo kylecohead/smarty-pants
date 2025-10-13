@@ -10,8 +10,10 @@ import { useNavigate, useParams, Outlet } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import catImage from "../assets/cat.jpg";
 import backgroundLanding from "../assets/background_landing.jpg";
+import lobbyPhoto from "../assets/lobby_photo.jpg";
 import { getSocket, closeSocket } from "../services/socket";
 import { api } from "../services/api";
+import ProfileCard from "../components/ProfileCard";
 
 const colors = {
   darkBlue: "#0A2442",
@@ -28,6 +30,7 @@ export default function Lobby() {
   const [currentUser, setCurrentUser] = useState(null);
   const [players, setPlayers] = useState([]);
   const [isHost, setIsHost] = useState(false);
+  const [maxPlayers, setMaxPlayers] = useState(6);
   const [socketConnected, setSocketConnected] = useState(false);
 
   const socketRef = useRef(null);
@@ -150,6 +153,8 @@ export default function Lobby() {
     (async () => {
       try {
         const res = await api.getMatch(matchId);
+        // Save match settings (maxPlayers) and determine host
+        setMaxPlayers(res.maxPlayers || 6);
         if (res.hostId && currentUser?.id) {
           setIsHost(res.hostId === currentUser.id);
         }
@@ -159,7 +164,7 @@ export default function Lobby() {
     })();
   }, [matchId, currentUser]);
 
-  const isLobbyFull = players.length >= 1;
+  const isLobbyFull = players.length >= (maxPlayers || 6);
 
   const handleStartGame = () => {
     const socket = socketRef.current;
@@ -192,7 +197,7 @@ export default function Lobby() {
 
         {/* Title */}
         <h1
-          className="text-center font-heading text-4xl sm:text-5xl lg:text-6xl font-black leading-none mb-4 text-smart-pink"
+          className="text-center font-heading text-4xl sm:text-5xl lg:text-6xl font-black leading-none mb-2 text-smart-pink"
           style={{
             textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6)",
           }}
@@ -205,75 +210,118 @@ export default function Lobby() {
       <div className="px-4 flex-1 flex items-start">
         <div className="max-w-7xl mx-auto w-full">
           {/* Panel */}
-          <div className="bg-[#1a237e] border border-[#1a237e] rounded-3xl p-6 shadow-[0_20px_40px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] h-[calc(100vh-180px)]">
-            {/* Join Code Display */}
-            <div className="text-center mb-6">
-              <span className="text-white text-lg block mb-2">
-                Share this join code:
-              </span>
-              <div className="inline-block bg-white/10 border border-white/20 rounded-xl px-8 py-3 text-white text-2xl font-bold tracking-wider select-all">
-                {matchId}
+          <div
+            className="bg-[#1a237e]/70 border border-[#1a237e]/80 rounded-3xl p-4 shadow-[0_20px_40px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] flex flex-col"
+            style={{ height: "calc(100vh - 140px)" }}
+          >
+            {/* Panel Header - Player Count and Code */}
+            <div className="relative flex justify-center items-center mb-3 flex-shrink-0">
+              <div className="text-2xl text-white font-bold">
+                {socketConnected
+                  ? `Game name's Players: ${players.length} / ${maxPlayers}`
+                  : "Connecting to server..."}
               </div>
-            </div>
-
-            {/* Player count */}
-            <div className="text-center mb-6 text-xl text-white font-semibold">
-              {socketConnected
-                ? `Players: ${players.length} / 6`
-                : "Connecting to server..."}
+              <div className="absolute right-0 inline-block bg-smart-pink rounded-lg px-3 py-1">
+                <span className="text-white text-sm font-semibold mr-2">
+                  Code:
+                </span>
+                <span className="text-white text-sm font-bold tracking-wider select-all">
+                  {matchId}
+                </span>
+              </div>
             </div>
 
             {/* Player grid */}
-            <div className="grid grid-cols-3 gap-6 place-items-center max-w-5xl mx-auto">
-              {Array.from({ length: 6 }).map((_, i) => {
-                const p = players[i];
-                return (
-                  <div
-                    key={i}
-                    className={`w-44 h-40 border-2 rounded-xl flex flex-col items-center justify-center ${
-                      p
-                        ? "border-emerald-500 bg-white/10"
-                        : "border-white/20 bg-white/5"
-                    }`}
-                  >
-                    {p ? (
-                      <>
-                        <img
-                          src={p.avatarUrl || catImage}
-                          alt={p.username}
-                          className="w-24 h-24 object-cover rounded-full ring-2 ring-white/20"
-                        />
-                        <span className="text-base mt-2 text-white font-semibold">
-                          {p.username}
+            <div className="flex-1 flex items-center justify-center py-2">
+              <div
+                className="grid gap-3 w-full max-w-4xl px-4"
+                style={{
+                  gridTemplateColumns: `repeat(${Math.min(
+                    maxPlayers,
+                    6
+                  )}, minmax(0,1fr))`,
+                }}
+              >
+                {Array.from({ length: maxPlayers }).map((_, i) => {
+                  const p = players[i];
+                  return (
+                    <div
+                      key={i}
+                      className={`aspect-square border-2 rounded-xl flex flex-col items-center justify-center p-2 ${
+                        p
+                          ? "border-emerald-500 bg-white/10"
+                          : "border-white/20 bg-white/5"
+                      }`}
+                    >
+                      {p ? (
+                        <div className="w-full h-full flex flex-col">
+                          {/* Player photo block with color overlay */}
+                          <div className="flex-1 relative overflow-hidden rounded-lg border-8 border-white">
+                            <img
+                              src={lobbyPhoto}
+                              alt={`${p.username}'s lobby`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.log("Image failed to load:", e);
+                                e.target.style.backgroundColor = "#1a237e";
+                              }}
+                            />
+                            {/* Color overlay based on user's stickman color - more visible */}
+                            <div
+                              className="absolute inset-0 opacity-40"
+                              style={{
+                                backgroundColor:
+                                  p.stickmanColor ||
+                                  localStorage.getItem("stickmanColor") ||
+                                  "#6EC5FF", // default smart-light-blue
+                              }}
+                            />
+                          </div>
+                          {/* Username below the photo in user color */}
+                          <div className="mt-1 text-center">
+                            <h3
+                              className="font-heading text-xs font-bold truncate"
+                              style={{
+                                color:
+                                  p.stickmanColor ||
+                                  localStorage.getItem("stickmanColor") ||
+                                  "#6EC5FF", // default smart-light-blue
+                              }}
+                            >
+                              {p.username.toUpperCase()}
+                            </h3>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-white text-sm sm:text-base">
+                          Waiting...
                         </span>
-                      </>
-                    ) : (
-                      <span className="text-white text-lg">Waiting...</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Host start button */}
-            {isHost && (
-              <div className="mt-6 flex justify-center gap-4">
-                <button
-                  onClick={handleStartGame}
-                  disabled={!isLobbyFull}
-                  className={`rounded-2xl px-10 py-4 text-xl font-bold border-2 border-white text-white transition-opacity ${
-                    isLobbyFull
-                      ? "bg-transparent hover:bg-white/10"
-                      : "bg-transparent border-white/30 text-white/50 cursor-not-allowed"
-                  }`}
-                >
-                  Start Game
-                </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Host start button - Below panel */}
+      {isHost && (
+        <div className="px-4 py-4 flex justify-center">
+          <button
+            onClick={handleStartGame}
+            disabled={!isLobbyFull}
+            className={`rounded-2xl px-10 py-4 text-xl font-bold border-2 border-white text-white transition-opacity shadow-lg ${
+              isLobbyFull
+                ? "bg-transparent hover:bg-white/10"
+                : "bg-transparent border-white/30 text-white/50 cursor-not-allowed"
+            }`}
+          >
+            Start Game
+          </button>
+        </div>
+      )}
 
       <Outlet />
     </div>

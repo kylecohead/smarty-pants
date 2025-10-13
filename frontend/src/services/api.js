@@ -14,8 +14,13 @@
  * - Testing: Mock this module in tests
  */
 
-const API_BASE = "http://localhost:3000/api";
+// const API_BASE = "http://localhost:3000/api";
 
+const base =
+  import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim() !== ""
+    ? import.meta.env.VITE_API_URL.replace(/\/$/, "")
+    : window.location.origin.replace(/\/$/, "");
+const API_BASE = `${base}/api`;
 /**
  * Get authentication token from localStorage
  * @returns {string|null} JWT token or null if not found

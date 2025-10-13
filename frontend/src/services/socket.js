@@ -3,8 +3,11 @@ import { io } from "socket.io-client";
 let socket = null;
 
 export function getSocket(token) {
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const apiUrl =
+    import.meta.env.VITE_API_URL ||
+    window.location.origin.replace(/\/$/, ""); // remove trailing slash
 
+    
   if (!socket) {
     socket = io(apiUrl, {
       path: "/socket.io",
@@ -14,6 +17,7 @@ export function getSocket(token) {
       reconnection: true, // Enable automatic reconnection
       reconnectionAttempts: 10, // Retry up to 10 times
       reconnectionDelay: 1000, // Wait 1 second between attempts
+      withCredentials: true,
     });
 
     // Handle reconnection

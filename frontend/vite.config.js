@@ -7,8 +7,12 @@ export default defineConfig({
     port: 5173,
     host: "0.0.0.0",
     allowedHosts: [
-      ".trycloudflare.com"
-      ],
+      ".trycloudflare.com",
+      "smartiepants.art",
+      ".smartiepants.art",
+      "play.smartiepants.art",
+      "api.smartiepants.art",
+    ],
     proxy: {
       "/api": {
         target: "http://backend:3000",
@@ -21,6 +25,7 @@ export default defineConfig({
       "/socket.io": {
         target: "http://backend:3000",
         ws: true,
+        changeOrigin: true,
       },
     },
   },

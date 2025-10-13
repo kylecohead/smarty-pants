@@ -56,6 +56,42 @@ router.put("/me", authMiddleware, async (req, res) => {
   }
 });
 
+// SEARCH users by username
+router.get("/search", authMiddleware, async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.trim().length < 2) {
+      return res.json({ users: [] });
+    }
+
+    const searchTerm = q.trim().toLowerCase();
+    const users = await prisma.user.findMany({
+      where: {
+        username: {
+          contains: searchTerm,
+          mode: 'insensitive'
+        },
+        id: {
+          not: req.user.id // Exclude current user from search results
+        }
+      },
+      select: {
+        id: true,
+        username: true
+      },
+      orderBy: {
+        username: 'asc'
+      },
+      take: 10 // Limit to 10 results
+    });
+
+    res.json({ users });
+  } catch (err) {
+    console.error("❌ GET /search error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // Increment games played once a match has ended
 router.post('/:id/increment-games', authMiddleware, async (req, res) => {
   const userId = parseInt(req.params.id);

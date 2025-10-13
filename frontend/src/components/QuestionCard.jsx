@@ -7,9 +7,11 @@ export default function QuestionCard({
   timeLeftMs,
   questionDurationMs,
   youAnswered,
+  selectedAnswer,
   questionResolved,
   waitingOnOthers,
   onAnswer,
+  correctAnswer,
 }) {
   const colorClasses = [
     "bg-gradient-to-br from-[#FF8FAB] to-[#FF5F87]",
@@ -20,7 +22,7 @@ export default function QuestionCard({
   const totalDuration = questionDurationMs || 6000;
 
   return (
-    <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 text-center shadow-2xl backdrop-blur-sm sm:p-10">
+    <div className="w-full max-w-5xl overflow-hidden rounded-3xl border-2 border-white bg-white/20 p-6 text-center shadow-2xl backdrop-blur-sm sm:p-10">
       {/* Timer Progress Bar */}
       <div className="mb-10 flex flex-col gap-2">
         <p className="text-xs uppercase tracking-[0.4em] text-white/60">
@@ -28,7 +30,7 @@ export default function QuestionCard({
         </p>
         <div className="h-3 w-full overflow-hidden rounded-full border border-white/20 bg-white/10">
           <div
-            className="h-full bg-smart-green transition-all duration-100 ease-linear"
+            className="h-full bg-smart-red transition-all duration-100 ease-linear"
             style={{
               width: `${
                 totalDuration > 0 ? (timeLeftMs / totalDuration) * 100 : 0
@@ -47,17 +49,37 @@ export default function QuestionCard({
       <div className="mt-10 grid gap-4 sm:grid-cols-2">
         {question?.options.map((opt, i) => {
           const baseClass = colorClasses[i % colorClasses.length];
+          const isSelected = selectedAnswer === opt.id;
           const disabledClass =
             youAnswered || questionResolved
               ? "opacity-60 cursor-not-allowed"
               : "";
+          const selectedClass =
+            isSelected && youAnswered && !questionResolved
+              ? "ring-4 ring-white ring-opacity-80 shadow-2xl scale-105"
+              : "";
+
+          // Result-time highlighting
+          let resultHighlight = "";
+          if (questionResolved && correctAnswer != null) {
+            if (opt.id === correctAnswer) {
+              // Bright green highlight for correct answer
+              resultHighlight =
+                "bg-emerald-300 text-black ring-8 ring-emerald-100 shadow-2xl";
+            } else if (isSelected && opt.id !== correctAnswer) {
+              // Dim incorrect selection
+              resultHighlight = "opacity-60 line-through ring-1 ring-white/10";
+            } else {
+              resultHighlight = "opacity-60";
+            }
+          }
 
           return (
             <button
               key={opt.id}
               onClick={() => onAnswer(opt.id)}
               disabled={youAnswered || questionResolved}
-              className={`group relative overflow-hidden rounded-2xl border border-white/10 px-6 py-8 text-xl font-bold text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${baseClass} ${disabledClass}`}
+              className={`group relative overflow-hidden rounded-2xl border border-white/10 px-6 py-8 text-xl font-bold text-white transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${baseClass} ${disabledClass} ${selectedClass} ${resultHighlight}`}
             >
               <span className="relative z-10 block drop-shadow-sm">
                 {opt.label}
@@ -70,7 +92,7 @@ export default function QuestionCard({
 
       {/* Waiting Message */}
       {waitingOnOthers && (
-        <p className="mt-6 text-sm font-medium text-white/70">
+        <p className="mt-6 text-lg font-bold text-smart-red">
           Waiting for other players to finish…
         </p>
       )}
