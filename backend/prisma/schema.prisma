@@ -55,11 +55,11 @@ model User {
   highScore   Int?          @default(0) 
   wins        Int?          @default(0)
   memberSince DateTime?
-  createdAt DateTime      @default(now())
-  role      Role          @default(USER)
+  createdAt   DateTime      @default(now())
+  role        Role          @default(USER)
 
   // Relations
-  hostedMatches Match[]       @relation("HostedMatches")
+  hostedMatches  Match[]       @relation("HostedMatches")
   matchPlayers   MatchPlayer[]
   answers        Answer[]
   
@@ -101,6 +101,7 @@ model MatchPlayer {
   score     Int      @default(0)
   isReady   Boolean  @default(false)
 
+  // Relations
   match     Match    @relation(fields: [matchId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
 

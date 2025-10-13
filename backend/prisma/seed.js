@@ -47,12 +47,12 @@ async function main() {
   const password = await bcrypt.hash("1234", 10);
 
   const users = [
-    { username: "Nina", email: "nina@example.com", role: "USER", avatarUrl: "/uploads/avatar1.png", gamesPlayed: 0, highScore: 2450, wins: 4, memberSince: new Date("2023-05-01") },
-    { username: "Wikus", email: "wikus@example.com", role: "USER", avatarUrl: "/uploads/avatar2.png", gamesPlayed: 0, highScore: 2600, wins: 6, memberSince: new Date("2023-07-10") },
+    { username: "Nina", email: "nina@example.com", role: "USER", avatarUrl: "/uploads/avatar1.png", gamesPlayed: 0, highScore: 0, wins: 0, memberSince: new Date("2023-05-01") },
+    { username: "Wikus", email: "wikus@example.com", role: "USER", avatarUrl: "/uploads/avatar2.png", gamesPlayed: 0, highScore:0 , wins: 0, memberSince: new Date("2023-07-10") },
     { username: "Amy", email: "amy@example.com", role: "USER", avatarUrl: "/uploads/avatar3.png", gamesPlayed: 0, highScore: 0, wins: 0, memberSince: new Date("2024-01-20") },
-    { username: "Conrad", email: "conrad@example.com", role: "USER", avatarUrl: "/uploads/avatar4.png", gamesPlayed: 0, highScore: 2700, wins: 10, memberSince: new Date("2022-11-15") },
-    { username: "Kyle", email: "kyle@example.com", role: "USER", avatarUrl: "/uploads/avatar5.png", gamesPlayed: 0, highScore: 1900, wins: 3, memberSince: new Date("2024-03-02") },
-    { username: "Admin", email: "admin@example.com", role: "ADMIN", avatarUrl: "/uploads/avatar6.png", gamesPlayed: 0, highScore: 3000, wins: 25, memberSince: new Date("2021-01-01") },
+    { username: "Conrad", email: "conrad@example.com", role: "USER", avatarUrl: "/uploads/avatar4.png", gamesPlayed: 0, highScore: 0, wins: 0, memberSince: new Date("2022-11-15") },
+    { username: "Kyle", email: "kyle@example.com", role: "USER", avatarUrl: "/uploads/avatar5.png", gamesPlayed: 0, highScore: 0, wins: 0, memberSince: new Date("2024-03-02") },
+    { username: "Admin", email: "admin@example.com", role: "ADMIN", avatarUrl: "/uploads/avatar6.png", gamesPlayed: 0, highScore: 0, wins: 0, memberSince: new Date("2021-01-01") },
   ];
 
   const createdUsers = [];

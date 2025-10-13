@@ -710,7 +710,7 @@ export default function SettingsModal() {
                           style={{
                             width: `${Math.min(
                               100,
-                              (m.score / highScore) * 100
+                              (m.score / userStats.highScore) * 100
                             )}%`,
                           }}
                         ></div>
