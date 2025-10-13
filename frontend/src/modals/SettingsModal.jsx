@@ -71,23 +71,11 @@ export default function SettingsModal() {
     memberSince: null
   });
 
-  // Match history (mock)
-  const [matchHistory] = useState([
-    {
-      id: 1,
-      date: "2025-09-18T19:30:00Z",
-      category: "Science",
-      score: 1800,
-      placement: 2,
-    },
-    {
-      id: 2,
-      date: "2025-09-20T20:00:00Z",
-      category: "Geography",
-      score: 2450,
-      placement: 1,
-    },
-  ]);
+  // Match history state
+  const [matchHistory, setMatchHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState(null);
+
   //===============================================
 
   // Fetch current user on mount
@@ -123,6 +111,35 @@ export default function SettingsModal() {
       }
     }
     fetchUser();
+  }, []);
+
+  // Fetch user match history
+  useEffect(() => {
+    async function fetchHistory() {
+      try {
+        setHistoryLoading(true);
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+          setMatchHistory([]);
+          setHistoryError("Not authenticated");
+          return;
+        }
+        const res = await fetch(`/api/users/me/history?limit=20`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.history)) {
+          setMatchHistory(data.history);
+        } else {
+          setHistoryError(data.error || "Failed to load history");
+        }
+      } catch (err) {
+        setHistoryError(err.message);
+      } finally {
+        setHistoryLoading(false);
+      }
+    }
+    fetchHistory();
   }, []);
 
   // Logout functions
@@ -680,44 +697,45 @@ export default function SettingsModal() {
                   🎯 MATCH HISTORY
                 </h3>
                 <div className="h-px bg-smart-purple/30 mb-6"></div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {matchHistory.map((m) => (
-                    <div
-                      key={m.id}
-                      className="rounded-xl border-2 border-smart-purple bg-smart-black/30 p-4 hover:border-smart-light-blue transition"
-                    >
-                      <div className="flex items-center justify-between text-lg font-body text-smart-purple">
-                        <span>{new Date(m.date).toLocaleDateString()}</span>
-                        <span className="uppercase text-smart-purple">
-                          {m.category}
-                        </span>
-                      </div>
-
-                      <p className="mt-2 text-xl font-body font-bold text-smart-purple">
-                        Score: {m.score}
-                      </p>
-                      <p className="text-lg font-body text-smart-purple">
-                        Placement: #{m.placement}
-                      </p>
-
-                      <div className="mt-3 h-2 w-full rounded-full bg-smart-black overflow-hidden">
+                {historyLoading ? (
+                  <p className="text-smart-purple">Loading history…</p>
+                ) : historyError ? (
+                  <p className="text-smart-purple">Error: {historyError}</p>
+                ) : matchHistory.length === 0 ? (
+                  <p className="text-smart-purple">No matches yet—go play a game!</p>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {matchHistory.map((m) => {
+                      const maxScore = Math.max(1, userStats.highScore || 0);
+                      const pct = Math.min(100, Math.round((m.score / maxScore) * 100));
+                      return (
                         <div
-                          className={`h-2 rounded-full ${
-                            m.placement === 1
-                              ? "bg-smart-yellow"
-                              : "bg-smart-purple"
-                          }`}
-                          style={{
-                            width: `${Math.min(
-                              100,
-                              (m.score / userStats.highScore) * 100
-                            )}%`,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                          key={`${m.id}-${m.date}`}
+                          className="rounded-xl border-2 border-smart-purple bg-smart-black/30 p-4 hover:border-smart-light-blue transition"
+                        >
+                          <div className="flex items-center justify-between text-lg font-body text-smart-purple">
+                            <span>{new Date(m.date).toLocaleDateString()}</span>
+                            <span className="uppercase text-smart-purple">{m.category}</span>
+                          </div>
+                          <p className="mt-2 text-xl font-body font-bold text-smart-purple">
+                            Score: {m.score}
+                          </p>
+                          <p className="text-lg font-body text-smart-purple">
+                            Placement: #{m.placement}
+                          </p>
+                          <div className="mt-3 h-2 w-full rounded-full bg-smart-black overflow-hidden">
+                            <div
+                              className={`h-2 rounded-full ${
+                                m.placement === 1 ? "bg-smart-yellow" : "bg-smart-purple"
+                              }`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </section>
