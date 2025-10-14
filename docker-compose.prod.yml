@@ -1,54 +1,59 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:16-alpine
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: trivia
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d trivia"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d trivia"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      target: production
+    image: artisan-backend:latest
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
+      NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@db:5432/trivia
-      NODE_ENV: development
       ACCESS_TOKEN_SECRET: supersecretaccess
       REFRESH_TOKEN_SECRET: supersecretrefresh
     ports:
       - "3000:3000"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    command: ["sh", "/app/entrypoint.sh"]
+    command: ["node", "src/server.js"] # replace if your backend uses a different entry
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
-      interval: 5s
-      timeout: 3s
+      interval: 15s
+      timeout: 5s
       retries: 5
 
-    frontend:
-      build:
-        context: ./frontend
-        target: prod        # ✅ use the Nginx production stage
-      ports:
-        - "5173:80"         # expose Nginx on port 5173 (or 80 if you prefer)
-      environment:
-        - NODE_ENV=production
-      depends_on:
-        - backend
-
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    image: artisan-frontend:latest
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "5173:5173"
+    environment:
+      NODE_ENV: production
+      VITE_API_URL: "http://localhost:3000"
+    command: npm run preview -- --host 0.0.0.0
 
 volumes:
   db_data:
