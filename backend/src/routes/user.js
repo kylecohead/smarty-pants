@@ -90,6 +90,86 @@ router.put("/me", authMiddleware, async (req, res) => {
   }
 });
 
+// Get user match history
+router.get('/me/history', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 20), 100); // Limit the number of historical matches to between 20 and 100
+
+    // Get the user's recent match-player rows (score, category, placement, date played)
+    const myRows = await prisma.matchPlayer.findMany({
+      where: { userId },
+      orderBy: { joinedAt: 'desc' },
+      take: limit,
+      select: {
+        matchId: true,
+        score: true,
+        joinedAt: true,
+        match: {
+          select: {
+            id: true,
+            title: true,
+            createdAt: true,
+            startedAt: true,
+            finishedAt: true,
+            // Traverse Match -> MatchQuestion -> Question to collect category
+            questions: {
+              take: 1,
+              orderBy: { order: 'asc' },
+              select: {
+                question: { select: { category: true } }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (myRows.length === 0) {
+      return res.json({ history: [] });
+    }
+
+    // Compute placement from all player's scores in each match
+    const matchIds = Array.from(new Set(myRows.map(r => r.matchId)));
+    const peers = await prisma.matchPlayer.findMany({
+      where: { matchId: { in: matchIds } },
+      select: { matchId: true, userId: true, score: true }
+    });
+
+    const scoresByMatch = new Map();
+    for (const mid of matchIds) scoresByMatch.set(mid, []); 
+    for (const p of peers) scoresByMatch.get(p.matchId).push(p.score);
+    for (const [mid, arr] of scoresByMatch) arr.sort((a, b) => b - a); // Sort all the scores
+
+    // Derive category of game
+    function deriveCategory(matchRow) {
+      const q0 = matchRow?.questions?.[0]?.question;
+      return (q0?.category && String(q0.category).trim()) || "Unknown";
+    }
+
+    // Build response object
+    const history = myRows.map(r => {
+      const descScores = scoresByMatch.get(r.matchId) || [];
+      const placement = 1 + descScores.findIndex( s => s === r.score);
+      const date = r.match.createdAt;
+      const category = deriveCategory(r.match);
+
+      return {
+        id: r.matchId,
+        date,
+        category,
+        score: r.score,
+        placement
+      };
+    });
+
+    res.json( { history });
+  } catch (err) {
+    console.error('Failed to load match history:', err);
+    res.status(500).json({ error: 'Failed to load match history' });
+  }
+});
+
 // SEARCH users by username
 router.get("/search", authMiddleware, async (req, res) => {
   try {
