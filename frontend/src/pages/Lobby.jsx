@@ -23,6 +23,24 @@ const colors = {
   muted: "#94A3B8",
 };
 
+// Color mapping for stickman colors to hex values
+const stickmanColorMap = {
+  "smart-light-blue": "#6EC5FF",
+  "smart-green": "#32D399",
+  "smart-yellow": "#FFC857",
+  "smart-orange": "#FF8C42",
+  "smart-red": "#FF6B6B",
+  "smart-purple": "#9B59B6",
+  "smart-light-pink": "#FF9FF3",
+  "smart-pink": "#E91E63",
+  "smart-dark-blue": "#1A237E",
+};
+
+// Utility function to get hex color from stickman color name
+const getStickmanHexColor = (colorName) => {
+  return stickmanColorMap[colorName] || "#6EC5FF"; // default to light blue
+};
+
 export default function Lobby() {
   const navigate = useNavigate();
   const { matchId } = useParams();
@@ -32,19 +50,59 @@ export default function Lobby() {
   const [isHost, setIsHost] = useState(false);
   const [maxPlayers, setMaxPlayers] = useState(6);
   const [socketConnected, setSocketConnected] = useState(false);
+  const [matchDetails, setMatchDetails] = useState(null);
 
   const socketRef = useRef(null);
 
   // Fetch current user
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await api.getCurrentUser();
-        setCurrentUser(data.user);
-      } catch (err) {
-        console.error("❌ Failed to fetch user:", err);
+  const fetchCurrentUser = async () => {
+    try {
+      const data = await api.getCurrentUser();
+      setCurrentUser(data.user);
+    } catch (err) {
+      console.error("❌ Failed to fetch user:", err);
+    }
+  };
+
+  // Fetch match details
+  const fetchMatchDetails = async () => {
+    if (!matchId) return;
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await fetch(`/api/matches/${matchId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const matchData = await response.json();
+        setMatchDetails(matchData);
+        console.log("📋 Match details fetched:", matchData);
+      } else {
+        console.error("❌ Failed to fetch match details:", response.status);
       }
-    })();
+    } catch (err) {
+      console.error("❌ Error fetching match details:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCurrentUser();
+    fetchMatchDetails();
+  }, [matchId]);
+
+  // Listen for user data refresh events from settings modal
+  useEffect(() => {
+    const handleUserRefresh = () => {
+      console.log("🔄 Refreshing user data in lobby after settings update...");
+      fetchCurrentUser();
+    };
+
+    window.addEventListener("refreshUserData", handleUserRefresh);
+
+    return () => {
+      window.removeEventListener("refreshUserData", handleUserRefresh);
+    };
   }, []);
 
   // Socket setup + join match
@@ -218,7 +276,9 @@ export default function Lobby() {
             <div className="relative flex justify-center items-center mb-3 flex-shrink-0">
               <div className="text-2xl text-white font-bold">
                 {socketConnected
-                  ? `Game name's Players: ${players.length} / ${maxPlayers}`
+                  ? `${matchDetails?.title || "Game"}'s Players: ${
+                      players.length
+                    } / ${maxPlayers}`
                   : "Connecting to server..."}
               </div>
               <div className="absolute right-0 inline-block bg-smart-pink rounded-lg px-3 py-1">
@@ -270,10 +330,13 @@ export default function Lobby() {
                             <div
                               className="absolute inset-0 opacity-40"
                               style={{
-                                backgroundColor:
+                                backgroundColor: getStickmanHexColor(
                                   p.stickmanColor ||
-                                  localStorage.getItem("stickmanColor") ||
-                                  "#6EC5FF", // default smart-light-blue
+                                    (currentUser?.id === p.userId
+                                      ? currentUser?.stickmanColor
+                                      : null) ||
+                                    "smart-light-blue"
+                                ),
                               }}
                             />
                           </div>
@@ -282,10 +345,13 @@ export default function Lobby() {
                             <h3
                               className="font-heading text-xs font-bold truncate"
                               style={{
-                                color:
+                                color: getStickmanHexColor(
                                   p.stickmanColor ||
-                                  localStorage.getItem("stickmanColor") ||
-                                  "#6EC5FF", // default smart-light-blue
+                                    (currentUser?.id === p.userId
+                                      ? currentUser?.stickmanColor
+                                      : null) ||
+                                    "smart-light-blue"
+                                ),
                               }}
                             >
                               {p.username.toUpperCase()}

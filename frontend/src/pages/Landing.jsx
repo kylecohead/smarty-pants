@@ -12,15 +12,15 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 import ProfileCard from "../components/ProfileCard.jsx";
 import backgroundLanding from "../assets/background_landing.jpg";
 import { isAuthenticated, authenticatedFetch } from "../utils/auth.js";
-import { 
-  fetchNotifications, 
-  acceptGameInvite, 
-  declineGameInvite, 
+import {
+  fetchNotifications,
+  acceptGameInvite,
+  declineGameInvite,
   dismissNotification,
   formatNotificationTime,
   getNotificationColor,
   isNotificationActionable,
-  sendGameInvite
+  sendGameInvite,
 } from "../utils/notifications.js";
 
 // Mock data for demonstration
@@ -85,42 +85,57 @@ export default function Landing() {
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
-  // Fetch user data
-  useEffect(() => {
-    async function fetchUser() {
-      console.log("🏠 Landing page: Fetching user data...");
-      
-      try {
-        // Check if user is authenticated
-        if (!isAuthenticated()) {
-          console.log("❌ User not authenticated, redirecting...");
-          setError("Not authenticated");
-          navigate("/");
-          return;
-        }
+  // Fetch user data function (extracted for reuse)
+  const fetchUser = async () => {
+    console.log("🏠 Landing page: Fetching user data...");
 
-        console.log("✅ User is authenticated, fetching profile...");
-        
-        // Fetch user profile using JWT token
-        const response = await authenticatedFetch("/api/users/me");
-        if (response.ok) {
-          const data = await response.json();
-          console.log("✅ User profile fetched successfully:", data.user);
-          setUser(data.user);
-        } else {
-          console.log("❌ Failed to fetch user profile:", response.status);
-          setError("Failed to fetch user profile");
-        }
-      } catch (err) {
-        console.log("❌ Error fetching user:", err);
-        setError(err.message || "Authentication error");
-      } finally {
-        setLoading(false);
+    try {
+      // Check if user is authenticated
+      if (!isAuthenticated()) {
+        console.log("❌ User not authenticated, redirecting...");
+        setError("Not authenticated");
+        navigate("/");
+        return;
       }
-    }
 
+      console.log("✅ User is authenticated, fetching profile...");
+
+      // Fetch user profile using JWT token
+      const response = await authenticatedFetch("/api/users/me");
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✅ User profile fetched successfully:", data.user);
+        setUser(data.user);
+      } else {
+        console.log("❌ Failed to fetch user profile:", response.status);
+        setError("Failed to fetch user profile");
+      }
+    } catch (err) {
+      console.log("❌ Error fetching user:", err);
+      setError(err.message || "Authentication error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch on mount
+  useEffect(() => {
     fetchUser();
     loadNotifications();
+  }, []);
+
+  // Listen for user data refresh events from settings modal
+  useEffect(() => {
+    const handleUserRefresh = () => {
+      console.log("🔄 Refreshing user data after settings update...");
+      fetchUser();
+    };
+
+    window.addEventListener("refreshUserData", handleUserRefresh);
+
+    return () => {
+      window.removeEventListener("refreshUserData", handleUserRefresh);
+    };
   }, []);
 
   useEffect(() => {
@@ -194,7 +209,7 @@ export default function Landing() {
     const result = await dismissNotification(notificationId);
     if (result.success) {
       // Remove from local state
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
     } else {
       alert(result.error || "Failed to dismiss notification");
     }
@@ -207,17 +222,17 @@ export default function Landing() {
       // In a full implementation, you'd let the user select from their existing matches
       const matchName = `Game with ${userName}`;
       const message = `${user.username} invited you to play a trivia game!`;
-      
+
       console.log(`🎮 Sending game invite to ${userName} (${userId})`);
-      
+
       await sendGameInvite(userId, matchName, message);
-      
+
       // Show success message
       alert(`Invite sent to ${userName}!`);
-      
+
       console.log(`✅ Game invite sent successfully to ${userName}`);
     } catch (error) {
-      console.error('❌ Failed to send game invite:', error);
+      console.error("❌ Failed to send game invite:", error);
       alert(`Failed to send invite to ${userName}. Please try again.`);
     }
   }
@@ -264,7 +279,8 @@ export default function Landing() {
                 🔔
                 {notifications.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-smart-red text-smart-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {notifications.filter(n => n.status === 'PENDING').length || notifications.length}
+                    {notifications.filter((n) => n.status === "PENDING")
+                      .length || notifications.length}
                   </span>
                 )}
               </button>
@@ -274,32 +290,36 @@ export default function Landing() {
                 <div className="absolute right-0 top-12 w-80 bg-white/10 border border-white/20 rounded-xl backdrop-blur-sm shadow-xl z-50">
                   <div className="p-4">
                     <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-button font-bold">
-                        Notifications
-                      </h3>
+                      <h3 className="font-button font-bold">Notifications</h3>
                       {loadingNotifications && (
-                        <span className="text-xs text-white/60">Loading...</span>
+                        <span className="text-xs text-white/60">
+                          Loading...
+                        </span>
                       )}
                     </div>
-                    
+
                     {notifications.length === 0 ? (
                       <p className="text-sm text-white/60">No notifications</p>
                     ) : (
                       notifications.map((notif) => (
                         <div
                           key={notif.id}
-                          className={`mb-3 p-3 rounded-lg border ${getNotificationColor(notif.type)}`}
+                          className={`mb-3 p-3 rounded-lg border ${getNotificationColor(
+                            notif.type
+                          )}`}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <p className="text-sm flex-1">{notif.message}</p>
                             <button
-                              onClick={() => handleDismissNotification(notif.id)}
+                              onClick={() =>
+                                handleDismissNotification(notif.id)
+                              }
                               className="text-white/40 hover:text-white/80 ml-2"
                             >
                               ✕
                             </button>
                           </div>
-                          
+
                           <p className="text-xs text-white/60 mb-2">
                             {formatNotificationTime(notif.createdAt)}
                           </p>
@@ -371,15 +391,25 @@ export default function Landing() {
                         }}
                       >
                         {leaderboardLoading ? (
-                          <div className="p-4 text-smart-black">Loading leaderboard…</div>
+                          <div className="p-4 text-smart-black">
+                            Loading leaderboard…
+                          </div>
                         ) : leaderboardError ? (
-                          <div className="p-4 text-smart-black">Error: {leaderboardError}</div>
+                          <div className="p-4 text-smart-black">
+                            Error: {leaderboardError}
+                          </div>
                         ) : leaderboard.length === 0 ? (
-                          <div className="p-4 text-smart-black">No scores yet. Be the first!</div>
+                          <div className="p-4 text-smart-black">
+                            No scores yet. Be the first!
+                          </div>
                         ) : (
-                          <div 
+                          <div
                             className="space-y-2 transition-transform duration-300 ease-in-out"
-                            style={{ transform: `translateY(-${leaderboardStart * 64}px)` }}
+                            style={{
+                              transform: `translateY(-${
+                                leaderboardStart * 64
+                              }px)`,
+                            }}
                           >
                             {leaderboard.map((player) => (
                               <div
@@ -399,9 +429,14 @@ export default function Landing() {
                                 </div>
                                 {player.name !== user?.username && (
                                   <button
-                                  onClick={() => handleInviteUser(player.id || player.rank, player.name)}
-                                  className="bg-smart-green hover:bg-smart-light-blue text-white text-xs px-2 py-1 rounded-lg transition-colors"
-                                  title={`Invite ${player.name} to a game`}
+                                    onClick={() =>
+                                      handleInviteUser(
+                                        player.id || player.rank,
+                                        player.name
+                                      )
+                                    }
+                                    className="bg-smart-green hover:bg-smart-light-blue text-white text-xs px-2 py-1 rounded-lg transition-colors"
+                                    title={`Invite ${player.name} to a game`}
                                   >
                                     📤
                                   </button>
@@ -449,10 +484,7 @@ export default function Landing() {
                             const slider = e.currentTarget.parentElement;
                             const sliderHeight =
                               slider.getBoundingClientRect().height;
-                            const maxPos = Math.max(
-                              0,
-                              leaderboard.length - 5
-                            );
+                            const maxPos = Math.max(0, leaderboard.length - 5);
 
                             const handleMouseMove = (moveEvent) => {
                               const deltaY = moveEvent.clientY - startY;
@@ -510,18 +542,10 @@ export default function Landing() {
                     memberSince: user.memberSince,
                   }}
                   size="large"
-                  stickmanStrokeWidth={
-                    parseInt(localStorage.getItem("stickmanStrokeWidth")) || 3
-                  }
-                  stickmanColor={
-                    localStorage.getItem("stickmanColor") || "smart-light-blue"
-                  }
-                  stickmanHeight={
-                    parseInt(localStorage.getItem("stickmanHeight")) || 120
-                  }
-                  stickmanWidth={
-                    parseInt(localStorage.getItem("stickmanWidth")) || 80
-                  }
+                  stickmanStrokeWidth={user?.stickmanStrokeWidth || 3}
+                  stickmanColor={user?.stickmanColor || "smart-light-blue"}
+                  stickmanHeight={user?.stickmanHeight || 120}
+                  stickmanWidth={user?.stickmanWidth || 80}
                 />
               </div>
             </div>

@@ -30,8 +30,8 @@ async function getQuestionsFromDB() {
       select: {
         id: true,
         question: true, // DB column
-        correct: true,  // DB column
-        options: true,  // String[]
+        correct: true, // DB column
+        options: true, // String[]
       },
     });
 
@@ -59,6 +59,10 @@ function emitPlayers(io, matchId) {
     username: p.username,
     avatarUrl: p.avatarUrl,
     score: match.scores[p.username] || 0,
+    stickmanColor: p.stickmanColor,
+    stickmanStrokeWidth: p.stickmanStrokeWidth,
+    stickmanHeight: p.stickmanHeight,
+    stickmanWidth: p.stickmanWidth,
   }));
 
   io.to(`match-${matchId}`).emit("playersUpdate", { matchId, players });
@@ -83,10 +87,10 @@ function endMatch(io, matchId, completed = true) {
   prisma.match
     .update({
       where: { id: Number(matchId) },
-      data: { 
+      data: {
         status: "FINISHED",
         completed: completed, // Mark if match was properly completed
-        finishedAt: new Date()
+        finishedAt: new Date(),
       },
     })
     .catch(console.error);
@@ -95,8 +99,11 @@ function endMatch(io, matchId, completed = true) {
 function sendQuestion(io, matchId) {
   const match = activeMatches.get(matchId);
   if (!match) return;
-  
-  if (match.questionIndex >= match.questions.length || !match.questions[match.questionIndex]) {
+
+  if (
+    match.questionIndex >= match.questions.length ||
+    !match.questions[match.questionIndex]
+  ) {
     endMatch(io, matchId); // Use existing endMatch function for proper cleanup
     return;
   }
@@ -110,7 +117,11 @@ function sendQuestion(io, matchId) {
   // Use the match's configured time limit (stored in seconds, convert to ms)
   const questionDurationMs = (match.timeLimit || 10) * 1000;
 
-  console.log(`🧠 Sending question ${match.questionIndex + 1}/${match.questions.length} for match ${matchId} (${match.timeLimit}s)`);
+  console.log(
+    `🧠 Sending question ${match.questionIndex + 1}/${
+      match.questions.length
+    } for match ${matchId} (${match.timeLimit}s)`
+  );
   io.to(`match-${matchId}`).emit("newQuestion", {
     index: match.questionIndex,
     total: match.questions.length,
@@ -150,7 +161,9 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
       const match = activeMatches.get(matchId);
       if (!match) return;
 
-      const player = [...match.players.values()].find((p) => p.userId === userId);
+      const player = [...match.players.values()].find(
+        (p) => p.userId === userId
+      );
       if (player && !player.disconnected) {
         console.log(`🔄 ${username} reconnected to match ${matchId}`);
         return;
@@ -165,8 +178,10 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
 
       // If host leaves, end the match for everyone
       if (match.hostId === userId) {
-        console.log(`👑 Host ${username} left match ${matchId} - ending game for all players`);
-        
+        console.log(
+          `👑 Host ${username} left match ${matchId} - ending game for all players`
+        );
+
         // Clear all timers
         clearAdvanceTimeout(match);
         if (match.questionTimer) {
@@ -175,30 +190,35 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
         }
 
         // Notify all players that host left and game is ending
-        io.to(`match-${matchId}`).emit("hostLeft", { 
-          message: "The host has left the game. Match ended. Stats will not be saved.",
-          scores: match.scores 
+        io.to(`match-${matchId}`).emit("hostLeft", {
+          message:
+            "The host has left the game. Match ended. Stats will not be saved.",
+          scores: match.scores,
         });
 
         // Update match status to FINISHED and mark as incomplete (stats discarded)
         await prisma.match.update({
           where: { id: Number(matchId) },
-          data: { 
+          data: {
             status: "FINISHED",
             completed: false, // Match incomplete, stats discarded
-            finishedAt: new Date()
+            finishedAt: new Date(),
           },
         });
 
         // Clean up the match from memory
         activeMatches.delete(matchId);
-        console.log(`❌ Match ${matchId} marked as incomplete - stats discarded`);
+        console.log(
+          `❌ Match ${matchId} marked as incomplete - stats discarded`
+        );
         return; // Exit early since match is ended
       }
 
       // If non-host player leaves during active game, mark match as incomplete
       if (match.status === "ACTIVE") {
-        console.log(`⚠️ Player ${username} left active match ${matchId} - marking as incomplete`);
+        console.log(
+          `⚠️ Player ${username} left active match ${matchId} - marking as incomplete`
+        );
         // Don't end the match, but mark it as incomplete so stats won't count
         await prisma.match.update({
           where: { id: Number(matchId) },
@@ -215,10 +235,10 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
         activeMatches.delete(matchId);
         await prisma.match.update({
           where: { id: Number(matchId) },
-          data: { 
+          data: {
             status: "FINISHED",
             completed: false, // No players, incomplete match
-            finishedAt: new Date()
+            finishedAt: new Date(),
           },
         });
         console.log(`🧹 Cleared empty match ${matchId} - marked incomplete`);
@@ -242,7 +262,6 @@ export default function setupSocket(server) {
         const allowed = origin.match(
           /^(http:\/\/localhost(:\d+)?|http:\/\/127\.0\.0\.1(:\d+)?|https:\/\/.*\.trycloudflare\.com|https:\/\/(www\.)?smartiepants\.art|https:\/\/play\.smartiepants\.art)$/
         );
-
 
         if (allowed) {
           callback(null, true);
@@ -273,7 +292,15 @@ export default function setupSocket(server) {
 
         const user = await prisma.user.findUnique({
           where: { id: userId },
-          select: { id: true, username: true, avatarUrl: true },
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+            stickmanColor: true,
+            stickmanStrokeWidth: true,
+            stickmanHeight: true,
+            stickmanWidth: true,
+          },
         });
         if (!user) throw new Error("User not found");
 
@@ -282,7 +309,8 @@ export default function setupSocket(server) {
           select: { id: true, status: true, hostId: true },
         });
         if (!dbMatch) throw new Error("Match not found");
-        if (dbMatch.status === "FINISHED") throw new Error("Match already ended");
+        if (dbMatch.status === "FINISHED")
+          throw new Error("Match already ended");
 
         if (!activeMatches.has(matchId)) {
           activeMatches.set(matchId, {
@@ -304,6 +332,10 @@ export default function setupSocket(server) {
         socket.username = user.username;
         socket.avatarUrl = user.avatarUrl;
         socket.matchId = matchId;
+        socket.stickmanColor = user.stickmanColor;
+        socket.stickmanStrokeWidth = user.stickmanStrokeWidth;
+        socket.stickmanHeight = user.stickmanHeight;
+        socket.stickmanWidth = user.stickmanWidth;
 
         const session = activeMatches.get(matchId);
         for (const [sid, p] of session.players) {
@@ -314,6 +346,10 @@ export default function setupSocket(server) {
           userId,
           username: user.username,
           avatarUrl: user.avatarUrl,
+          stickmanColor: user.stickmanColor,
+          stickmanStrokeWidth: user.stickmanStrokeWidth,
+          stickmanHeight: user.stickmanHeight,
+          stickmanWidth: user.stickmanWidth,
         });
 
         prisma.matchPlayer
@@ -342,8 +378,8 @@ export default function setupSocket(server) {
 
       const dbMatch = await prisma.match.findUnique({
         where: { id: Number(matchId) },
-        select: { 
-          hostId: true, 
+        select: {
+          hostId: true,
           timeLimit: true, // Get the time limit per question
         },
       });
@@ -363,7 +399,9 @@ export default function setupSocket(server) {
         data: { status: "ACTIVE" },
       });
 
-      console.log(`🎮 Host started match ${matchId} with ${match.timeLimit}s per question`);
+      console.log(
+        `🎮 Host started match ${matchId} with ${match.timeLimit}s per question`
+      );
 
       // Fetch questions assigned to this specific match
       const matchQuestions = await prisma.matchQuestion.findMany({
@@ -385,7 +423,9 @@ export default function setupSocket(server) {
       }));
       match.questionIndex = 0;
 
-      console.log(`📚 Loaded ${match.questions.length} questions for match ${matchId}`);
+      console.log(
+        `📚 Loaded ${match.questions.length} questions for match ${matchId}`
+      );
 
       io.to(`match-${matchId}`).emit("matchStarted", { started: true });
       sendQuestion(io, matchId);
@@ -442,7 +482,8 @@ export default function setupSocket(server) {
       const timeFactor = Math.max(0, 1 - (elapsedTimeMs || 0) / timeLimitMs);
       const points = correct ? Math.round(1 + 4 * timeFactor) : 0;
 
-      match.scores[socket.username] = (match.scores[socket.username] || 0) + points;
+      match.scores[socket.username] =
+        (match.scores[socket.username] || 0) + points;
 
       // Store this player's response
       match.currentQuestionResponses.set(socket.username, {
@@ -453,7 +494,9 @@ export default function setupSocket(server) {
         elapsedTimeMs,
       });
 
-      console.log(`📝 ${socket.username} answered (${match.currentQuestionResponses.size}/${match.players.size}) - waiting for timer`);
+      console.log(
+        `📝 ${socket.username} answered (${match.currentQuestionResponses.size}/${match.players.size}) - waiting for timer`
+      );
 
       // Send immediate feedback to just this player
       socket.emit("answerSubmitted", {
@@ -527,7 +570,9 @@ function showQuestionResults(io, matchId) {
     correctAnswer: match.questions[match.questionIndex].answer,
   });
 
-  console.log(`📊 Question ${match.questionIndex + 1} results sent to all players`);
+  console.log(
+    `📊 Question ${match.questionIndex + 1} results sent to all players`
+  );
 
   // Clear responses for next question
   match.currentQuestionResponses = new Map();

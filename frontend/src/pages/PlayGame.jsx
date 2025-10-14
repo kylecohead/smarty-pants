@@ -51,15 +51,31 @@ export default function PlayGame() {
   }, [isAnswered]);
 
   // Fetch user
+  const fetchCurrentUser = async () => {
+    try {
+      const data = await api.getCurrentUser();
+      setCurrentUser(data.user);
+    } catch (err) {
+      console.error(" Failed to fetch user:", err);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      try {
-        const data = await api.getCurrentUser();
-        setCurrentUser(data.user);
-      } catch (err) {
-        console.error(" Failed to fetch user:", err);
-      }
-    })();
+    fetchCurrentUser();
+  }, []);
+
+  // Listen for user data refresh events from settings modal
+  useEffect(() => {
+    const handleUserRefresh = () => {
+      console.log("🔄 Refreshing user data in game after settings update...");
+      fetchCurrentUser();
+    };
+
+    window.addEventListener("refreshUserData", handleUserRefresh);
+
+    return () => {
+      window.removeEventListener("refreshUserData", handleUserRefresh);
+    };
   }, []);
 
   // Socket setup
@@ -191,7 +207,9 @@ export default function PlayGame() {
           await api.incrementGamesPlayed(currentUser.id);
 
           // Check is the current user is the winner
-          const sortedScores = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+          const sortedScores = Object.entries(scores).sort(
+            (a, b) => b[1] - a[1]
+          );
           const winner = sortedScores[0];
 
           // If current user is the winner, increment their wins count

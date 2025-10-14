@@ -57,6 +57,12 @@ model User {
   memberSince DateTime?
   createdAt   DateTime      @default(now())
   role        Role          @default(USER)
+  
+  // Stickman customization
+  stickmanColor       String? @default("smart-light-blue")
+  stickmanStrokeWidth Int?    @default(3)
+  stickmanHeight      Int?    @default(120)
+  stickmanWidth       Int?    @default(80)
 
   // Relations
   hostedMatches  Match[]       @relation("HostedMatches")

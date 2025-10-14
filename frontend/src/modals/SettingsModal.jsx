@@ -50,25 +50,17 @@ export default function SettingsModal() {
   // Logout modal state
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Stick man settings
-  const [stickmanStrokeWidth, setStickmanStrokeWidth] = useState(() => {
-    return parseInt(localStorage.getItem("stickmanStrokeWidth")) || 3;
-  });
-  const [stickmanHeight, setStickmanHeight] = useState(() => {
-    return parseInt(localStorage.getItem("stickmanHeight")) || 120;
-  });
-  const [stickmanWidth, setStickmanWidth] = useState(() => {
-    return parseInt(localStorage.getItem("stickmanWidth")) || 80;
-  });
-  const [stickmanColor, setStickmanColor] = useState(() => {
-    return localStorage.getItem("stickmanColor") || "smart-light-blue";
-  });
+  // Stick man settings - loaded from database
+  const [stickmanStrokeWidth, setStickmanStrokeWidth] = useState(3);
+  const [stickmanHeight, setStickmanHeight] = useState(120);
+  const [stickmanWidth, setStickmanWidth] = useState(80);
+  const [stickmanColor, setStickmanColor] = useState("smart-light-blue");
 
   const [userStats, setUserStats] = useState({
     gamesPlayed: 0,
     highScore: 0,
     wins: 0,
-    memberSince: null
+    memberSince: null,
   });
 
   // Match history (mock)
@@ -111,8 +103,13 @@ export default function SettingsModal() {
             gamesPlayed: data.user.gamesPlayed || 0,
             highScore: data.user.highScore || 0,
             wins: data.user.wins || 0,
-            memberSince: data.user.memberSince || data.user.createdAt
+            memberSince: data.user.memberSince || data.user.createdAt,
           });
+          // Set stickman customization from database
+          setStickmanColor(data.user.stickmanColor || "smart-light-blue");
+          setStickmanStrokeWidth(data.user.stickmanStrokeWidth || 3);
+          setStickmanHeight(data.user.stickmanHeight || 120);
+          setStickmanWidth(data.user.stickmanWidth || 80);
         } else {
           console.error("Fetch user error:", data.error);
         }
@@ -174,8 +171,12 @@ export default function SettingsModal() {
         },
         body: JSON.stringify({
           username,
-          password: password || undefined, // don’t send empty string
+          password: password || undefined, // don't send empty string
           avatarUrl: avatar,
+          stickmanColor,
+          stickmanStrokeWidth,
+          stickmanHeight,
+          stickmanWidth,
         }),
       });
       const data = await res.json();
@@ -183,11 +184,69 @@ export default function SettingsModal() {
         alert("Profile updated!");
         setUsername(data.user.username);
         setAvatar(data.user.avatarUrl);
+        setStickmanColor(data.user.stickmanColor);
+        setStickmanStrokeWidth(data.user.stickmanStrokeWidth);
+        setStickmanHeight(data.user.stickmanHeight);
+        setStickmanWidth(data.user.stickmanWidth);
+        // Update localStorage for immediate UI updates
+        localStorage.setItem("stickmanColor", data.user.stickmanColor);
+        localStorage.setItem(
+          "stickmanStrokeWidth",
+          data.user.stickmanStrokeWidth
+        );
+        localStorage.setItem("stickmanHeight", data.user.stickmanHeight);
+        localStorage.setItem("stickmanWidth", data.user.stickmanWidth);
+        // Trigger refresh in other components
+        window.dispatchEvent(new CustomEvent("refreshUserData"));
       } else {
         alert(data.error || "Update failed");
       }
     } catch (err) {
       console.error("Update failed", err);
+    }
+  }
+
+  // Save avatar/stickman customization only
+  async function handleSaveAvatar() {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_URL}/me`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          stickmanColor,
+          stickmanStrokeWidth,
+          stickmanHeight,
+          stickmanWidth,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Avatar customization saved!");
+        setStickmanColor(data.user.stickmanColor);
+        setStickmanStrokeWidth(data.user.stickmanStrokeWidth);
+        setStickmanHeight(data.user.stickmanHeight);
+        setStickmanWidth(data.user.stickmanWidth);
+        // Update localStorage for immediate UI updates
+        localStorage.setItem("stickmanColor", data.user.stickmanColor);
+        localStorage.setItem(
+          "stickmanStrokeWidth",
+          data.user.stickmanStrokeWidth
+        );
+        localStorage.setItem("stickmanHeight", data.user.stickmanHeight);
+        localStorage.setItem("stickmanWidth", data.user.stickmanWidth);
+        // Trigger refresh in other components
+        window.dispatchEvent(new CustomEvent("refreshUserData"));
+      } else {
+        alert(data.error || "Avatar save failed");
+      }
+    } catch (err) {
+      console.error("Avatar save failed", err);
     }
   }
 
@@ -380,10 +439,6 @@ export default function SettingsModal() {
                           onChange={(e) => {
                             const newWidth = parseInt(e.target.value);
                             setStickmanStrokeWidth(newWidth);
-                            localStorage.setItem(
-                              "stickmanStrokeWidth",
-                              newWidth.toString()
-                            );
                           }}
                           className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
                         />
@@ -413,10 +468,6 @@ export default function SettingsModal() {
                           onChange={(e) => {
                             const newHeight = parseInt(e.target.value);
                             setStickmanHeight(newHeight);
-                            localStorage.setItem(
-                              "stickmanHeight",
-                              newHeight.toString()
-                            );
                           }}
                           className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
                         />
@@ -446,10 +497,6 @@ export default function SettingsModal() {
                           onChange={(e) => {
                             const newWidth = parseInt(e.target.value);
                             setStickmanWidth(newWidth);
-                            localStorage.setItem(
-                              "stickmanWidth",
-                              newWidth.toString()
-                            );
                           }}
                           className="flex-1 h-2 bg-smart-black rounded-lg appearance-none cursor-pointer"
                         />
@@ -538,7 +585,6 @@ export default function SettingsModal() {
                             key={color.name}
                             onClick={() => {
                               setStickmanColor(color.name);
-                              localStorage.setItem("stickmanColor", color.name);
                             }}
                             className={`rounded-lg p-3 text-lg font-body transition border-2 ${
                               stickmanColor === color.name
@@ -599,6 +645,16 @@ export default function SettingsModal() {
                     </div>
                   </div>
                 </div>
+
+                {/* Save Avatar Button - Bottom Right */}
+                <div className="flex justify-end mt-6">
+                  <button
+                    onClick={handleSaveAvatar}
+                    className="bg-smart-orange hover:bg-smart-orange/80 text-smart-black font-heading font-bold px-6 py-3 rounded-lg transition-colors border-2 border-smart-orange"
+                  >
+                    Save Avatar
+                  </button>
+                </div>
               </div>
             )}
 
@@ -627,8 +683,12 @@ export default function SettingsModal() {
                     <span>Win Rate</span>
                     <span className="font-bold text-smart-light-blue">
                       {userStats.gamesPlayed > 0
-                        ? ((userStats.wins / userStats.gamesPlayed) * 100).toFixed(1)
-                        : "0"}%
+                        ? (
+                            (userStats.wins / userStats.gamesPlayed) *
+                            100
+                          ).toFixed(1)
+                        : "0"}
+                      %
                     </span>
                   </div>
 
@@ -640,7 +700,9 @@ export default function SettingsModal() {
                     <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
                       <div
                         className="h-3 rounded-full bg-smart-light-blue"
-                        style={{ width: `${Math.min(100, (userStats.wins || 0) * 8)}%` }}
+                        style={{
+                          width: `${Math.min(100, (userStats.wins || 0) * 8)}%`,
+                        }}
                       ></div>
                     </div>
                   </div>
@@ -653,7 +715,10 @@ export default function SettingsModal() {
                       <div
                         className="h-3 rounded-full bg-smart-light-blue"
                         style={{
-                          width: `${Math.min(100, ((userStats.highScore || 0) / 3000) * 100)}%`,
+                          width: `${Math.min(
+                            100,
+                            ((userStats.highScore || 0) / 3000) * 100
+                          )}%`,
                         }}
                       ></div>
                     </div>
@@ -666,7 +731,12 @@ export default function SettingsModal() {
                     <div className="h-3 w-full rounded-full bg-smart-black overflow-hidden">
                       <div
                         className="h-3 rounded-full bg-smart-light-blue"
-                        style={{ width: `${Math.min(100, (userStats.gamesPlayed || 0) * 2)}%` }}
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            (userStats.gamesPlayed || 0) * 2
+                          )}%`,
+                        }}
                       ></div>
                     </div>
                   </div>

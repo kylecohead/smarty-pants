@@ -11,7 +11,7 @@ router.get("/me", authMiddleware, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-       select: {
+      select: {
         id: true,
         username: true,
         email: true,
@@ -20,6 +20,10 @@ router.get("/me", authMiddleware, async (req, res) => {
         highScore: true,
         wins: true,
         memberSince: true,
+        stickmanColor: true,
+        stickmanStrokeWidth: true,
+        stickmanHeight: true,
+        stickmanWidth: true,
       },
     });
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -33,7 +37,15 @@ router.get("/me", authMiddleware, async (req, res) => {
 // UPDATE current user
 router.put("/me", authMiddleware, async (req, res) => {
   try {
-    const { username, password, avatarUrl } = req.body;
+    const {
+      username,
+      password,
+      avatarUrl,
+      stickmanColor,
+      stickmanStrokeWidth,
+      stickmanHeight,
+      stickmanWidth,
+    } = req.body;
     const updateData = {};
 
     if (username) updateData.username = username;
@@ -43,10 +55,32 @@ router.put("/me", authMiddleware, async (req, res) => {
       updateData.password = hashed;
     }
 
+    // Handle stickman customization updates
+    if (stickmanColor !== undefined) updateData.stickmanColor = stickmanColor;
+    if (stickmanStrokeWidth !== undefined)
+      updateData.stickmanStrokeWidth = parseInt(stickmanStrokeWidth);
+    if (stickmanHeight !== undefined)
+      updateData.stickmanHeight = parseInt(stickmanHeight);
+    if (stickmanWidth !== undefined)
+      updateData.stickmanWidth = parseInt(stickmanWidth);
+
     const user = await prisma.user.update({
       where: { id: req.user.id },
       data: updateData,
-      select: { id: true, username: true, email: true, avatarUrl: true },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        avatarUrl: true,
+        gamesPlayed: true,
+        highScore: true,
+        wins: true,
+        memberSince: true,
+        stickmanColor: true,
+        stickmanStrokeWidth: true,
+        stickmanHeight: true,
+        stickmanWidth: true,
+      },
     });
 
     res.json({ user });
@@ -69,20 +103,20 @@ router.get("/search", authMiddleware, async (req, res) => {
       where: {
         username: {
           contains: searchTerm,
-          mode: 'insensitive'
+          mode: "insensitive",
         },
         id: {
-          not: req.user.id // Exclude current user from search results
-        }
+          not: req.user.id, // Exclude current user from search results
+        },
       },
       select: {
         id: true,
-        username: true
+        username: true,
       },
       orderBy: {
-        username: 'asc'
+        username: "asc",
       },
-      take: 10 // Limit to 10 results
+      take: 10, // Limit to 10 results
     });
 
     res.json({ users });
@@ -93,28 +127,28 @@ router.get("/search", authMiddleware, async (req, res) => {
 });
 
 // Increment games played once a match has ended
-router.post('/:id/increment-games', authMiddleware, async (req, res) => {
+router.post("/:id/increment-games", authMiddleware, async (req, res) => {
   const userId = parseInt(req.params.id);
-  
+
   try {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
         gamesPlayed: {
-          increment: 1
-        }
-      }
+          increment: 1,
+        },
+      },
     });
-    
+
     res.json({ success: true, gamesPlayed: updatedUser.gamesPlayed });
   } catch (error) {
-    console.error('Failed to increment games played:', error);
-    res.status(500).json({ error: 'Failed to update games played count' });
+    console.error("Failed to increment games played:", error);
+    res.status(500).json({ error: "Failed to update games played count" });
   }
 });
 
 // Increment wins when a user wins a match
-router.post('/:id/increment-wins', authMiddleware, async (req, res) => {
+router.post("/:id/increment-wins", authMiddleware, async (req, res) => {
   const userId = parseInt(req.params.id);
 
   try {
@@ -122,20 +156,20 @@ router.post('/:id/increment-wins', authMiddleware, async (req, res) => {
       where: { id: userId },
       data: {
         wins: {
-          increment: 1
-        }
-      }
+          increment: 1,
+        },
+      },
     });
 
     res.json({ success: true, wins: updatedUser.wins });
   } catch (error) {
     console.error("Failed to increment wins:", error);
-    res.status(500).json({ error: 'Failed to update wins count' });
+    res.status(500).json({ error: "Failed to update wins count" });
   }
 });
 
 // Update high score when a new high score is achieved
-router.post('/:id/update-highscore', authMiddleware, async (req, res) => {
+router.post("/:id/update-highscore", authMiddleware, async (req, res) => {
   const userId = parseInt(req.params.id);
   const newScore = parseInt(req.body.score);
 
@@ -143,38 +177,38 @@ router.post('/:id/update-highscore', authMiddleware, async (req, res) => {
     // First get the current user to check existing high score
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { highScore: true }
+      select: { highScore: true },
     });
 
     // Update if a new high score has been achieved
     if (!user.highScore || newScore > user.highScore) {
       const updatedUser = await prisma.user.update({
-        where : { id: userId },
+        where: { id: userId },
         data: {
-          highScore: newScore
-        }
+          highScore: newScore,
+        },
       });
 
       res.json({
         success: true,
         highScore: updatedUser.highScore,
-        isNewRecord: true
+        isNewRecord: true,
       });
     } else {
       res.json({
         success: true,
         highScore: user.highScore,
-        isNewRecord: false
+        isNewRecord: false,
       });
     }
   } catch (error) {
-    console.error("Failed to update high score:", error); 
-    res.status(500).json({ error: 'Failed to update high score' });
+    console.error("Failed to update high score:", error);
+    res.status(500).json({ error: "Failed to update high score" });
   }
 });
 
 // Determine leaderboard for the top best players in the database
-router.get('/leaderboard', async (req, res) => {
+router.get("/leaderboard", async (req, res) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 50); // Limit the number of best players to return
 
@@ -185,24 +219,24 @@ router.get('/leaderboard', async (req, res) => {
         highScore: true,
       },
       orderBy: [
-        { highScore: 'desc' }, // Initially sort using best score
-        { createdAt: 'asc' },  // Earlier account first as a tiebreaker
+        { highScore: "desc" }, // Initially sort using best score
+        { createdAt: "asc" }, // Earlier account first as a tiebreaker
       ],
-      take: limit,             // Select only the top 'limit' number of players
+      take: limit, // Select only the top 'limit' number of players
     });
 
-    // Determine the leaders 
+    // Determine the leaders
     const leaderboard = players.map((p, i) => ({
       rank: i + 1,
       id: p.id,
       name: p.username,
-      highScore: p.highScore ?? 0, 
+      highScore: p.highScore ?? 0,
     }));
 
     res.json({ leaderboard });
   } catch (error) {
-    console.error('Failed to load leaderboard', error);
-    res.status(500).json({ error: 'Failed to load leaderboard' })
+    console.error("Failed to load leaderboard", error);
+    res.status(500).json({ error: "Failed to load leaderboard" });
   }
 });
 

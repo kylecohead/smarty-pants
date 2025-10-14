@@ -10,7 +10,9 @@ async function main() {
 
   const questionCount = await prisma.question.count();
   if (questionCount > 0) {
-    console.log(`🟡 Database already has ${questionCount} questions — skipping question seeding.`);
+    console.log(
+      `🟡 Database already has ${questionCount} questions — skipping question seeding.`
+    );
   } else {
     // Only seed questions if none exist
     console.log("🧠 No questions found — seeding new ones from OpenTDB...");
@@ -25,7 +27,9 @@ async function main() {
     for (const { id, name } of CATEGORY_MAP) {
       const questions = await fetchCategoryQuestions(id, name, 10);
       if (questions.length < 10) {
-        console.warn(`⚠️ Only fetched ${questions.length} questions for "${name}"`);
+        console.warn(
+          `⚠️ Only fetched ${questions.length} questions for "${name}"`
+        );
       }
 
       for (const question of questions) {
@@ -37,7 +41,9 @@ async function main() {
     }
 
     if (!seededQuestions.length) {
-      throw new Error("❌ No questions were seeded. Check OpenTDB availability.");
+      throw new Error(
+        "❌ No questions were seeded. Check OpenTDB availability."
+      );
     }
 
     console.log(`✅ Inserted ${seededQuestions.length} questions.`);
@@ -47,12 +53,90 @@ async function main() {
   const password = await bcrypt.hash("1234", 10);
 
   const users = [
-    { username: "Nina", email: "nina@example.com", role: "USER", avatarUrl: "/uploads/avatar1.png", gamesPlayed: 0, highScore: 0, wins: 0, memberSince: new Date("2023-05-01") },
-    { username: "Wikus", email: "wikus@example.com", role: "USER", avatarUrl: "/uploads/avatar2.png", gamesPlayed: 0, highScore:0 , wins: 0, memberSince: new Date("2023-07-10") },
-    { username: "Amy", email: "amy@example.com", role: "USER", avatarUrl: "/uploads/avatar3.png", gamesPlayed: 0, highScore: 0, wins: 0, memberSince: new Date("2024-01-20") },
-    { username: "Conrad", email: "conrad@example.com", role: "USER", avatarUrl: "/uploads/avatar4.png", gamesPlayed: 0, highScore: 0, wins: 0, memberSince: new Date("2022-11-15") },
-    { username: "Kyle", email: "kyle@example.com", role: "USER", avatarUrl: "/uploads/avatar5.png", gamesPlayed: 0, highScore: 0, wins: 0, memberSince: new Date("2024-03-02") },
-    { username: "Admin", email: "admin@example.com", role: "ADMIN", avatarUrl: "/uploads/avatar6.png", gamesPlayed: 0, highScore: 0, wins: 0, memberSince: new Date("2021-01-01") },
+    {
+      username: "Nina",
+      email: "nina@example.com",
+      role: "USER",
+      avatarUrl: "/uploads/avatar1.png",
+      gamesPlayed: 0,
+      highScore: 0,
+      wins: 0,
+      memberSince: new Date("2023-05-01"),
+      stickmanColor: "smart-pink",
+      stickmanStrokeWidth: 3,
+      stickmanHeight: 120,
+      stickmanWidth: 80,
+    },
+    {
+      username: "Wikus",
+      email: "wikus@example.com",
+      role: "USER",
+      avatarUrl: "/uploads/avatar2.png",
+      gamesPlayed: 0,
+      highScore: 0,
+      wins: 0,
+      memberSince: new Date("2023-07-10"),
+      stickmanColor: "smart-orange",
+      stickmanStrokeWidth: 4,
+      stickmanHeight: 130,
+      stickmanWidth: 85,
+    },
+    {
+      username: "Amy",
+      email: "amy@example.com",
+      role: "USER",
+      avatarUrl: "/uploads/avatar3.png",
+      gamesPlayed: 0,
+      highScore: 0,
+      wins: 0,
+      memberSince: new Date("2024-01-20"),
+      stickmanColor: "smart-light-blue",
+      stickmanStrokeWidth: 2,
+      stickmanHeight: 110,
+      stickmanWidth: 75,
+    },
+    {
+      username: "Conrad",
+      email: "conrad@example.com",
+      role: "USER",
+      avatarUrl: "/uploads/avatar4.png",
+      gamesPlayed: 0,
+      highScore: 0,
+      wins: 0,
+      memberSince: new Date("2022-11-15"),
+      stickmanColor: "smart-purple",
+      stickmanStrokeWidth: 5,
+      stickmanHeight: 140,
+      stickmanWidth: 90,
+    },
+    {
+      username: "Kyle",
+      email: "kyle@example.com",
+      role: "USER",
+      avatarUrl: "/uploads/avatar5.png",
+      gamesPlayed: 0,
+      highScore: 0,
+      wins: 0,
+      memberSince: new Date("2024-03-02"),
+      stickmanColor: "smart-green",
+      stickmanStrokeWidth: 3,
+      stickmanHeight: 125,
+      stickmanWidth: 82,
+    },
+    {
+      username: "Admin",
+      email: "admin@example.com",
+      role: "ADMIN",
+      avatarUrl: "/uploads/avatar6.png",
+      gamesPlayed: 0,
+      highScore: 0,
+      wins: 0,
+      memberSince: new Date("2021-01-01"),
+      stickmanColor: "smart-yellow",
+      stickmanStrokeWidth: 4,
+      stickmanHeight: 135,
+      stickmanWidth: 88,
+    },
   ];
 
   const createdUsers = [];
