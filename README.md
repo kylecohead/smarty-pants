@@ -151,3 +151,7 @@ Smartie-Pants
 
 ## Deploy
 https://play.smartiepants.art
+```bash
+#server command
+docker compose -f docker-compose.prod.yml up -d --build
+```
