@@ -17,6 +17,7 @@ const prisma = new PrismaClient();
  *   advanceTimeout: NodeJS.Timeout,      // Timer for next question after results
  *   questionTimer: NodeJS.Timeout,       // Timer for synchronized leaderboard display
  *   currentQuestionResponses: Map,       // username → response for current question
+ *   playerStats: {},                     // username → { correctCount, totalTimeMs, answerCount } for tiebreaker
  * }
  */
 const activeMatches = new Map();
@@ -75,13 +76,100 @@ function clearAdvanceTimeout(match) {
   }
 }
 
+// =============================================================
+//  END MATCH (with comprehensive tiebreaker logic)
+// =============================================================
 function endMatch(io, matchId, completed = true) {
   const match = activeMatches.get(matchId);
   if (!match) return;
   clearAdvanceTimeout(match);
 
-  io.to(`match-${matchId}`).emit("matchEnded", { scores: match.scores });
-  console.log(`🏁 Match ${matchId} ended - Completed: ${completed}`);
+  // Build detailed ranking with tiebreaker stats
+  const ranking = Object.keys(match.scores).map((username) => {
+    const stats = match.playerStats?.[username] || {
+      correctCount: 0,
+      totalTimeMs: 0,
+      answerCount: 0,
+    };
+    
+    // Average time per answer (including incorrect answers and timeouts)
+    const avgTime = stats.answerCount > 0 
+      ? stats.totalTimeMs / stats.answerCount 
+      : Infinity;
+
+    return {
+      username,
+      score: match.scores[username] || 0,
+      correctCount: stats.correctCount,
+      totalAnswers: stats.answerCount,
+      avgTime: Math.round(avgTime), // Round to nearest ms
+    };
+  });
+
+  // Multi-level tiebreaker sort
+  ranking.sort((a, b) => {
+    // Primary: Total score (descending)
+    if (a.score !== b.score) return b.score - a.score;
+    
+    // Secondary: Correct answers count (descending)  
+    if (a.correctCount !== b.correctCount) return b.correctCount - a.correctCount;
+    
+    // Tertiary: Average response time (ascending - faster is better)
+    if (Math.abs(a.avgTime - b.avgTime) >= 100) return a.avgTime - b.avgTime; // 100ms tolerance
+    
+    // Final: Total answers given (descending - participation)
+    return b.totalAnswers - a.totalAnswers;
+  });
+
+  // Determine winner and check for ties
+  const winner = ranking[0];
+  const runnerUp = ranking[1];
+  
+  // Check if there's a tie at the top
+  const isTie = ranking.length > 1 && 
+    winner.score === runnerUp.score &&
+    winner.correctCount === runnerUp.correctCount &&
+    Math.abs(winner.avgTime - runnerUp.avgTime) < 100; // 100ms tolerance
+
+  // Find all players tied for first place
+  const tiedPlayers = ranking.filter(player => 
+    player.score === winner.score &&
+    player.correctCount === winner.correctCount &&
+    Math.abs(player.avgTime - winner.avgTime) < 100
+  );
+
+  // Enhanced match end event with tiebreaker info
+  io.to(`match-${matchId}`).emit("matchEnded", {
+    scores: match.scores,
+    ranking: ranking, // Full ranking with tiebreaker stats
+    winner: isTie ? null : {
+      username: winner.username,
+      score: winner.score,
+      correctCount: winner.correctCount,
+      avgTime: winner.avgTime
+    },
+    isTie,
+    tiedPlayers: isTie ? tiedPlayers : [],
+    tiebreakStats: ranking.map(p => ({
+      username: p.username,
+      score: p.score,
+      correct: p.correctCount,
+      avgTime: p.avgTime,
+      answers: p.totalAnswers
+    }))
+  });
+
+  if (isTie) {
+    console.log(`🤝 Match ${matchId} ended in a ${tiedPlayers.length}-way tie between: ${tiedPlayers.map(p => p.username).join(', ')}`);
+  } else {
+    console.log(`🏆 Match ${matchId} winner: ${winner.username} (${winner.score} pts, ${winner.correctCount} correct, ${winner.avgTime}ms avg)`);
+  }
+
+  // Log full ranking for debugging
+  console.log(`📊 Final ranking for match ${matchId}:`);
+  ranking.forEach((player, index) => {
+    console.log(`  ${index + 1}. ${player.username}: ${player.score} pts, ${player.correctCount}/${player.totalAnswers} correct, ${player.avgTime}ms avg`);
+  });
 
   activeMatches.delete(matchId);
   prisma.match
@@ -89,7 +177,7 @@ function endMatch(io, matchId, completed = true) {
       where: { id: Number(matchId) },
       data: {
         status: "FINISHED",
-        completed: completed, // Mark if match was properly completed
+        completed: completed,
         finishedAt: new Date(),
       },
     })
@@ -321,8 +409,9 @@ export default function setupSocket(server) {
             started: false,
             players: new Map(),
             advanceTimeout: null,
-            questionTimer: null, // Timer for synchronized leaderboard display
-            currentQuestionResponses: new Map(), // Track player responses per question
+            questionTimer: null,
+            currentQuestionResponses: new Map(),
+            playerStats: {}, // ← NEW: Track stats for tiebreaker
           });
           console.log(`🆕 Created in-memory session for match ${matchId}`);
         }
@@ -351,6 +440,15 @@ export default function setupSocket(server) {
           stickmanHeight: user.stickmanHeight,
           stickmanWidth: user.stickmanWidth,
         });
+
+        // Initialize player stats for tiebreaker
+        if (!session.playerStats[user.username]) {
+          session.playerStats[user.username] = {
+            correctCount: 0,
+            totalTimeMs: 0,
+            answerCount: 0,
+          };
+        }
 
         prisma.matchPlayer
           .upsert({
@@ -455,7 +553,7 @@ export default function setupSocket(server) {
       });
     });
 
-    // ---------------- SUBMIT ANSWER ----------------
+    // ---------------- SUBMIT ANSWER (with tiebreaker tracking) ----------------
     socket.on("submitAnswer", ({ matchId, answer, elapsedTimeMs }) => {
       const match = activeMatches.get(matchId);
       if (!match || !match.started) return;
@@ -484,6 +582,20 @@ export default function setupSocket(server) {
 
       match.scores[socket.username] =
         (match.scores[socket.username] || 0) + points;
+
+      // ✨ Track stats for tiebreaker logic
+      if (!match.playerStats[socket.username]) {
+        match.playerStats[socket.username] = {
+          correctCount: 0,
+          totalTimeMs: 0,
+          answerCount: 0,
+        };
+      }
+      
+      const stats = match.playerStats[socket.username];
+      if (correct) stats.correctCount++;
+      stats.totalTimeMs += (elapsedTimeMs || 0);
+      stats.answerCount++;
 
       // Store this player's response
       match.currentQuestionResponses.set(socket.username, {
@@ -521,10 +633,13 @@ export default function setupSocket(server) {
     });
   });
 
-  console.log("🎯 Socket.IO hybrid setup complete");
+  console.log("🎯 Socket.IO setup complete with tiebreaker logic");
   return io;
 }
 
+// =============================================================
+//  SHOW QUESTION RESULTS (with tiebreaker stat tracking)
+// =============================================================
 function showQuestionResults(io, matchId) {
   const match = activeMatches.get(matchId);
   if (!match) return;
@@ -556,6 +671,19 @@ function showQuestionResults(io, matchId) {
         points: 0,
         answered: false,
       });
+      
+      // ✨ Track non-response for tiebreaker (full time penalty)
+      if (!match.playerStats[player.username]) {
+        match.playerStats[player.username] = {
+          correctCount: 0,
+          totalTimeMs: 0,
+          answerCount: 0,
+        };
+      }
+      const stats = match.playerStats[player.username];
+      stats.totalTimeMs += (match.timeLimit || 10) * 1000; // Full time penalty
+      stats.answerCount++;
+      
       // Ensure they get 0 points in the scores
       if (match.scores[player.username] === undefined) {
         match.scores[player.username] = 0;
