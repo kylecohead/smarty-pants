@@ -152,6 +152,7 @@ Smartie-Pants
 ## Deploy
 https://play.smartiepants.art
 ```bash
-#server command
-docker-compose -f docker-compose.prod.yml exec frontend npm run build
+#server command also use (make prod)
+docker compose -f docker-compose.prod.yml exec frontend npm run build
+
 ```
