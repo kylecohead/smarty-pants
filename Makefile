@@ -99,10 +99,12 @@ test-socket:
 # -------- PRODUCTION --------
 #this is not working.... yet
 prod:
-	docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+	docker-compose -f docker-compose.prod.yml run --rm frontend npm run build
+	docker-compose -f docker-compose.prod.yml up
+
 
 prod-logs:
-	docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f
+	docker-compose -f docker-compose.yml -f docker-compose.prod.yml logs -f
 
 # -------- DEPLOY WITH CLOUDFLARE --------
 tunnel:
