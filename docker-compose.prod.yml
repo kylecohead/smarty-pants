@@ -47,12 +47,12 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: npm run preview -- --host 0.0.0.0
+    command: npm run preview -- --host 0.0.0.0 --port 5173    
     environment:
-      VITE_API_URL: ""
-      # Optional: force rebuild cache refresh each compose up
-      FORCE_COLOR: "1"
-      NODE_ENV: production
+        VITE_API_URL: ""
+        # Optional: force rebuild cache refresh each compose up
+        FORCE_COLOR: "1"
+        NODE_ENV: production
 
 volumes:
   db_data:

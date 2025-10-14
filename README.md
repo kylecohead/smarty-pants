@@ -153,5 +153,5 @@ Smartie-Pants
 https://play.smartiepants.art
 ```bash
 #server command
-docker compose -f docker-compose.prod.yml up -d --build
+docker-compose -f docker-compose.prod.yml exec frontend npm run build
 ```
