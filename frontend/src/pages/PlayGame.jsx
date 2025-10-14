@@ -16,10 +16,6 @@ import GameOverScreen from "../components/GameOverScreen";
 import QuestionRecapModal from "../modals/QuestionRecapModal";
 import GameOverModal from "../modals/GameOverModal";
 import QuitConfirmModal from "../modals/QuitConfirmModal";
-import {
-  buildPerQuestionLeaderboard,
-  buildFinalLeaderboard,
-} from "../utils/gameUtils";
 
 const colors = { darkBlue: "#0A2442" };
 
@@ -37,8 +33,10 @@ export default function PlayGame() {
   const [recapData, setRecapData] = useState(null);
   const [showRecap, setShowRecap] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [questionStartTime, setQuestionStartTime] = useState(0);
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  const [finalRanking, setFinalRanking] = useState([]);
+  const [isTie, setIsTie] = useState(false);
+  const [tiedPlayers, setTiedPlayers] = useState([]);
 
   const socketRef = useRef(null);
   const timerRef = useRef(null);
@@ -56,7 +54,7 @@ export default function PlayGame() {
       const data = await api.getCurrentUser();
       setCurrentUser(data.user);
     } catch (err) {
-      console.error(" Failed to fetch user:", err);
+      console.error("Failed to fetch user:", err);
     }
   };
 
@@ -70,12 +68,8 @@ export default function PlayGame() {
       console.log("🔄 Refreshing user data in game after settings update...");
       fetchCurrentUser();
     };
-
     window.addEventListener("refreshUserData", handleUserRefresh);
-
-    return () => {
-      window.removeEventListener("refreshUserData", handleUserRefresh);
-    };
+    return () => window.removeEventListener("refreshUserData", handleUserRefresh);
   }, []);
 
   // Socket setup
@@ -90,64 +84,44 @@ export default function PlayGame() {
       setTimeout(() => socket.emit("requestCurrentQuestion", { matchId }), 500);
     });
 
-    // When new question arrives
+    // Handle new question
     socket.on("newQuestion", (data) => {
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
-
       setQuestion(data);
-      // Clear any previously revealed correct answer
       setCurrentCorrectAnswer(null);
       setIsAnswered(false);
       setShowRecap(false);
       setRecapData(null);
-
-      timeoutGuardRef.current = setTimeout(
-        () => startTimer(data.timeLimit || 10000),
-        200
-      );
+      timeoutGuardRef.current = setTimeout(() => startTimer(data.timeLimit || 10000), 200);
     });
 
-    // Individual answer confirmation (immediate feedback)
-    socket.on("answerSubmitted", ({ correct, points, correctAnswer }) => {
+    // Handle answer confirmation
+    socket.on("answerSubmitted", ({ correct, points }) => {
       if (!isAnswered) {
         setIsAnswered(true);
-        // DON'T clear the timer - let it keep running for synchronized leaderboard
-        // clearInterval(timerRef.current); // REMOVED
         clearTimeout(timeoutGuardRef.current);
-
-        // Just show a simple "Answer submitted" state
-        console.log(
-          ` Answer submitted: ${correct ? "Correct" : "Wrong"} (+${points})`
-        );
+        console.log(`🧠 Answer submitted: ${correct ? "✅ Correct" : "❌ Wrong"} (+${points})`);
       }
     });
 
-    // Question results for all players (after everyone answered or time up)
+    // Handle question results
     socket.on("questionResults", ({ responses, scores, correctAnswer }) => {
       setScores(scores);
-      // Keep the correct answer so the UI can highlight it
       setCurrentCorrectAnswer(correctAnswer || null);
+      const yourResponse = responses.find((r) => r.username === currentUser.username);
 
-      // Find your response
-      const yourResponse = responses.find(
-        (r) => r.username === currentUser.username
-      );
-
-      // Build leaderboard with both total and round scores
       const currentLeaderboard = Object.entries(scores)
         .sort((a, b) => b[1] - a[1])
         .map(([playerName, totalScore], index) => {
-          const playerResponse = responses.find(
-            (r) => r.username === playerName
-          );
+          const playerResponse = responses.find((r) => r.username === playerName);
           return {
             id: index,
             name: playerName,
             total: totalScore,
             round: playerResponse ? playerResponse.points : 0,
-            answered: playerResponse ? playerResponse.answered : false,
-            correct: playerResponse ? playerResponse.correct : false,
+            answered: playerResponse?.answered || false,
+            correct: playerResponse?.correct || false,
             isYou: playerName === currentUser.username,
           };
         });
@@ -157,67 +131,47 @@ export default function PlayGame() {
         points: yourResponse?.points || 0,
         leaderboard: currentLeaderboard,
         correctAnswer: correctAnswer || null,
-        allResponses: responses, // Include all player responses
       };
 
-      // WAIT for the visual timer to hit 0 before showing leaderboard
-      // This ensures the timer bar is empty when the leaderboard pops up
       const timeRemaining = timeLeftRef.current;
-      if (timeRemaining > 100) {
-        // If there's still time on the clock, wait for it
-        setTimeout(() => {
-          setRecapData(recapDataToShow);
-          setShowRecap(true);
-          setTimeLeft(0);
-          timeLeftRef.current = 0;
-          clearInterval(timerRef.current);
-          clearTimeout(timeoutGuardRef.current);
-          setTimeout(() => setShowRecap(false), 4000);
-        }, timeRemaining);
-      } else {
-        // Timer already at 0 or very close, show immediately
+      const show = () => {
         setRecapData(recapDataToShow);
         setShowRecap(true);
         setTimeLeft(0);
-        timeLeftRef.current = 0;
         clearInterval(timerRef.current);
         clearTimeout(timeoutGuardRef.current);
         setTimeout(() => setShowRecap(false), 4000);
-      }
+      };
+      if (timeRemaining > 100) setTimeout(show, timeRemaining);
+      else show();
     });
 
+    // Handle player updates
     socket.on("playersUpdate", ({ players }) => {
       const map = {};
       players.forEach((p) => (map[p.username] = p.score));
       setScores(map);
     });
 
-    socket.on("matchEnded", async ({ scores }) => {
+    // Handle match end
+    socket.on("matchEnded", async (data) => {
+      const { scores, ranking, tiebreakStats, isTie, tiedPlayers } = data;
       setScores(scores);
+      setFinalRanking(ranking || tiebreakStats || []);
+      setIsTie(!!isTie);
+      setTiedPlayers(tiedPlayers || []);
       setMatchEnded(true);
+
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
 
       try {
         if (currentUser) {
-          // Get current user's score from the scores object
           const userScore = scores[currentUser.username];
-
-          // Increment games played once the match has ended
           await api.incrementGamesPlayed(currentUser.id);
-
-          // Check is the current user is the winner
-          const sortedScores = Object.entries(scores).sort(
-            (a, b) => b[1] - a[1]
-          );
-          const winner = sortedScores[0];
-
-          // If current user is the winner, increment their wins count
-          if (winner && winner[0] === currentUser.username) {
+          if (!isTie && ranking?.[0]?.username === currentUser.username) {
             await api.incrementUserWins(currentUser.id);
           }
-
-          // Update high score if applicable
           await api.updateHighScore(currentUser.id, userScore);
         }
       } catch (error) {
@@ -225,13 +179,13 @@ export default function PlayGame() {
       }
     });
 
+    // Handle host leaving
     socket.on("hostLeft", ({ message, scores }) => {
-      console.log("👑 Host left the game:", message);
+      console.log("👑 Host left:", message);
       setScores(scores || {});
       setMatchEnded(true);
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
-      // Show message to user
       alert(message);
     });
 
@@ -246,22 +200,17 @@ export default function PlayGame() {
     };
   }, [currentUser, matchId]);
 
-  // Start countdown with smooth updates
+  // Timer logic
   const startTimer = (duration) => {
     clearInterval(timerRef.current);
-    const startTime = Date.now();
-    setQuestionStartTime(startTime);
-    questionStartTimeRef.current = startTime;
+    const start = Date.now();
+    questionStartTimeRef.current = start;
     setTimeLeft(duration);
-
-    // Update timer every 100ms for smooth progress bar
     timerRef.current = setInterval(() => {
       const elapsed = Date.now() - questionStartTimeRef.current;
       const remaining = Math.max(0, duration - elapsed);
-
       setTimeLeft(remaining);
-      timeLeftRef.current = remaining; // Keep ref in sync
-
+      timeLeftRef.current = remaining;
       if (remaining <= 0) {
         clearInterval(timerRef.current);
         if (!isAnsweredRef.current) handleAnswer(null);
@@ -269,34 +218,22 @@ export default function PlayGame() {
     }, 100);
   };
 
+  // Answer handling
   const handleAnswer = (optionLabel) => {
     if (isAnswered || !socketRef.current || !question) return;
     setIsAnswered(true);
-    setSelectedAnswer(optionLabel); // Track the selected answer
-    // DON'T clear the timer - let it keep running for synchronized display
-    // clearInterval(timerRef.current); // REMOVED
+    setSelectedAnswer(optionLabel);
     clearTimeout(timeoutGuardRef.current);
-
     const elapsedTimeMs = Date.now() - questionStartTimeRef.current;
-
-    // Handle the case where no answer was selected (timer ran out)
-    const finalAnswer = optionLabel || ""; // Convert null/undefined to empty string
-
-    // console.log(" Submitting answer:", finalAnswer);
-    // console.log(" Current question:", question);
-
     socketRef.current.emit("submitAnswer", {
       matchId,
-      answer: finalAnswer,
+      answer: optionLabel || "",
       elapsedTimeMs,
     });
   };
 
-  const handleQuitGame = () => {
-    // Show confirmation modal before quitting
-    setShowQuitConfirm(true);
-  };
-
+  // Quit confirmation
+  const handleQuitGame = () => setShowQuitConfirm(true);
   const confirmQuitGame = () => {
     const socket = socketRef.current;
     if (socket && socket.connected) {
@@ -305,25 +242,29 @@ export default function PlayGame() {
     }
     navigate("/landing");
   };
-
-  const cancelQuit = () => {
-    setShowQuitConfirm(false);
-  };
+  const cancelQuit = () => setShowQuitConfirm(false);
 
   // ================== UI RENDERING ==================
-
   if (matchEnded) {
-    // Create properly sorted leaderboard
-    const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-    const winner = sorted[0];
+    const formattedLeaderboard = finalRanking.length
+      ? finalRanking.map((p, index) => ({
+          id: index,
+          name: p.username,
+          total: p.score,
+          correct: p.correctCount,
+          avgTime: p.avgTime,
+          answers: p.totalAnswers,
+          isYou: p.username === currentUser?.username,
+        }))
+      : Object.entries(scores).map(([username, score], index) => ({
+          id: index,
+          name: username,
+          total: score,
+          avgTime: null,
+          isYou: username === currentUser?.username,
+        }));
 
-    // Format leaderboard for GameOverScreen component
-    const formattedLeaderboard = sorted.map(([username, score], index) => ({
-      id: index,
-      name: username,
-      total: score,
-      isYou: username === currentUser?.username,
-    }));
+    const winner = formattedLeaderboard[0];
 
     return (
       <div
@@ -331,11 +272,15 @@ export default function PlayGame() {
         style={{ backgroundColor: colors.darkBlue }}
       >
         <GameOverScreen
-          winner={{
-            name: winner[0], // Use 'name' not 'username'
-            score: winner[1],
-            isYou: winner[0] === currentUser?.username,
-          }}
+          winner={
+            isTie
+              ? { name: "🤝 It's a Tie!", score: winner?.total || 0, isYou: false }
+              : {
+                  name: winner.name,
+                  score: winner.total,
+                  isYou: winner.name === currentUser?.username,
+                }
+          }
           score={scores[currentUser?.username] || 0}
           finalLeaderboard={formattedLeaderboard}
         />
@@ -391,14 +336,14 @@ export default function PlayGame() {
             youAnswered={isAnswered}
             selectedAnswer={selectedAnswer}
             questionResolved={showRecap}
-            waitingOnOthers={isAnswered && !showRecap} // NEW: show waiting state
+            waitingOnOthers={isAnswered && !showRecap}
             onAnswer={(optionText) => handleAnswer(optionText)}
             correctAnswer={currentCorrectAnswer}
           />
         </main>
       </div>
 
-      {/* Question Recap Modal Overlay */}
+      {/* Recap */}
       {showRecap && recapData && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-4xl">
@@ -406,7 +351,6 @@ export default function PlayGame() {
               correct={recapData.correct}
               points={recapData.points}
               leaderboard={recapData.leaderboard}
-              allResponses={recapData.allResponses} // Pass this as a prop
               questionIndex={question.index}
               onClose={() => setShowRecap(false)}
               correctAnswer={recapData.correctAnswer}
@@ -415,19 +359,16 @@ export default function PlayGame() {
         </div>
       )}
 
-      {/* Quit Confirmation Modal */}
+      {/* Quit Confirmation */}
       {showQuitConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-md">
-            <QuitConfirmModal
-              onConfirm={confirmQuitGame}
-              onCancel={cancelQuit}
-            />
+            <QuitConfirmModal onConfirm={confirmQuitGame} onCancel={cancelQuit} />
           </div>
         </div>
       )}
 
-      {/* Game Over Modal Overlay */}
+      {/* Game Over Modal (backup) */}
       {matchEnded && (
         <div className="fixed inset-0 z-50">
           <GameOverModal

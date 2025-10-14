@@ -88,6 +88,8 @@ export default function GameOverScreen({ winner, score, finalLeaderboard }) {
                 <th className="px-4 py-3">Rank</th>
                 <th className="px-4 py-3">Player</th>
                 <th className="px-4 py-3 text-right">Total</th>
+                <th className="px-4 py-3 text-right">Correct</th>
+                <th className="px-4 py-3 text-right">Avg Time</th>
               </tr>
             </thead>
             <tbody>
@@ -111,6 +113,14 @@ export default function GameOverScreen({ winner, score, finalLeaderboard }) {
                   </td>
                   <td className="px-4 py-3 text-right font-bold text-white">
                     {row.total}
+                  </td>
+                  <td className="px-4 py-3 text-right text-white/90">
+                    {row.correct ?? "-"}
+                  </td>
+                  <td className="px-4 py-3 text-right text-white/90">
+                    {row.avgTime 
+                      ? `${(row.avgTime / 1000).toFixed(2)}s`
+                      : "–"}
                   </td>
                 </tr>
               ))}

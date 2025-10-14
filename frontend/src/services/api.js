@@ -174,6 +174,10 @@ export const api = {
         'Content-Type': 'application/json'
       }
     });
+    console.log("🧩 incrementGamesPlayed status:", response.status);
+    const text = await response.text();
+    console.log("🧩 Response body:", text);
+
     if (!response.ok) throw new Error('Failed to update games played');
     return response.json();
   },
