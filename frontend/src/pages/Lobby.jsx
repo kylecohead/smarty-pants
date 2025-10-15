@@ -287,7 +287,7 @@ export default function Lobby() {
           {/* Panel */}
           <div
             className="bg-[#1a237e]/70 border border-[#1a237e]/80 rounded-3xl p-4 shadow-[0_20px_40px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] flex flex-col"
-            style={{ height: "calc(100vh - 140px)" }}
+            style={{ maxHeight: "calc(100vh - 250px)", overflow: "auto" }}
           >
             {/* Panel Header - Player Count and Code */}
             <div className="relative flex justify-center items-center mb-3 flex-shrink-0">
