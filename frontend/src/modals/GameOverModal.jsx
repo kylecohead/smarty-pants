@@ -71,9 +71,44 @@ export default function GameOverScreen({ winner, score, finalLeaderboard }) {
           </p>
         </header>
 
-        {/* Winner Display */}
-        <div className="mx-auto mt-8 flex h-32 w-32 items-center justify-center rounded-2xl text-2xl font-extrabold text-white shadow-lg bg-smart-orange">
-          {winner?.name}
+        {/* Winner Display with Stickman */}
+        <div className="mx-auto mt-8 flex flex-col items-center">
+          {/* Stickman Avatar */}
+          <svg
+            width="120"
+            height="150"
+            viewBox="0 0 140 180"
+            className={`text-${winner?.stickmanColor || 'smart-orange'} mb-4`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={winner?.stickmanStrokeWidth || 4}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              transform: `scale(${(winner?.stickmanWidth || 80) / 140}, ${(winner?.stickmanHeight || 120) / 180})`,
+            }}
+          >
+            {/* Head */}
+            <circle cx="70" cy="22" r="18" />
+            {/* Body */}
+            <line x1="70" y1="40" x2="70" y2="115" />
+            {/* Left arm */}
+            <line x1="70" y1="70" x2="35" y2="52" />
+            {/* Right arm */}
+            <line x1="70" y1="70" x2="105" y2="52" />
+            {/* Left leg */}
+            <line x1="70" y1="115" x2="43" y2="160" />
+            {/* Right leg */}
+            <line x1="70" y1="115" x2="97" y2="160" />
+          </svg>
+          
+          {/* Crown for winner */}
+          <div className="text-6xl mb-2">👑</div>
+          
+          {/* Winner Name */}
+          <div className="rounded-2xl bg-smart-orange px-6 py-3 text-2xl font-extrabold text-white shadow-lg">
+            {winner?.name}
+          </div>
         </div>
 
         {/* Your Score */}
