@@ -575,10 +575,13 @@ export default function setupSocket(server) {
       const correct =
         (answer ?? "").trim().toLowerCase() === question.answer.toLowerCase();
 
-      // Time-based scoring formula - use match's configured time limit
-      const timeLimitMs = (match.timeLimit || 10) * 1000;
-      const timeFactor = Math.max(0, 1 - (elapsedTimeMs || 0) / timeLimitMs);
-      const points = correct ? Math.round(1 + 4 * timeFactor) : 0;
+  // Percent-based scoring: use a fixed MAX_POINTS so selecting longer
+  // per-question timers does not inflate leaderboard scores.
+  const timeLimitMs = (match.timeLimit || 10) * 1000;
+  const elapsed = Math.max(0, Math.min(elapsedTimeMs || 0, timeLimitMs));
+  const timeFactor = Math.max(0, 1 - elapsed / timeLimitMs);
+  const MAX_POINTS = 10;
+  const points = correct ? Math.max(1, Math.round(MAX_POINTS * timeFactor)) : 0;
 
       match.scores[socket.username] =
         (match.scores[socket.username] || 0) + points;
