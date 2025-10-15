@@ -77,6 +77,7 @@ export default function Lobby() {
       if (response.ok) {
         const matchData = await response.json();
         setMatchDetails(matchData);
+        setMaxPlayers(matchData.maxPlayers ?? 6);
         console.log("📋 Match details fetched:", matchData);
       } else {
         console.error("❌ Failed to fetch match details:", response.status);
@@ -212,7 +213,7 @@ export default function Lobby() {
       try {
         const res = await api.getMatch(matchId);
         // Save match settings (maxPlayers) and determine host
-        setMaxPlayers(res.maxPlayers || 6);
+        setMaxPlayers(res.maxPlayers ?? 6);
         if (res.hostId && currentUser?.id) {
           setIsHost(res.hostId === currentUser.id);
         }
@@ -222,7 +223,10 @@ export default function Lobby() {
     })();
   }, [matchId, currentUser]);
 
-  const isLobbyFull = players.length >= (maxPlayers || 6);
+  // Debug 
+  useEffect(() => { console.log('🔎 Lobby maxPlayers =', maxPlayers); }, [maxPlayers]);
+
+  const isLobbyFull = Math.max(1, maxPlayers ?? 6);
 
   const handleStartGame = () => {
     const socket = socketRef.current;

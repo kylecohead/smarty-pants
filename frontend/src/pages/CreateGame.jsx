@@ -270,6 +270,7 @@ export default function CreateGame() {
       if (!res.ok) throw new Error(match.error || "Failed to create match!");
 
       console.log("✅ Created match:", match.id, match);
+      console.log('🔶 raw maxPlayers:', maxPlayers, typeof maxPlayers); // debug max number of players set
 
       // 🔹 Send invites to invited users if any
       if (invited.length > 0) {
@@ -368,7 +369,7 @@ export default function CreateGame() {
                   <div className="flex items-center gap-4 mt-1">
                     <input
                       type="range"
-                      min={2}
+                      min={1}
                       max={20}
                       step={1}
                       value={maxPlayers}
