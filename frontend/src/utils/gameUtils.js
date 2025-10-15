@@ -14,12 +14,17 @@
  */
 export function calculateScore(isCorrect, answerTimeMs, questionDurationMs) {
   if (!isCorrect) return 0;
-  const clamped = Math.max(0, Math.min(answerTimeMs, questionDurationMs));
-  const secondsLeft = Math.max(
-    0,
-    Math.floor((questionDurationMs - clamped) / 1000)
-  );
-  return secondsLeft * 10;
+  // Use the same time-based scoring formula as the server
+  // timeLimitMs = questionDurationMs
+  // timeFactor = max(0, 1 - elapsed / timeLimitMs)
+  // points = round(1 + 4 * timeFactor)
+  const timeLimitMs = Math.max(1, questionDurationMs || 10000);
+  const elapsed = Math.max(0, Math.min(answerTimeMs || 0, timeLimitMs));
+  const timeFactor = Math.max(0, 1 - elapsed / timeLimitMs);
+  // Percent-based scoring: scale to a fixed MAX_POINTS so longer timers don't
+  // inflate scores. Minimum 1 point for correct answers.
+  const MAX_POINTS = 10;
+  return Math.max(1, Math.round(MAX_POINTS * timeFactor));
 }
 
 /**

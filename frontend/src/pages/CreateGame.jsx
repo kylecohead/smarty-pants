@@ -38,15 +38,7 @@ const MODES = [
   },
 ];
 
-/**
- * Available scoring models for the trivia game
- * @type {Array<{key: string, label: string}>}
- */
-const scoringModels = [
-  { key: "classic", label: "Classic (1 pt / correct)" }, // Standard scoring: 1 point per correct answer
-  { key: "speed", label: "Speed Bonus" }, // Bonus points based on answer speed
-  { key: "streak", label: "Streaks" }, // Extra points for consecutive correct answers
-];
+// Scoring is fixed server-side to a single time-based model
 
 /**
  * Section title component with customizable color
@@ -137,7 +129,6 @@ export default function CreateGame() {
       window.sessionStorage.setItem("questionDurationSeconds", String(secPerQ));
     }
   }, [secPerQ]);
-  const [scoring, setScoring] = useState(scoringModels[0].key); // Selected scoring model
   const [numQuestions, setNumQuestions] = useState(5); // Number of questions per game (5-10)
 
   // Current selected game mode object
@@ -563,31 +554,7 @@ export default function CreateGame() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-white/90 text-sm">
-                  Scoring model
-                </label>
-                <div className="relative mt-1">
-                  <select
-                    className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-white outline-none"
-                    value={scoring}
-                    onChange={(e) => setScoring(e.target.value)}
-                  >
-                    {scoringModels.map((s) => (
-                      <option
-                        key={s.key}
-                        value={s.key}
-                        className="bg-[#0A2442] text-white"
-                      >
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40 text-sm">
-                    ⌄
-                  </span>
-                </div>
-              </div>
+              {/* Scoring is fixed server-side to a single time-based model */}
             </div>
           </div>
 
