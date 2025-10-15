@@ -282,16 +282,15 @@ export default function Landing() {
       console.error("❌ API test failed:", err);
     }
   };
-// =========================================================
+  // =========================================================
 
   return (
     <div
-      className="h-screen bg-smart-dark-blue text-smart-white overflow-hidden bg-cover bg-center bg-no-repeat"
+      className="min-h-screen bg-smart-dark-blue text-smart-white overflow-y-auto bg-cover bg-center bg-no-repeat"
       style={{
         backgroundImage: `url(${backgroundLanding})`,
       }}
     >
-
       {/* Header Section - Title, Notifications, and Settings */}
       <div className="px-4 pt-2 pb-1">
         {/* Top Navigation Bar */}

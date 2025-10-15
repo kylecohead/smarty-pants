@@ -69,7 +69,8 @@ export default function PlayGame() {
       fetchCurrentUser();
     };
     window.addEventListener("refreshUserData", handleUserRefresh);
-    return () => window.removeEventListener("refreshUserData", handleUserRefresh);
+    return () =>
+      window.removeEventListener("refreshUserData", handleUserRefresh);
   }, []);
 
   // Socket setup
@@ -93,7 +94,10 @@ export default function PlayGame() {
       setIsAnswered(false);
       setShowRecap(false);
       setRecapData(null);
-      timeoutGuardRef.current = setTimeout(() => startTimer(data.timeLimit || 10000), 200);
+      timeoutGuardRef.current = setTimeout(
+        () => startTimer(data.timeLimit || 10000),
+        200
+      );
     });
 
     // Handle answer confirmation
@@ -101,7 +105,11 @@ export default function PlayGame() {
       if (!isAnswered) {
         setIsAnswered(true);
         clearTimeout(timeoutGuardRef.current);
-        console.log(`🧠 Answer submitted: ${correct ? "✅ Correct" : "❌ Wrong"} (+${points})`);
+        console.log(
+          `🧠 Answer submitted: ${
+            correct ? "✅ Correct" : "❌ Wrong"
+          } (+${points})`
+        );
       }
     });
 
@@ -109,12 +117,16 @@ export default function PlayGame() {
     socket.on("questionResults", ({ responses, scores, correctAnswer }) => {
       setScores(scores);
       setCurrentCorrectAnswer(correctAnswer || null);
-      const yourResponse = responses.find((r) => r.username === currentUser.username);
+      const yourResponse = responses.find(
+        (r) => r.username === currentUser.username
+      );
 
       const currentLeaderboard = Object.entries(scores)
         .sort((a, b) => b[1] - a[1])
         .map(([playerName, totalScore], index) => {
-          const playerResponse = responses.find((r) => r.username === playerName);
+          const playerResponse = responses.find(
+            (r) => r.username === playerName
+          );
           return {
             id: index,
             name: playerName,
@@ -274,7 +286,11 @@ export default function PlayGame() {
         <GameOverScreen
           winner={
             isTie
-              ? { name: "🤝 It's a Tie!", score: winner?.total || 0, isYou: false }
+              ? {
+                  name: "🤝 It's a Tie!",
+                  score: winner?.total || 0,
+                  isYou: false,
+                }
               : {
                   name: winner.name,
                   score: winner.total,
@@ -291,7 +307,7 @@ export default function PlayGame() {
   if (!question) {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center text-white relative overflow-hidden bg-cover bg-center bg-no-repeat"
+        className="min-h-screen flex flex-col items-center justify-center text-white relative overflow-y-auto bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${backgroundWaitHost})` }}
       >
         <div className="absolute inset-0 bg-black/30 animate-[pulse_3s_infinite]" />
@@ -363,7 +379,10 @@ export default function PlayGame() {
       {showQuitConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-md">
-            <QuitConfirmModal onConfirm={confirmQuitGame} onCancel={cancelQuit} />
+            <QuitConfirmModal
+              onConfirm={confirmQuitGame}
+              onCancel={cancelQuit}
+            />
           </div>
         </div>
       )}

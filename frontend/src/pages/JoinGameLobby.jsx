@@ -56,14 +56,12 @@ export default function JoinGameLobby() {
   const [publicGames, setPublicGames] = useState([]);
   const [loadingGames, setLoadingGames] = useState(true);
 
-
   // const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
   const base =
-  import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim() !== ""
-    ? import.meta.env.VITE_API_URL.replace(/\/$/, "")
-    : window.location.origin.replace(/\/$/, "");
+    import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim() !== ""
+      ? import.meta.env.VITE_API_URL.replace(/\/$/, "")
+      : window.location.origin.replace(/\/$/, "");
   const API_URL = `${base}/api`;
-  
 
   // 🔄 Fetch public games from API
   const fetchPublicGames = async () => {
@@ -196,7 +194,7 @@ export default function JoinGameLobby() {
 
   return (
     <div
-      className="min-h-screen bg-smart-dark-blue text-smart-white overflow-hidden bg-cover bg-center bg-no-repeat"
+      className="min-h-screen bg-smart-dark-blue text-smart-white overflow-y-auto bg-cover bg-center bg-no-repeat"
       style={{
         backgroundImage: `url(${backgroundJoin})`,
       }}
@@ -210,7 +208,7 @@ export default function JoinGameLobby() {
       </button>
 
       {/* Main Content Panel */}
-      <div className="px-4 py-10 flex items-center justify-center min-h-screen">
+      <div className="px-4 py-10 flex items-center justify-center">
         <div className="bg-smart-light-blue/90 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/20 max-w-3xl w-full space-y-8">
           {/* Heading */}
           <div className="text-center mb-8">

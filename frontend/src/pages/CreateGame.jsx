@@ -301,7 +301,7 @@ export default function CreateGame() {
 
   return (
     <div
-      className="min-h-screen bg-smart-dark-blue text-smart-white overflow-hidden bg-cover bg-center bg-no-repeat"
+      className="min-h-screen bg-smart-dark-blue text-smart-white overflow-y-auto bg-cover bg-center bg-no-repeat"
       style={{
         backgroundImage: `url(${backgroundCreate})`,
       }}
