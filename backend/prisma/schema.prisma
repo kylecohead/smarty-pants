@@ -73,18 +73,19 @@ model User {
 }
 
 model Match {
-  id          Int           @id @default(autoincrement())
-  title       String
-  category    String
-  difficulty  String?
-  isPublic    Boolean       @default(true)
-  maxPlayers  Int           @default(5)
-  timeLimit   Int           @default(10) // seconds per question
-  status      MatchStatus   @default(LOBBY)
-  completed   Boolean       @default(false) // true only if all questions answered by all active players
-  createdAt   DateTime      @default(now())
-  startedAt   DateTime?
-  finishedAt  DateTime?
+  id                Int           @id @default(autoincrement())
+  title             String
+  category          String
+  difficulty        String?
+  isPublic          Boolean       @default(true)
+  maxPlayers        Int           @default(5)
+  timeLimit         Int           @default(10) // seconds per question
+  status            MatchStatus   @default(LOBBY)
+  completed         Boolean       @default(false) // true only if all questions answered by all active players
+  createdAt         DateTime      @default(now())
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  scheduledStartAt  DateTime? // When set, the lobby shows countdown, host auto-starts at this time
 
   // Relations - CASCADE when host is deleted
   hostId Int

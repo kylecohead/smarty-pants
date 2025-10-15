@@ -111,6 +111,8 @@ export default function CreateGame() {
   const [invited, setInvited] = useState([]); // Array of invited user objects {id, username}
   const [modeIndex, setModeIndex] = useState(0); // Currently selected game mode index
   const [username, setUsername] = useState(""); // Current user's username
+  const [scheduleMode, setScheduleMode] = useState('now');
+  const [delayMinutes, setDelayMinutes] = useState(5);
 
   const [secPerQ, setSecPerQ] = useState(() => {
     if (typeof window !== "undefined") {
@@ -263,6 +265,9 @@ export default function CreateGame() {
           maxPlayers: maxPlayers,
           numQuestions: numQuestions,
           timeLimit: secPerQ, // seconds per question
+
+          isScheduled: scheduleMode === 'schedule', // defines whether the match is scheduled or not
+          scheduledDelayMinutes: scheduleMode === 'schedule' ? delayMinutes : undefined,
         }),
       });
 
@@ -379,6 +384,56 @@ export default function CreateGame() {
                       {maxPlayers}
                     </span>
                   </div>
+                </div>
+                {/** Schedule */}
+                <div className="mt-6">
+                  <SectionTitle color={colors.accentB}>Start Time</SectionTitle>
+
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="scheduleMode"
+                        value="now"
+                        checked={scheduleMode === 'now'}
+                        onChange={() => setScheduleMode('now')}
+                      />
+                      <span>Start now</span>
+                    </label>
+
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="scheduleMode"
+                        value="schedule"
+                        checked={scheduleMode === 'schedule'}
+                        onChange={() => setScheduleMode('schedule')}
+                      />
+                      <span>Schedule start</span>
+                    </label>
+                  </div>
+
+                  {scheduleMode === 'schedule' && (
+                    <div className="mt-3">
+                      <label className="block text-white/90 text-sm">
+                        Starts in (minutes)
+                      </label>
+                      <div className="flex items-center gap-4 mt-1">
+                        <input
+                          type="range"
+                          min={1}
+                          max={60}
+                          step={1}
+                          value={delayMinutes}
+                          onChange={(e) => setDelayMinutes(parseInt(e.target.value, 10))}
+                          className="w-full accent-white"
+                        />
+                        <span className="inline-block rounded-xl border border-white/20 bg-white/10 text-white text-xs px-2 py-1">
+                          {delayMinutes} min
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

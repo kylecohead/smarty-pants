@@ -51,6 +51,8 @@ export default function Lobby() {
   const [maxPlayers, setMaxPlayers] = useState(6);
   const [socketConnected, setSocketConnected] = useState(false);
   const [matchDetails, setMatchDetails] = useState(null);
+  const [remainingMs, setRemainingMs] = useState(null); // count down for scheduled matches
+  const [hasAutoStarted, setHasAutoStarted] = useState(false);
 
   const socketRef = useRef(null);
 
@@ -239,6 +241,33 @@ export default function Lobby() {
     })();
   }, [matchId, currentUser]);
 
+  // Compute countdown
+  useEffect(() => {
+    const scheduledStart = matchDetails?.scheduledStartAt;
+    if (!scheduledStart) { setRemainingMs(null); return; }
+
+    const target = new Date(scheduledStart).getTime();
+    const tick = () => {
+      const now = Date.now();
+      setRemainingMs(Math.max(0, target - now));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [matchDetails?.scheduledStartAt]);
+
+  useEffect(() => {
+    if (!isHost || hasAutoStarted == null) return;
+    if (remainingMs === 0 && !hasAutoStarted) {
+      const socket = socketRef.current;
+      if (socket && socket.connected) {
+        console.log('⏱️ Countdown reached zero — auto-starting match');
+        socket.emit("startMatch", { matchId });
+        setHasAutoStarted(true);
+      }
+    }
+  }, [remainingMs, isHost, hasAutoStarted, matchId]);
+
   const isLobbyFull = players.length >= (maxPlayers || 6);
 
   const handleStartGame = () => {
@@ -253,6 +282,15 @@ export default function Lobby() {
     console.log("🚀 Starting match:", matchId);
     socket.emit("startMatch", { matchId });
   };
+
+  // Helper to format time
+  function formatCountdown(ms) {
+    if (ms == null) return '--:--';
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const m = Math.floor(total / 60).toString().padStart(2, '0');
+    const s = (total % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
 
   return (
     <div
@@ -298,6 +336,17 @@ export default function Lobby() {
                     } / ${maxPlayers}`
                   : "Connecting to server..."}
               </div>
+
+              {/** Countdown if scheduled */}
+              {matchDetails?.scheduledStartAt && (
+                <div className="ml-3 inline-flex items-center gap-2 rounded-lg bg-smart-yellow px-3 py-1">
+                  <span className="text-black text-sm font-semibold">Starts in:</span>
+                  <span className="text-black text-sm font-bold tabular-nums">
+                    {formatCountdown(remainingMs)}
+                  </span>
+                </div>
+              )}
+
               <div className="absolute right-0 inline-block bg-smart-pink rounded-lg px-3 py-1">
                 <span className="text-white text-sm font-semibold mr-2">
                   Code:
