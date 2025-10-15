@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
+// Runtime reference to Socket.IO server so admin routes can emit and inspect matches
+let ioServer = null;
 
 /**
  * In-memory runtime session store
@@ -636,6 +638,9 @@ export default function setupSocket(server) {
     });
   });
 
+  // Store runtime io reference for admin helpers
+  ioServer = io;
+
   console.log("🎯 Socket.IO setup complete with tiebreaker logic");
   return io;
 }
@@ -716,4 +721,150 @@ function showQuestionResults(io, matchId) {
     stillThere.advanceTimeout = null;
     sendQuestion(io, matchId);
   }, 5000); // 5 seconds to view results
+}
+
+/**
+ * Return a summary of active matches for admin UI
+ */
+export function getActiveMatchesSummary() {
+  const out = [];
+  for (const [matchId, match] of activeMatches.entries()) {
+    const players = [...match.players.values()].map((p) => ({
+      userId: p.userId,
+      username: p.username,
+      avatarUrl: p.avatarUrl,
+      score: match.scores[p.username] || 0,
+    }));
+
+    const hostPlayer = players.find((p) => p.userId === match.hostId) || null;
+
+    out.push({
+      matchId,
+      hostId: match.hostId,
+      hostUsername: hostPlayer?.username || null,
+      status: match.status || "UNKNOWN",
+      started: !!match.started,
+      questionIndex: match.questionIndex || 0,
+      totalQuestions: match.questions?.length || 0,
+      players,
+    });
+  }
+  return out;
+}
+
+/**
+ * Admin: Kick a player from an active match. Sends a direct socket message to the player's sockets.
+ * Marks match as incomplete (completed=false) so stats won't be saved.
+ */
+export async function adminKickPlayer(matchId, userId) {
+  if (!ioServer) throw new Error("Socket server not initialized");
+  const match = activeMatches.get(String(matchId));
+  if (!match) {
+    throw new Error("Match not found or not active");
+  }
+
+  // Find all socketIds for this user in the match
+  const kickedSockets = [];
+  for (const [socketId, p] of match.players.entries()) {
+    if (p.userId === Number(userId)) {
+      const sock = ioServer.sockets.sockets.get(socketId);
+      if (sock) {
+        // Notify the kicked socket directly
+        sock.emit("kickedByAdmin", {
+          message: "You were removed from the match by an administrator. This game will not count in your stats.",
+          matchId: Number(matchId),
+        });
+      }
+      kickedSockets.push(socketId);
+      // Remove from players map
+      match.players.delete(socketId);
+    }
+  }
+
+  // Update DB: mark match as incomplete if it is active
+  try {
+    if (match.status === "ACTIVE") {
+      await prisma.match.update({
+        where: { id: Number(matchId) },
+        data: { completed: false },
+      });
+    }
+
+    // Also mark the matchPlayer row as disconnected/removed
+    await prisma.matchPlayer.updateMany({
+      where: { matchId: Number(matchId), userId: Number(userId) },
+      data: { connected: false },
+    });
+  } catch (err) {
+    console.error("Error updating DB during adminKickPlayer:", err);
+  }
+
+  // Broadcast updated players list to remaining participants
+  emitPlayers(ioServer, String(matchId));
+
+  // If match has no players left, clean up
+  if (match.players.size === 0) {
+    clearAdvanceTimeout(match);
+    if (match.questionTimer) {
+      clearTimeout(match.questionTimer);
+      match.questionTimer = null;
+    }
+    activeMatches.delete(String(matchId));
+    try {
+      await prisma.match.update({
+        where: { id: Number(matchId) },
+        data: {
+          status: "FINISHED",
+          completed: false,
+          finishedAt: new Date(),
+        },
+      });
+    } catch (err) {
+      console.error("Error marking empty match finished after admin kick:", err);
+    }
+  }
+
+  return { kickedSockets };
+}
+
+/**
+ * Admin: End a match immediately. Do not compute or save stats for this match.
+ */
+export async function adminEndMatch(matchId) {
+  if (!ioServer) throw new Error("Socket server not initialized");
+  const match = activeMatches.get(String(matchId));
+  if (!match) {
+    throw new Error("Match not found or not active");
+  }
+
+  // Notify all connected sockets in the room about admin termination
+  ioServer.to(`match-${matchId}`).emit("adminEnded", {
+    message: "An administrator has ended this match. No stats will be saved for this game.",
+    matchId: Number(matchId),
+  });
+
+  // Clear timers and remove from memory
+  clearAdvanceTimeout(match);
+  if (match.questionTimer) {
+    clearTimeout(match.questionTimer);
+    match.questionTimer = null;
+  }
+
+  activeMatches.delete(String(matchId));
+
+  // Persist match as finished but incomplete (stats discarded)
+  try {
+    await prisma.match.update({
+      where: { id: Number(matchId) },
+      data: {
+        status: "FINISHED",
+        completed: false,
+        finishedAt: new Date(),
+      },
+    });
+  } catch (err) {
+    console.error("Error updating DB during adminEndMatch:", err);
+  }
+
+  return { ended: true };
 }
