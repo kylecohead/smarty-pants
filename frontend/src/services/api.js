@@ -242,6 +242,27 @@ export const api = {
     if (!res.ok) throw new Error(data.error || 'Failed to fetch leaderboard');
     return data;
   },
+  // ===========================
+  // Admin Endpoints
+  // ===========================
+
+  async getActiveMatches() {
+    return fetchWithAuth(`/admin/matches`);
+  },
+
+  async adminKickPlayer(matchId, userId) {
+    return fetchWithAuth(`/admin/matches/${matchId}/kick`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+  },
+
+  async adminEndMatch(matchId) {
+    return fetchWithAuth(`/admin/matches/${matchId}/end`, {
+      method: 'POST',
+    });
+  },
 };
 
 

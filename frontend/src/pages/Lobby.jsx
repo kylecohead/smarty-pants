@@ -154,6 +154,23 @@ export default function Lobby() {
       navigate("/game");
     });
 
+    // Admin ended the match for everyone
+    socket.on("adminEnded", ({ message }) => {
+      console.log("\u26d4 Admin ended the match:", message);
+      alert(message || "An administrator has ended this match.");
+      // Return to the main game menu
+      socket.disconnect();
+      navigate("/game");
+    });
+
+    // This client was kicked by an admin
+    socket.on("kickedByAdmin", ({ message }) => {
+      console.log("\u26d4 Kicked by admin:", message);
+      alert(message || "You were removed from the match by an administrator.");
+      socket.disconnect();
+      navigate("/game");
+    });
+
     socket.on("disconnect", () => {
       console.warn("⚠️ Disconnected from server");
       setSocketConnected(false);

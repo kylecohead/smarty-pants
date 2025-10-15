@@ -10,6 +10,7 @@
 // ===========================
 
 import { useEffect, useMemo, useState } from "react";
+import { api } from "../services/api";
 import { useNavigate } from "react-router-dom";
 
 const base =
@@ -33,6 +34,8 @@ export default function Admin() {
   const [selectedCategory, setSelectedCategory] = useState("All"); // Filter selection
   const [stats, setStats] = useState(initialStats); // Total count & per-category breakdown
   const [loading, setLoading] = useState(false); // Initial data load
+  const [liveMatches, setLiveMatches] = useState([]); // Active runtime matches for admins
+  const [refreshingMatches, setRefreshingMatches] = useState(false);
   const [importing, setImporting] = useState(false); // Import operation in progress
   const [resetting, setResetting] = useState(false); // Reset operation in progress
   const [error, setError] = useState(null); // Error message display
@@ -51,7 +54,22 @@ export default function Admin() {
   // Initial load on mount
   useEffect(() => {
     loadEverything();
+    loadLiveMatches();
   }, []);
+
+  // Load live matches (admins only)
+  async function loadLiveMatches() {
+    setRefreshingMatches(true);
+    try {
+      const data = await api.getActiveMatches();
+      // data.matches is expected
+      setLiveMatches(data.matches || []);
+    } catch (err) {
+      console.error("Failed to load live matches:", err);
+    } finally {
+      setRefreshingMatches(false);
+    }
+  }
 
   // ===========================
   // Memoized Computed Values
@@ -302,6 +320,39 @@ export default function Admin() {
   async function handleRefresh() {
     if (isBusy) return;
     await loadEverything();
+    await loadLiveMatches();
+  }
+
+  async function handleAdminKick(matchId, userId) {
+    const ok = window.confirm(
+      "Kick this player from the match? They will receive a message and this game won't count."
+    );
+    if (!ok) return;
+    try {
+      await api.adminKickPlayer(matchId, userId);
+      alert("Player kicked.");
+      await loadLiveMatches();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to kick player. See console for details.");
+    }
+  }
+
+  async function handleAdminEnd(matchId) {
+    const ok = window.confirm(
+      "End this match for all players? No stats will be saved."
+    );
+    if (!ok) return;
+    try {
+      await api.adminEndMatch(matchId);
+      alert("Match ended.");
+      await loadLiveMatches();
+      // Also reload DB-backed matches list
+      await loadEverything();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to end match. See console for details.");
+    }
   }
 
   return (
@@ -329,6 +380,80 @@ export default function Admin() {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8">
+        {/* Live matches panel for admins */}
+        <section className="mb-6">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-bold">Live Matches</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={loadLiveMatches}
+                disabled={refreshingMatches}
+                className="rounded-lg bg-blue-500 px-3 py-1 text-xs font-semibold"
+              >
+                {refreshingMatches ? "Refreshing…" : "Refresh"}
+              </button>
+            </div>
+          </div>
+
+          {liveMatches.length === 0 ? (
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
+              No active matches right now.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {liveMatches.map((m) => (
+                <div
+                  key={m.matchId}
+                  className="rounded-xl border border-white/10 bg-white/5 p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-white/60">
+                        {m.category || "Unknown"} ·{" "}
+                        {m.title || `Match ${m.matchId}`}
+                      </div>
+                      <div className="text-xs text-white/70">
+                        Players: {m.players.length} · Status: {m.status}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAdminEnd(m.matchId)}
+                        className="rounded-md bg-red-600 px-3 py-1 text-xs font-semibold"
+                      >
+                        End Match
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 grid gap-2 md:grid-cols-3">
+                    {m.players.map((p) => (
+                      <div
+                        key={p.userId}
+                        className="flex items-center justify-between rounded-md border border-white/10 px-3 py-2"
+                      >
+                        <div className="text-sm">
+                          <div className="font-semibold">{p.username}</div>
+                          <div className="text-xs text-white/60">
+                            Score: {p.score}
+                          </div>
+                        </div>
+                        <div>
+                          <button
+                            onClick={() => handleAdminKick(m.matchId, p.userId)}
+                            className="rounded-md bg-yellow-500 px-2 py-1 text-xs font-semibold text-black"
+                          >
+                            Kick
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
         <section className="mb-6 grid gap-4 md:grid-cols-3">
           <div className="rounded-xl border border-white/10 bg-white/5 p-4 shadow">
             <p className="text-sm uppercase text-white/60">Total questions</p>

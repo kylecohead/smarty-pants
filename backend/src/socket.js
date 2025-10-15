@@ -774,6 +774,18 @@ export async function adminKickPlayer(matchId, userId) {
           message: "You were removed from the match by an administrator. This game will not count in your stats.",
           matchId: Number(matchId),
         });
+        try {
+          // Ensure the socket leaves the room so it no longer receives room broadcasts
+          sock.leave(`match-${matchId}`);
+        } catch (e) {
+          /* ignore */
+        }
+        try {
+          // Forcefully disconnect the socket to ensure client cleans up
+          sock.disconnect(true);
+        } catch (e) {
+          /* ignore */
+        }
       }
       kickedSockets.push(socketId);
       // Remove from players map
