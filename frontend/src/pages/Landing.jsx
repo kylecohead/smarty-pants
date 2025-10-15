@@ -11,6 +11,8 @@ import React, { useState, useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import ProfileCard from "../components/ProfileCard.jsx";
 import backgroundLanding from "../assets/background_landing.jpg";
+import { api } from "../services/api.js";
+
 import { isAuthenticated, authenticatedFetch } from "../utils/auth.js";
 import {
   fetchNotifications,
@@ -258,6 +260,30 @@ export default function Landing() {
     navigate("/");
   };
 
+  // This is only to test API's=============================
+  const handleTestAPI = async () => {
+    try {
+      if (!user) {
+        console.log("⚠️ No user loaded yet.");
+        return;
+      }
+
+      console.log(`🚀 Testing API for user ID: ${user.id}`);
+
+      // Example 1: test getCurrentUser()
+      const me = await api.getCurrentUser();
+      console.log("✅ getCurrentUser() success:", me);
+
+      // Example 2: test incrementGamesPlayed()
+      const result = await api.incrementGamesPlayed(user.id);
+
+      console.log("✅ incrementGamesPlayed() success:", result);
+    } catch (err) {
+      console.error("❌ API test failed:", err);
+    }
+  };
+// =========================================================
+
   return (
     <div
       className="h-screen bg-smart-dark-blue text-smart-white overflow-hidden bg-cover bg-center bg-no-repeat"
@@ -265,6 +291,7 @@ export default function Landing() {
         backgroundImage: `url(${backgroundLanding})`,
       }}
     >
+
       {/* Header Section - Title, Notifications, and Settings */}
       <div className="px-4 pt-2 pb-1">
         {/* Top Navigation Bar */}

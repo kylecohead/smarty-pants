@@ -161,6 +161,22 @@ export const api = {
     });
   },
 
+// incrementGamesPlayed: async (userId) => {
+//   return fetchWithAuth(`/users/${userId}/increment-games`, { method: "POST" });
+// },
+
+// incrementUserWins: async (userId) => {
+//   return fetchWithAuth(`/users/${userId}/increment-wins`, { method: "POST" });
+// },
+
+// updateHighScore: async (userId, newScore) => {
+//   return fetchWithAuth(`/users/${userId}/update-highscore`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({ score: newScore }),
+//   });
+// },
+
   /**
    * Increment games played for a user once a match ends
    * @param {number} userId  - user ID
@@ -175,11 +191,10 @@ export const api = {
       }
     });
     console.log("🧩 incrementGamesPlayed status:", response.status);
-    const text = await response.text();
-    console.log("🧩 Response body:", text);
-
+    const data = await response.json();
+    console.log("🧩 incrementGamesPlayed data:", data);
     if (!response.ok) throw new Error('Failed to update games played');
-    return response.json();
+    return data;
   },
 
   /**
@@ -217,6 +232,7 @@ export const api = {
     if (!response.ok) throw new Error('Failed to update high score');
     return response.json();
   },
+
 
   /**
    * Get the current leaderboard 
