@@ -67,9 +67,45 @@ export default function GameOverScreen({ winner, score, finalLeaderboard }) {
           </p>
         </header>
 
-        {/* Winner Display */}
-        <div className="mx-auto mt-8 flex h-32 w-32 items-center justify-center rounded-2xl text-2xl font-extrabold text-white shadow-lg bg-smart-orange">
-          {winner?.name}
+        {/* Winner Display with Stickman Avatar */}
+        <div className="mx-auto mt-8 flex flex-col items-center">
+          {/* Crown */}
+          <div className="text-6xl mb-2">👑</div>
+          
+          {/* Winner Stickman */}
+          <svg
+            width="120"
+            height="150"
+            viewBox="0 0 140 180"
+            className={`text-${winner?.stickmanColor || 'smart-orange'} mb-4 drop-shadow-lg`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={winner?.stickmanStrokeWidth || 4}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              transform: `scale(${(winner?.stickmanWidth || 80) / 140}, ${(winner?.stickmanHeight || 120) / 180})`,
+              filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.5))'
+            }}
+          >
+            {/* Head */}
+            <circle cx="70" cy="22" r="18" />
+            {/* Body */}
+            <line x1="70" y1="40" x2="70" y2="115" />
+            {/* Left arm */}
+            <line x1="70" y1="70" x2="35" y2="52" />
+            {/* Right arm */}
+            <line x1="70" y1="70" x2="105" y2="52" />
+            {/* Left leg */}
+            <line x1="70" y1="115" x2="43" y2="160" />
+            {/* Right leg */}
+            <line x1="70" y1="115" x2="97" y2="160" />
+          </svg>
+          
+          {/* Winner Name */}
+          <div className="rounded-2xl bg-smart-orange px-6 py-3 text-2xl font-extrabold text-white shadow-lg">
+            {winner?.name}
+          </div>
         </div>
 
         {/* Your Score */}
@@ -80,7 +116,7 @@ export default function GameOverScreen({ winner, score, finalLeaderboard }) {
           </span>
         </p>
 
-        {/* Final Leaderboard */}
+        {/* Final Leaderboard with Mini Avatars */}
         <section className="mt-10 overflow-hidden rounded-2xl shadow-lg bg-smart-orange">
           <table className="w-full border-collapse text-left text-sm sm:text-base">
             <thead className="bg-black/20 uppercase tracking-[0.25em] text-white">
@@ -104,12 +140,42 @@ export default function GameOverScreen({ winner, score, finalLeaderboard }) {
                     {i + 1}
                   </td>
                   <td className="px-4 py-3 font-medium text-white">
-                    {row.name}
-                    {row.isYou && (
-                      <span className="ml-2 rounded-full bg-smart-green/80 px-2 py-0.5 text-xs font-semibold text-white">
-                        You
-                      </span>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {/* Mini Stickman Avatar */}
+                      <svg
+                        width="24"
+                        height="30"
+                        viewBox="0 0 140 180"
+                        className={`text-${row.stickmanColor || 'smart-white'} flex-shrink-0`}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={row.stickmanStrokeWidth || 2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        {/* Head */}
+                        <circle cx="70" cy="22" r="18" />
+                        {/* Body */}
+                        <line x1="70" y1="40" x2="70" y2="115" />
+                        {/* Left arm */}
+                        <line x1="70" y1="70" x2="35" y2="52" />
+                        {/* Right arm */}
+                        <line x1="70" y1="70" x2="105" y2="52" />
+                        {/* Left leg */}
+                        <line x1="70" y1="115" x2="43" y2="160" />
+                        {/* Right leg */}
+                        <line x1="70" y1="115" x2="97" y2="160" />
+                      </svg>
+                      
+                      <div className="flex flex-col">
+                        <span>{row.name}</span>
+                        {row.isYou && (
+                          <span className="rounded-full bg-smart-green/80 px-2 py-0.5 text-xs font-semibold text-white w-fit">
+                            You
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right font-bold text-white">
                     {row.total}
