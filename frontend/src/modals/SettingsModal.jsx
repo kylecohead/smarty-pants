@@ -1,6 +1,8 @@
 import { NavLink, useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ProfileCard from "../components/ProfileCard";
+import { authenticatedFetch } from "../utils/auth.js";
+import { api } from "../services/api.js";
 
 const tabs = [
   {
@@ -47,8 +49,10 @@ export default function SettingsModal() {
   const [avatar, setAvatar] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Logout modal state
+  // Modal states
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Stick man settings - loaded from database
   const [stickmanStrokeWidth, setStickmanStrokeWidth] = useState(3);
@@ -68,7 +72,43 @@ export default function SettingsModal() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState(null);
 
-  //===============================================
+  // Add scrollbar styles on component mount
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.id = 'settings-scrollbar-styles';
+    style.textContent = `
+      .settings-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #BF00FF #0B1426;
+      }
+      .settings-scrollbar::-webkit-scrollbar {
+        width: 8px;
+      }
+      .settings-scrollbar::-webkit-scrollbar-track {
+        background: #0B1426;
+        border-radius: 4px;
+      }
+      .settings-scrollbar::-webkit-scrollbar-thumb {
+        background: #BF00FF;
+        border-radius: 4px;
+        border: 1px solid #0B1426;
+      }
+      .settings-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #00CFFF;
+      }
+    `;
+    
+    if (!document.querySelector('#settings-scrollbar-styles')) {
+      document.head.appendChild(style);
+    }
+    
+    return () => {
+      const existingStyle = document.querySelector('#settings-scrollbar-styles');
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+    };
+  }, []);
 
   // Fetch current user on mount
   useEffect(() => {
@@ -149,6 +189,33 @@ export default function SettingsModal() {
 
   const handleLogoutCancel = () => {
     setShowLogoutModal(false);
+  };
+
+  // Delete account functions
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true);
+    try {
+      await api.deleteAccount();
+      
+      // Clear tokens and redirect
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('stickmanColor');
+      localStorage.removeItem('stickmanStrokeWidth');
+      localStorage.removeItem('stickmanHeight');
+      localStorage.removeItem('stickmanWidth');
+      setShowDeleteModal(false);
+      navigate('/');
+    } catch (err) {
+      console.error('Delete account failed:', err);
+      alert(err.message || 'Failed to delete account');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
   };
 
   // Upload avatar
@@ -353,6 +420,16 @@ export default function SettingsModal() {
                 className="rounded-lg border-2 border-smart-red bg-smart-red/20 hover:bg-smart-red/30 px-6 py-4 font-heading text-sm tracking-wide text-smart-red transition-colors w-full text-center"
               >
                 LOG OUT
+              </button>
+            </div>
+
+            {/* Delete Account Button */}
+            <div className="mt-3">
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="rounded-lg border-2 border-smart-red bg-smart-red/10 hover:bg-smart-red/20 px-6 py-4 font-heading text-xs tracking-wide text-smart-red transition-colors w-full text-center"
+              >
+                DELETE ACCOUNT
               </button>
             </div>
           </aside>
@@ -762,7 +839,7 @@ export default function SettingsModal() {
             )}
 
             {active === "4" && (
-              <div>
+              <div className="h-full flex flex-col">
                 <h3 className="mb-4 text-2xl font-heading text-smart-purple">
                   🎯 MATCH HISTORY
                 </h3>
@@ -774,36 +851,38 @@ export default function SettingsModal() {
                 ) : matchHistory.length === 0 ? (
                   <p className="text-smart-purple">No matches yet—go play a game!</p>
                 ) : (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {matchHistory.map((m) => {
-                      const maxScore = Math.max(1, userStats.highScore || 0);
-                      const pct = Math.min(100, Math.round((m.score / maxScore) * 100));
-                      return (
-                        <div
-                          key={`${m.id}-${m.date}`}
-                          className="rounded-xl border-2 border-smart-purple bg-smart-black/30 p-4 hover:border-smart-light-blue transition"
-                        >
-                          <div className="flex items-center justify-between text-lg font-body text-smart-purple">
-                            <span>{new Date(m.date).toLocaleDateString()}</span>
-                            <span className="uppercase text-smart-purple">{m.category}</span>
+                  <div className="flex-1 overflow-y-auto max-h-96 pr-2 settings-scrollbar">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {matchHistory.map((m) => {
+                        const maxScore = Math.max(1, userStats.highScore || 0);
+                        const pct = Math.min(100, Math.round((m.score / maxScore) * 100));
+                        return (
+                          <div
+                            key={`${m.id}-${m.date}`}
+                            className="rounded-xl border-2 border-smart-purple bg-smart-black/30 p-4 hover:border-smart-light-blue transition"
+                          >
+                            <div className="flex items-center justify-between text-lg font-body text-smart-purple">
+                              <span>{new Date(m.date).toLocaleDateString()}</span>
+                              <span className="uppercase text-smart-purple">{m.category}</span>
+                            </div>
+                            <p className="mt-2 text-xl font-body font-bold text-smart-purple">
+                              Score: {m.score}
+                            </p>
+                            <p className="text-lg font-body text-smart-purple">
+                              Placement: #{m.placement}
+                            </p>
+                            <div className="mt-3 h-2 w-full rounded-full bg-smart-black overflow-hidden">
+                              <div
+                                className={`h-2 rounded-full ${
+                                  m.placement === 1 ? "bg-smart-yellow" : "bg-smart-purple"
+                                }`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
                           </div>
-                          <p className="mt-2 text-xl font-body font-bold text-smart-purple">
-                            Score: {m.score}
-                          </p>
-                          <p className="text-lg font-body text-smart-purple">
-                            Placement: #{m.placement}
-                          </p>
-                          <div className="mt-3 h-2 w-full rounded-full bg-smart-black overflow-hidden">
-                            <div
-                              className={`h-2 rounded-full ${
-                                m.placement === 1 ? "bg-smart-yellow" : "bg-smart-purple"
-                              }`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -834,6 +913,38 @@ export default function SettingsModal() {
                 className="rounded-xl border-2 border-smart-red bg-smart-red hover:bg-smart-red/80 px-6 py-2 font-button text-smart-white transition-colors"
               >
                 LOGOUT
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="max-w-md mx-4 rounded-2xl bg-smart-dark-blue border-2 border-smart-red p-6 shadow-xl">
+            <h3 className="mb-4 text-2xl font-heading text-smart-red text-center">
+              ⚠️ DELETE ACCOUNT
+            </h3>
+            <p className="mb-6 text-center text-smart-white font-body">
+              Are you sure you want to permanently delete your account? 
+              <br />
+              <span className="text-smart-red font-bold">This action cannot be undone!</span>
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={handleDeleteCancel}
+                disabled={deleteLoading}
+                className="rounded-xl border-2 border-smart-white/30 bg-smart-white/10 hover:bg-smart-white/20 px-6 py-2 font-button text-smart-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteLoading}
+                className="rounded-xl border-2 border-smart-red bg-smart-red hover:bg-smart-red/80 px-6 py-2 font-button text-smart-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deleteLoading ? "Deleting..." : "DELETE FOREVER"}
               </button>
             </div>
           </div>

@@ -77,6 +77,16 @@ export const api = {
     return fetchWithAuth("/users/me");
   },
 
+  /**
+   * Delete current user account
+   * @returns {Promise<object>} - Deletion confirmation
+   */
+  async deleteAccount() {
+    return fetchWithAuth("/users/me", {
+      method: "DELETE",
+    });
+  },
+
   // ===========================
   // Question Endpoints
   // ===========================
@@ -160,22 +170,6 @@ export const api = {
       method: "POST",
     });
   },
-
-// incrementGamesPlayed: async (userId) => {
-//   return fetchWithAuth(`/users/${userId}/increment-games`, { method: "POST" });
-// },
-
-// incrementUserWins: async (userId) => {
-//   return fetchWithAuth(`/users/${userId}/increment-wins`, { method: "POST" });
-// },
-
-// updateHighScore: async (userId, newScore) => {
-//   return fetchWithAuth(`/users/${userId}/update-highscore`, {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({ score: newScore }),
-//   });
-// },
 
   /**
    * Increment games played for a user once a match ends

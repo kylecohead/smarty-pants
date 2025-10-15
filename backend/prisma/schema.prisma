@@ -64,12 +64,10 @@ model User {
   stickmanHeight      Int?    @default(120)
   stickmanWidth       Int?    @default(80)
 
-  // Relations
-  hostedMatches  Match[]       @relation("HostedMatches")
-  matchPlayers   MatchPlayer[]
-  answers        Answer[]
-  
-  // Notifications
+  // Relations with CASCADE DELETE
+  hostedMatches         Match[]        @relation("HostedMatches")
+  matchPlayers          MatchPlayer[]
+  answers               Answer[]
   sentNotifications     Notification[] @relation("SentNotifications")
   receivedNotifications Notification[] @relation("ReceivedNotifications")
 }
@@ -88,13 +86,13 @@ model Match {
   startedAt   DateTime?
   finishedAt  DateTime?
 
-  // Relations
+  // Relations - CASCADE when host is deleted
   hostId Int
-  host   User          @relation("HostedMatches", fields: [hostId], references: [id])
+  host   User @relation("HostedMatches", fields: [hostId], references: [id], onDelete: Cascade)
 
-  players   MatchPlayer[]
-  questions MatchQuestion[]
-  answers   Answer[]
+  players       MatchPlayer[]
+  questions     MatchQuestion[]
+  answers       Answer[]
   notifications Notification[]
 }
 
@@ -107,9 +105,9 @@ model MatchPlayer {
   score     Int      @default(0)
   isReady   Boolean  @default(false)
 
-  // Relations
-  match     Match    @relation(fields: [matchId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  // Relations with CASCADE DELETE
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([matchId, userId]) // prevent duplicate joins
 }
@@ -123,8 +121,8 @@ model Question {
   options    String[]  // store multiple choices
 
   // Relations
-  matches   MatchQuestion[]
-  answers   Answer[]
+  matches MatchQuestion[]
+  answers Answer[]
 }
 
 model MatchQuestion {
@@ -133,8 +131,9 @@ model MatchQuestion {
   questionId Int
   order      Int      // order in match (1st, 2nd, etc.)
 
-  match      Match    @relation(fields: [matchId], references: [id])
-  question   Question @relation(fields: [questionId], references: [id])
+  // CASCADE when match is deleted, but keep questions
+  match    Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Restrict)
 
   @@unique([matchId, questionId])
 }
@@ -145,15 +144,15 @@ model Answer {
   isCorrect  Boolean
   createdAt  DateTime @default(now())
 
-  // Relations
-  userId     Int
-  user       User     @relation(fields: [userId], references: [id])
+  // Relations with CASCADE DELETE
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   questionId Int
-  question   Question @relation(fields: [questionId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Restrict)
 
-  matchId    Int
-  match      Match    @relation(fields: [matchId], references: [id])
+  matchId Int
+  match   Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
@@ -165,13 +164,13 @@ model Notification {
   createdAt DateTime          @default(now())
   readAt    DateTime?
 
-  // Relations
-  senderId   Int
-  sender     User @relation("SentNotifications", fields: [senderId], references: [id])
+  // Relations with CASCADE DELETE
+  senderId Int
+  sender   User @relation("SentNotifications", fields: [senderId], references: [id], onDelete: Cascade)
   
   receiverId Int
-  receiver   User @relation("ReceivedNotifications", fields: [receiverId], references: [id])
+  receiver   User @relation("ReceivedNotifications", fields: [receiverId], references: [id], onDelete: Cascade)
   
-  matchId    Int?
-  match      Match? @relation(fields: [matchId], references: [id])
+  matchId Int?
+  match   Match? @relation(fields: [matchId], references: [id], onDelete: Cascade)
 }

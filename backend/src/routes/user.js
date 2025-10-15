@@ -90,6 +90,26 @@ router.put("/me", authMiddleware, async (req, res) => {
   }
 });
 
+// DELETE current user account
+router.delete("/me", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Delete user from database (this will cascade delete related records if configured)
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: "Account deleted successfully" 
+    });
+  } catch (err) {
+    console.error("❌ DELETE /me error:", err);
+    res.status(500).json({ error: "Failed to delete account" });
+  }
+});
+
 // Get user match history
 router.get('/me/history', authMiddleware, async (req, res) => {
   try {
