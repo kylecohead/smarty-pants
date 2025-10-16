@@ -56,7 +56,7 @@ router.post("/", authMiddleware, async (req, res) => {
         difficulty,
         timeLimit: timeLimitSeconds,
         isPublic: isPublic !== undefined ? Boolean(isPublic) : true,
-        maxPlayers: maxPlayers && maxPlayers >= 2 && maxPlayers <= 20 ? maxPlayers : 5,
+        maxPlayers: maxPlayers && maxPlayers >= 1 && maxPlayers <= 20 ? maxPlayers : 5,
         hostId: userId,
         players: {
           create: { userId } // host auto-joins

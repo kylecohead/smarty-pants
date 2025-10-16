@@ -368,7 +368,7 @@ export default function CreateGame() {
                   <div className="flex items-center gap-4 mt-1">
                     <input
                       type="range"
-                      min={2}
+                      min={1}
                       max={20}
                       step={1}
                       value={maxPlayers}
