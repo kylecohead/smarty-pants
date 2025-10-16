@@ -14,7 +14,7 @@ const router = express.Router();
  * Uses QUESTIONS_PER_GAME constant (default: 5) for number of questions.
  */
 router.post("/", authMiddleware, async (req, res) => {
-  const { title, category, difficulty, numQuestions, timeLimit, isPublic, maxPlayers } = req.body;
+  const { title, category, difficulty, numQuestions, timeLimit, isPublic, maxPlayers, isScheduled, scheduledDelayMinutes } = req.body;
   const userId = req.user.id;
 
   try {
@@ -48,7 +48,16 @@ router.post("/", authMiddleware, async (req, res) => {
     const shuffledQuestions = shuffle(allCategoryQuestions);
     const selectedQuestions = shuffledQuestions.slice(0, questionsCount);
 
-    // Step 3: Create match with questions assigned
+    // Step 3: Scheduling: compute scheduled time (nullable)
+    let scheduled = null;
+    const wantScheduled = Boolean(isScheduled);
+    if (wantScheduled) {
+      if (Number.isFinite(Number(scheduledDelayMinutes))) {
+        scheduled = new Date(Date.now() + Number(scheduledDelayMinutes) * 60_000);
+      }
+    }
+
+    // Step 4: Create match with questions assigned
     const match = await prisma.match.create({
       data: {
         title,
@@ -58,6 +67,7 @@ router.post("/", authMiddleware, async (req, res) => {
         isPublic: isPublic !== undefined ? Boolean(isPublic) : true,
         maxPlayers: maxPlayers && maxPlayers >= 1 && maxPlayers <= 20 ? maxPlayers : 5,
         hostId: userId,
+        scheduledStartAt: scheduled,
         players: {
           create: { userId } // host auto-joins
         },
