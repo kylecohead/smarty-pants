@@ -173,6 +173,25 @@ function endMatch(io, matchId, completed = true) {
     console.log(`  ${index + 1}. ${player.username}: ${player.score} pts, ${player.correctCount}/${player.totalAnswers} correct, ${player.avgTime}ms avg`);
   });
 
+  // 💾 UPDATE ALL PLAYER SCORES IN DATABASE
+  const scoreUpdates = Object.keys(match.scores).map(username => {
+    const player = [...match.players.values()].find(p => p.username === username);
+    if (player) {
+      return prisma.matchPlayer.updateMany({
+        where: { 
+          matchId: Number(matchId), 
+          userId: player.userId 
+        },
+        data: { score: match.scores[username] || 0 }
+      });
+    }
+  }).filter(Boolean);
+
+  // Execute all score updates
+  Promise.all(scoreUpdates).catch(err => {
+    console.error("❌ Failed to update final scores in DB:", err);
+  });
+
   activeMatches.delete(matchId);
   prisma.match
     .update({
@@ -348,7 +367,7 @@ export default function setupSocket(server) {
       origin: (origin, callback) => {
         if (!origin) return callback(null, true);
 
-        // ✅ Allow localhost + any Cloudflare quick tunnel
+        //  Allow localhost + any Cloudflare quick tunnel
         const allowed = origin.match(
           /^(http:\/\/localhost(:\d+)?|http:\/\/127\.0\.0\.1(:\d+)?|https:\/\/.*\.trycloudflare\.com|https:\/\/(www\.)?smartiepants\.art|https:\/\/play\.smartiepants\.art)$/
         );
