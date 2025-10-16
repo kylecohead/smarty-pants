@@ -365,7 +365,7 @@ export default function CreateGame() {
 
             {/* Public vs Private controls */}
             {isPublic ? (
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="mt-4 space-y-6">
                 <div>
                   <label className="block text-white/90 text-sm">
                     Max players
@@ -387,8 +387,7 @@ export default function CreateGame() {
                 </div>
                 {/** Schedule */}
                 <div className="mt-6">
-                  <SectionTitle color={colors.accentB}>Start Time</SectionTitle>
-
+                  <SectionTitle color="#1740d1ff">Start Time</SectionTitle>
                   <div className="flex items-center gap-6">
                     <label className="flex items-center gap-2">
                       <input
