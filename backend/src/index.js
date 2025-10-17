@@ -23,14 +23,14 @@ app.use(
       // Allow requests with no origin (like mobile apps, curl, or same-origin)
       if (!origin) return callback(null, true);
 
-      // Allow local dev + any Cloudflare quick tunnel URL
+      // Allow local dev + any Cloudflare quick tunnel URL and actual deployed domains
       const allowed = origin.match(
         /^(http:\/\/localhost(:\d+)?|http:\/\/127\.0\.0\.1(:\d+)?|https:\/\/.*\.trycloudflare\.com|https:\/\/(www\.)?smartiepants\.art|https:\/\/play\.smartiepants\.art)$/
       );
       if (allowed) {
         callback(null, true);
       } else {
-        console.warn("🚫 Blocked by CORS:", origin);
+        console.warn("Blocked by CORS:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -59,5 +59,5 @@ setupSocket(server);
 // === START SERVER ===
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Backend + Socket.IO running on http://0.0.0.0:${PORT}`);
+  console.log(`Backend + Socket.IO running on http://0.0.0.0:${PORT}`);
 });

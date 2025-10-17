@@ -51,10 +51,41 @@ export default function PlayGame() {
   // Fetch user
   const fetchCurrentUser = async () => {
     try {
+      // Use the same token refresh logic as other components
       const data = await api.getCurrentUser();
       setCurrentUser(data.user);
     } catch (err) {
-      console.error("Failed to fetch user:", err);
+      console.error("❌ Failed to fetch user:", err);
+      
+      // If token is invalid, try to refresh or redirect to login
+      if (err.message.includes('Invalid token') || err.message.includes('Unauthorized')) {
+        console.log("🔄 Token expired, attempting refresh...");
+        
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (refreshToken) {
+          try {
+            // Try to refresh the token
+            const refreshResponse = await api.refreshAccessToken();
+            console.log("✅ Token refreshed successfully");
+            
+            // Retry fetching user data with new token
+            const data = await api.getCurrentUser();
+            setCurrentUser(data.user);
+            console.log("✅ User data fetched after token refresh");
+          } catch (refreshErr) {
+            console.error("❌ Token refresh failed:", refreshErr);
+            // Clear invalid tokens and redirect
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            navigate('/login');  
+          }
+        } else {
+          console.log("❌ No refresh token available");
+          // No refresh token, redirect to login
+          localStorage.removeItem('accessToken');
+          navigate('/login');  // ← Changed from '/auth/login' to '/login'
+        }
+      }
     }
   };
 

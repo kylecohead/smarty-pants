@@ -99,16 +99,17 @@ router.post("/login", async (req, res) => {
 
 // --- REFRESH ---
 router.post("/refresh", (req, res) => {
-  const { token } = req.body;
+  // Fix: Accept both "token" and "refreshToken" formats
+  const refreshToken = req.body.refreshToken || req.body.token;
   
-  if (!token) {
+  if (!refreshToken) {
     console.log("❌ REFRESH: No refresh token provided");
     return res.status(401).json({ error: "No token" });
   }
 
-  console.log(`🔄 REFRESH: Attempting to verify refresh token: ${token.substring(0, 20)}...`);
+  console.log(`🔄 REFRESH: Attempting to verify refresh token: ${refreshToken.substring(0, 20)}...`);
 
-  jwt.verify(token, REFRESH_SECRET, (err, user) => {
+  jwt.verify(refreshToken, REFRESH_SECRET, (err, user) => {
     if (err) {
       console.log(`❌ REFRESH: Token verification failed - ${err.name}: ${err.message}`);
       
@@ -124,10 +125,11 @@ router.post("/refresh", (req, res) => {
       }
     }
 
+    // Fix: Longer expiry time for access token
     const newAccessToken = jwt.sign(
       { id: user.id, role: user.role },
       ACCESS_SECRET,
-      { expiresIn: "1m" }
+      { expiresIn: "30m" }  // ← Changed from "1m" to "30m"
     );
 
     console.log(`✅ REFRESH: Successfully created new access token for user ID ${user.id}`);

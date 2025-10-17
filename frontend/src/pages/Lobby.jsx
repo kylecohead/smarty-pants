@@ -257,13 +257,24 @@ export default function Lobby() {
   }, [matchDetails?.scheduledStartAt]);
 
   useEffect(() => {
-    if (!isHost || hasAutoStarted == null) return;
+    // Only auto-start if:
+    // 1. User is the host
+    // 2. We have a valid countdown
+    // 3. Countdown reached zero
+    // 4. We haven't already auto-started
+    if (!isHost || remainingMs === null) return;
+    
     if (remainingMs === 0 && !hasAutoStarted) {
       const socket = socketRef.current;
       if (socket && socket.connected) {
         console.log('⏱️ Countdown reached zero — auto-starting match');
+        console.log('🔑 Host token being used for auto-start');
+        
+        // This should work since isHost is true and socket has host's token
         socket.emit("startMatch", { matchId });
         setHasAutoStarted(true);
+      } else {
+        console.error('❌ Socket not connected for auto-start');
       }
     }
   }, [remainingMs, isHost, hasAutoStarted, matchId]);
