@@ -90,7 +90,7 @@ router.post("/", authMiddleware, async (req, res) => {
 
     res.json(match);
   } catch (err) {
-    console.error("❌ Create match failed:", err);
+    console.error("Create match failed:", err);
     res.status(500).json({ error: "Failed to create match" });
   }
 });
@@ -125,7 +125,7 @@ router.get("/", authMiddleware, async (req, res) => {
 
     res.json(matches);
   } catch (err) {
-    console.error("❌ Fetch matches failed:", err);
+    console.error("Fetch matches failed:", err);
     res.status(500).json({ error: "Failed to fetch matches" });
   }
 });
@@ -155,7 +155,7 @@ router.post("/:id/join", authMiddleware, async (req, res) => {
 
     res.json(join);
   } catch (err) {
-    console.error("❌ Join match failed:", err);
+    console.error("Join match failed:", err);
     res.status(500).json({ error: "Failed to join match" });
   }
 });
@@ -182,7 +182,7 @@ router.get("/:id", authMiddleware, async (req, res) => {
     if (!match) return res.status(404).json({ error: "Match not found" });
     res.json(match);
   } catch (err) {
-    console.error("❌ Get match failed:", err);
+    console.error("Get match failed:", err);
     res.status(500).json({ error: "Failed to fetch match" });
   }
 });

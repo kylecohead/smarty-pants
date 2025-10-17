@@ -11,11 +11,11 @@ async function main() {
   const questionCount = await prisma.question.count();
   if (questionCount > 0) {
     console.log(
-      `🟡 Database already has ${questionCount} questions — skipping question seeding.`
+      `Database already has ${questionCount} questions — skipping question seeding.`
     );
   } else {
     // Only seed questions if none exist
-    console.log("🧠 No questions found — seeding new ones from OpenTDB...");
+    console.log(" No questions found — seeding new ones from OpenTDB...");
 
     // Clear question-related data (fresh start)
     await prisma.answer.deleteMany();
@@ -28,7 +28,7 @@ async function main() {
       const questions = await fetchCategoryQuestions(id, name, 10);
       if (questions.length < 10) {
         console.warn(
-          `⚠️ Only fetched ${questions.length} questions for "${name}"`
+          `Only fetched ${questions.length} questions for "${name}"`
         );
       }
 
@@ -42,11 +42,11 @@ async function main() {
 
     if (!seededQuestions.length) {
       throw new Error(
-        "❌ No questions were seeded. Check OpenTDB availability."
+        "No questions were seeded. Check OpenTDB availability."
       );
     }
 
-    console.log(`✅ Inserted ${seededQuestions.length} questions.`);
+    console.log(`Inserted ${seededQuestions.length} questions.`);
   }
 
   // Always upsert users and match (safe to rerun)
@@ -149,7 +149,7 @@ async function main() {
     createdUsers.push(user);
   }
 
-  console.log("✅ Seed complete: users and (if empty) questions added.");
+  console.log("Seed complete: users and (if empty) questions added.");
 }
 
 main()

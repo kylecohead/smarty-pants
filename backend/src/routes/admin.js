@@ -36,7 +36,7 @@ router.get("/matches", authMiddleware, requireAdmin, async (req, res) => {
 
     res.json({ matches: enriched });
   } catch (err) {
-    console.error("❌ GET /api/admin/matches error:", err);
+    console.error("GET /api/admin/matches error:", err);
     res.status(500).json({ error: "Failed to fetch active matches" });
   }
 });
@@ -51,7 +51,7 @@ router.post("/matches/:id/kick", authMiddleware, requireAdmin, async (req, res) 
     const result = await adminKickPlayer(matchId, userId);
     res.json({ success: true, ...result });
   } catch (err) {
-    console.error("❌ POST /api/admin/matches/:id/kick error:", err);
+    console.error("POST /api/admin/matches/:id/kick error:", err);
     res.status(500).json({ error: err.message || "Failed to kick player" });
   }
 });
@@ -63,7 +63,7 @@ router.post("/matches/:id/end", authMiddleware, requireAdmin, async (req, res) =
     const result = await adminEndMatch(matchId);
     res.json({ success: true, ...result });
   } catch (err) {
-    console.error("❌ POST /api/admin/matches/:id/end error:", err);
+    console.error("POST /api/admin/matches/:id/end error:", err);
     res.status(500).json({ error: err.message || "Failed to end match" });
   }
 });

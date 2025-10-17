@@ -76,7 +76,7 @@ router.post("/login", async (req, res) => {
     const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "30m" });
     const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
-    console.log(`🔑 LOGIN: Created new tokens for user ${user.username} (ID: ${user.id})`);
+    console.log(`  LOGIN: Created new tokens for user ${user.username} (ID: ${user.id})`);
     console.log(`   Access Token: ${accessToken.substring(0, 20)}...`);
     console.log(`   Refresh Token: ${refreshToken.substring(0, 20)}...`);
 
@@ -92,7 +92,7 @@ router.post("/login", async (req, res) => {
       }
     });
   } catch (err) {
-    console.error("❌ LOGIN error:", err);
+    console.error("LOGIN error:", err);
     res.status(500).json({ error: "Internal server error during login" });
   }
 });
@@ -103,7 +103,7 @@ router.post("/refresh", (req, res) => {
   const refreshToken = req.body.refreshToken || req.body.token;
   
   if (!refreshToken) {
-    console.log("❌ REFRESH: No refresh token provided");
+    console.log("REFRESH: No refresh token provided");
     return res.status(401).json({ error: "No token" });
   }
 
@@ -111,16 +111,16 @@ router.post("/refresh", (req, res) => {
 
   jwt.verify(refreshToken, REFRESH_SECRET, (err, user) => {
     if (err) {
-      console.log(`❌ REFRESH: Token verification failed - ${err.name}: ${err.message}`);
+      console.log(`REFRESH: Token verification failed - ${err.name}: ${err.message}`);
       
       if (err.name === 'TokenExpiredError') {
-        console.log(`🕒 REFRESH: Refresh token expired at ${err.expiredAt}`);
+        console.log(`REFRESH: Refresh token expired at ${err.expiredAt}`);
         return res.status(403).json({ error: "Refresh token expired" });
       } else if (err.name === 'JsonWebTokenError') {
-        console.log(`🔒 REFRESH: Invalid refresh token format`);
+        console.log(`REFRESH: Invalid refresh token format`);
         return res.status(403).json({ error: "Invalid refresh token" });
       } else {
-        console.log(`🔒 REFRESH: Other JWT error: ${err.name}`);
+        console.log(`REFRESH: Other JWT error: ${err.name}`);
         return res.status(403).json({ error: "Invalid refresh token" });
       }
     }
@@ -132,7 +132,7 @@ router.post("/refresh", (req, res) => {
       { expiresIn: "30m" }  // ← Changed from "1m" to "30m"
     );
 
-    console.log(`✅ REFRESH: Successfully created new access token for user ID ${user.id}`);
+    console.log(`REFRESH: Successfully created new access token for user ID ${user.id}`);
     console.log(`   New Access Token: ${newAccessToken.substring(0, 20)}...`);
 
     res.json({ accessToken: newAccessToken, role: user.role });

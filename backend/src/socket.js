@@ -45,7 +45,7 @@ async function getQuestionsFromDB() {
       answer: q.correct,
     }));
   } catch (err) {
-    console.error("❌ Failed to fetch questions from DB:", err);
+    console.error("Failed to fetch questions from DB:", err);
     return [];
   }
 }
@@ -162,18 +162,18 @@ function endMatch(io, matchId, completed = true) {
   });
 
   if (isTie) {
-    console.log(`🤝 Match ${matchId} ended in a ${tiedPlayers.length}-way tie between: ${tiedPlayers.map(p => p.username).join(', ')}`);
+    console.log(`Match ${matchId} ended in a ${tiedPlayers.length}-way tie between: ${tiedPlayers.map(p => p.username).join(', ')}`);
   } else {
-    console.log(`🏆 Match ${matchId} winner: ${winner.username} (${winner.score} pts, ${winner.correctCount} correct, ${winner.avgTime}ms avg)`);
+    console.log(`Match ${matchId} winner: ${winner.username} (${winner.score} pts, ${winner.correctCount} correct, ${winner.avgTime}ms avg)`);
   }
 
   // Log full ranking for debugging
-  console.log(`📊 Final ranking for match ${matchId}:`);
+  console.log(`Final ranking for match ${matchId}:`);
   ranking.forEach((player, index) => {
     console.log(`  ${index + 1}. ${player.username}: ${player.score} pts, ${player.correctCount}/${player.totalAnswers} correct, ${player.avgTime}ms avg`);
   });
 
-  // 💾 UPDATE ALL PLAYER SCORES IN DATABASE
+  // UPDATE ALL PLAYER SCORES IN DATABASE
   const scoreUpdates = Object.keys(match.scores).map(username => {
     const player = [...match.players.values()].find(p => p.username === username);
     if (player) {
@@ -189,7 +189,7 @@ function endMatch(io, matchId, completed = true) {
 
   // Execute all score updates
   Promise.all(scoreUpdates).catch(err => {
-    console.error("❌ Failed to update final scores in DB:", err);
+    console.error("Failed to update final scores in DB:", err);
   });
 
   activeMatches.delete(matchId);
@@ -227,7 +227,7 @@ function sendQuestion(io, matchId) {
   const questionDurationMs = (match.timeLimit || 10) * 1000;
 
   console.log(
-    `🧠 Sending question ${match.questionIndex + 1}/${
+    `Sending question ${match.questionIndex + 1}/${
       match.questions.length
     } for match ${matchId} (${match.timeLimit}s)`
   );
@@ -242,7 +242,7 @@ function sendQuestion(io, matchId) {
   // Start timer for synchronized leaderboard display
   // Leaderboard shows ONLY when timer expires, not when all players answer
   match.questionTimer = setTimeout(() => {
-    console.log(`⏰ Question timer expired - showing synchronized leaderboard`);
+    console.log(`Question timer expired - showing synchronized leaderboard`);
     showQuestionResults(io, matchId);
   }, questionDurationMs);
 }
@@ -252,7 +252,7 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
   if (!matchId || !userId) return;
 
   console.log(
-    `🚪 ${username || socket.id} ${
+    `${username || socket.id} ${
       manual ? "manually left" : "disconnected from"
     } match ${matchId}`
   );
@@ -274,7 +274,7 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
         (p) => p.userId === userId
       );
       if (player && !player.disconnected) {
-        console.log(`🔄 ${username} reconnected to match ${matchId}`);
+        console.log(`${username} reconnected to match ${matchId}`);
         return;
       }
 
@@ -288,7 +288,7 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
       // If host leaves, end the match for everyone
       if (match.hostId === userId) {
         console.log(
-          `👑 Host ${username} left match ${matchId} - ending game for all players`
+          `Host ${username} left match ${matchId} - ending game for all players`
         );
 
         // Clear all timers
@@ -318,7 +318,7 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
         // Clean up the match from memory
         activeMatches.delete(matchId);
         console.log(
-          `❌ Match ${matchId} marked as incomplete - stats discarded`
+          `Match ${matchId} marked as incomplete - stats discarded`
         );
         return; // Exit early since match is ended
       }
@@ -326,7 +326,7 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
       // If non-host player leaves during active game, mark match as incomplete
       if (match.status === "ACTIVE") {
         console.log(
-          `⚠️ Player ${username} left active match ${matchId} - marking as incomplete`
+          `Player ${username} left active match ${matchId} - marking as incomplete`
         );
         // Don't end the match, but mark it as incomplete so stats won't count
         await prisma.match.update({
@@ -350,11 +350,11 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
             finishedAt: new Date(),
           },
         });
-        console.log(`🧹 Cleared empty match ${matchId} - marked incomplete`);
+        console.log(`Cleared empty match ${matchId} - marked incomplete`);
       }
     }, 10000);
   } catch (err) {
-    console.error("❌ Error during player leave:", err.message);
+    console.error("Error during player leave:", err.message);
   }
 }
 
@@ -375,7 +375,7 @@ export default function setupSocket(server) {
         if (allowed) {
           callback(null, true);
         } else {
-          console.warn("🚫 [Socket.IO] Blocked origin:", origin);
+          console.warn("[Socket.IO] Blocked origin:", origin);
           callback(new Error("Not allowed by CORS"));
         }
       },
@@ -434,7 +434,7 @@ export default function setupSocket(server) {
             currentQuestionResponses: new Map(),
             playerStats: {}, // ← NEW: Track stats for tiebreaker
           });
-          console.log(`🆕 Created in-memory session for match ${matchId}`);
+          console.log(`Created in-memory session for match ${matchId}`);
         }
 
         socket.join(`match-${matchId}`);
@@ -480,9 +480,9 @@ export default function setupSocket(server) {
           .catch(console.error);
 
         emitPlayers(io, matchId);
-        console.log(`✅ ${user.username} joined match ${matchId}`);
+        console.log(`${user.username} joined match ${matchId}`);
       } catch (err) {
-        console.error("❌ joinMatch error:", err.message);
+        console.error("joinMatch error:", err.message);
         socket.emit("error", { message: err.message });
       }
     });
@@ -543,7 +543,7 @@ export default function setupSocket(server) {
       match.questionIndex = 0;
 
       console.log(
-        `📚 Loaded ${match.questions.length} questions for match ${matchId}`
+        `Loaded ${match.questions.length} questions for match ${matchId}`
       );
 
       io.to(`match-${matchId}`).emit("matchStarted", { started: true });
@@ -564,7 +564,7 @@ export default function setupSocket(server) {
         return;
       }
 
-      console.log(`📤 [RESEND] Current question for match ${matchId}`);
+      console.log(`[RESEND] Current question for match ${matchId}`);
       socket.emit("newQuestion", {
         index: match.questionIndex,
         total: match.questions.length,
@@ -589,7 +589,7 @@ export default function setupSocket(server) {
 
       // Check if player already answered this question
       if (match.currentQuestionResponses.has(socket.username)) {
-        console.log(`⚠️ ${socket.username} already answered this question`);
+        console.log(`${socket.username} already answered this question`);
         return;
       }
 
@@ -607,7 +607,7 @@ export default function setupSocket(server) {
       match.scores[socket.username] =
         (match.scores[socket.username] || 0) + points;
 
-      // ✨ Track stats for tiebreaker logic
+      // Track stats for tiebreaker logic
       if (!match.playerStats[socket.username]) {
         match.playerStats[socket.username] = {
           correctCount: 0,
@@ -631,7 +631,7 @@ export default function setupSocket(server) {
       });
 
       console.log(
-        `📝 ${socket.username} answered (${match.currentQuestionResponses.size}/${match.players.size}) - waiting for timer`
+        `${socket.username} answered (${match.currentQuestionResponses.size}/${match.players.size}) - waiting for timer`
       );
 
       // Send immediate feedback to just this player
@@ -726,7 +726,7 @@ function showQuestionResults(io, matchId) {
   });
 
   console.log(
-    `📊 Question ${match.questionIndex + 1} results sent to all players`
+    `Question ${match.questionIndex + 1} results sent to all players`
   );
 
   // Clear responses for next question
