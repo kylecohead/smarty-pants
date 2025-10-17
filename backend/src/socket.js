@@ -385,7 +385,7 @@ export default function setupSocket(server) {
   });
 
   io.on("connection", (socket) => {
-    console.log("⚡ Socket connected:", socket.id);
+    console.log(" Socket connected:", socket.id);
 
     // ---------------- JOIN MATCH ----------------
     socket.on("joinMatch", async ({ matchId, token }) => {
@@ -519,7 +519,7 @@ export default function setupSocket(server) {
       });
 
       console.log(
-        `🎮 Host started match ${matchId} with ${match.timeLimit}s per question`
+        ` Host started match ${matchId} with ${match.timeLimit}s per question`
       );
 
       // Fetch questions assigned to this specific match
@@ -660,7 +660,7 @@ export default function setupSocket(server) {
   // Store runtime io reference for admin helpers
   ioServer = io;
 
-  console.log("🎯 Socket.IO setup complete with tiebreaker logic");
+  console.log(" Socket.IO setup complete with tiebreaker logic");
   return io;
 }
 

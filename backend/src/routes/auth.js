@@ -32,7 +32,7 @@ router.post("/signup", async (req, res) => {
     const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
     const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
-    console.log(`🎉 SIGNUP: Created new tokens for user ${user.username} (ID: ${user.id})`);
+    console.log(` SIGNUP: Created new tokens for user ${user.username} (ID: ${user.id})`);
     console.log(`   Access Token: ${accessToken.substring(0, 20)}...`);
     console.log(`   Refresh Token: ${refreshToken.substring(0, 20)}...`);
 
@@ -107,7 +107,7 @@ router.post("/refresh", (req, res) => {
     return res.status(401).json({ error: "No token" });
   }
 
-  console.log(`🔄 REFRESH: Attempting to verify refresh token: ${refreshToken.substring(0, 20)}...`);
+  console.log(` REFRESH: Attempting to verify refresh token: ${refreshToken.substring(0, 20)}...`);
 
   jwt.verify(refreshToken, REFRESH_SECRET, (err, user) => {
     if (err) {
