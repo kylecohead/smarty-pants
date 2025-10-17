@@ -25,8 +25,9 @@ async function main() {
     const seededQuestions = [];
 
     for (const { id, name } of CATEGORY_MAP) {
-      const questions = await fetchCategoryQuestions(id, name, 10);
-      if (questions.length < 10) {
+      // Fetch 20 questions per category 
+      const questions = await fetchCategoryQuestions(id, name, 20);
+      if (questions.length < 20) {
         console.warn(
           `Only fetched ${questions.length} questions for "${name}"`
         );
