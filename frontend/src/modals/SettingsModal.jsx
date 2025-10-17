@@ -453,6 +453,7 @@ export default function SettingsModal() {
                         type="text"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
+                        maxLength={20}
                         className="mt-2 rounded-lg border border-smart-pink bg-[#2d2d3a] px-4 py-3 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink text-lg"
                       />
                     </label>
@@ -464,6 +465,8 @@ export default function SettingsModal() {
                         <input
                           type={showPassword ? "text" : "password"}
                           value={password}
+                          maxLength={20}
+
                           onChange={(e) => setPassword(e.target.value)}
                           className="w-full rounded-lg border border-smart-pink bg-[#2d2d3a] px-4 py-3 pr-12 text-smart-white focus:outline-none focus:ring-2 focus:ring-smart-pink text-lg"
                         />

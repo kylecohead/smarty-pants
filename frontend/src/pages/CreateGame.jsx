@@ -334,6 +334,8 @@ export default function CreateGame() {
               onChange={(e) => setTitle(e.target.value)}
               className="w-full max-w-md text-center rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 px-4 py-3 outline-none text-lg font-semibold placeholder:font-semibold placeholder:uppercase"
               placeholder="GAME NAME"
+              maxLength={20}
+
             />
           </div>
 

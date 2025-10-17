@@ -60,6 +60,8 @@ export default function LoginModal({ mode = "login", onAuth }) {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Username"
+            maxLength={20}
+
             required
             className="w-full rounded-lg bg-[#2d2d3a] px-4 py-2 text-smart-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-smart-light-blue"
           />
@@ -70,6 +72,7 @@ export default function LoginModal({ mode = "login", onAuth }) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder={mode === "login" ? "Username or Email" : "Email"}
           type={mode === "login" ? "text" : "email"}
+          maxLength={20}
           required
           className="w-full rounded-lg bg-[#2d2d3a] px-4 py-2 text-smart-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-smart-light-blue"
         />
@@ -79,6 +82,7 @@ export default function LoginModal({ mode = "login", onAuth }) {
           onChange={(e) => setPassword(e.target.value)}
           type="password"
           placeholder="Password"
+          maxLength={20}
           required
           className="w-full rounded-lg bg-[#2d2d3a] px-4 py-2 text-smart-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-smart-green"
         />
