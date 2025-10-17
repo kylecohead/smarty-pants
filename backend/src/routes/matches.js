@@ -28,27 +28,39 @@ router.post("/", authMiddleware, async (req, res) => {
       ? timeLimit 
       : 10;
 
-    // Step 1: Check if category has enough questions
+    // Build question filter (category + optional difficulty)
+    const questionWhere = { category };
+    // Normalize difficulty to lowercase to match stored OpenTDB values ("easy","medium","hard")
+    let normDifficulty = null;
+    if (difficulty && typeof difficulty === "string") {
+      const norm = difficulty.trim();
+      if (norm.length > 0) {
+        normDifficulty = norm.toLowerCase();
+        questionWhere.difficulty = normDifficulty;
+      }
+    }
+
+    // Check if category/difficulty has enough questions
     const availableQuestions = await prisma.question.count({
-      where: { category }
+      where: questionWhere,
     });
 
     if (availableQuestions < questionsCount) {
-      return res.status(400).json({ 
-        error: `Not enough questions in category "${category}". Available: ${availableQuestions}, Required: ${questionsCount}` 
+      return res.status(400).json({
+        error: `Not enough questions in category "${category}"${questionWhere.difficulty ? ` (difficulty: ${questionWhere.difficulty})` : ""}. Available: ${availableQuestions}, Required: ${questionsCount}`,
       });
     }
 
-    // Step 2: Fetch random questions from the selected category
+    // Fetch random questions from the selected category/difficulty
     const allCategoryQuestions = await prisma.question.findMany({
-      where: { category }
+      where: questionWhere,
     });
 
     // Shuffle and take first questionsCount questions
     const shuffledQuestions = shuffle(allCategoryQuestions);
     const selectedQuestions = shuffledQuestions.slice(0, questionsCount);
 
-    // Step 3: Scheduling: compute scheduled time (nullable)
+    // Scheduling: compute scheduled time (nullable)
     let scheduled = null;
     const wantScheduled = Boolean(isScheduled);
     if (wantScheduled) {
@@ -57,12 +69,12 @@ router.post("/", authMiddleware, async (req, res) => {
       }
     }
 
-    // Step 4: Create match with questions assigned
+    //  Create match with questions assigned
     const match = await prisma.match.create({
       data: {
         title,
         category,
-        difficulty,
+  difficulty: normDifficulty,
         timeLimit: timeLimitSeconds,
         isPublic: isPublic !== undefined ? Boolean(isPublic) : true,
         maxPlayers: maxPlayers && maxPlayers >= 1 && maxPlayers <= 20 ? maxPlayers : 5,
