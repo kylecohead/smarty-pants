@@ -22,7 +22,7 @@
 ## 🗓️ Daily Work Log
 
 | Date           | Member | Branch                         | Description of Work Done                                                               | Commit / Merge Status |
-| -------------- | ------ | ------------------------------ | -------------------------------------------------------------------------------------- | --------------------- | --- |
+| -------------- | ------ | ------------------------------ | -------------------------------------------------------------------------------------- | --------------------- |
 | **2025-09-19** | Nina   | `main`                         | Initialized React project with Vite and Tailwind                                       | ✅ Merged             |
 | **2025-09-19** | Nina   | `main`                         | Initialized all pages & routing to pages                                               | ✅ Merged             |
 | **2025-09-19** | Wikus  | `dev`                          | Set up Express backend, Docker Compose, and initial API routes                         | ✅ Merged             |
@@ -33,15 +33,13 @@
 | **2025-09-25** | Wikus  | `backend-setup`                | Finalized database schema and migrations for Users, Matches, Questions                 | ✅ Merged             |
 | **2025-09-27** | Wikus  | `backend-setup`                | Added token validation middleware and protected route enforcement                      | ✅ Merged             |
 | **2025-09-29** | Kyle   | `feature/kyle-play-game`       | Implemented (hard-coded) multiplayer player game play logic                            | ✅ Merged             |
-| **2025-09-29** | Amy    | `feature/amy-lobby`            | Implement lobby feature, simulating players joining every 2 seconds                    |✅ Merged             |
+| **2025-09-29** | Amy    | `feature/amy-lobby`            | Implement lobby feature, simulating players joining every 2 seconds                    | ✅ Merged             |
 | **2025-09-29** | Wikus  | `feature/wikus-auth`           | Implemented frontend JWT authentication; connected login/signup to backend             | ✅ Merged             |
-| **2025-09-30** | Wikus  | `feature/wikus-auth`           | Fixed routing issues (Nginx rewrite); improved login/signup modal UX                   | ✅ Merged             |     |
+| **2025-09-30** | Wikus  | `feature/wikus-auth`           | Fixed routing issues (Nginx rewrite); improved login/signup modal UX                   | ✅ Merged             |
 | **2025-10-01** | Kyle   | `feature/kyle-play-game`       | Changed game play styling and implemented user set question timing                     | ✅ Merged             |
-| **2025-10-02** | Wikus  | `feature/wikus-uploads`        | Added avatar upload endpoint and integrated URL-based avatar storage                   | ✅ 
-Merged  
-| **2025-10-02** | Amy    | `feature/amy-lobby`            | Merged lobby into dev                                                                  | ✅ 
-Merged  
-| **2025-10-03** | Kyle   | `feature/kyle-play-game`       | Refactroed game play into multiple files                                               | ✅ Merged             |
+| **2025-10-02** | Wikus  | `feature/wikus-uploads`        | Added avatar upload endpoint and integrated URL-based avatar storage                   | ✅ Merged             |
+| **2025-10-02** | Amy    | `feature/amy-lobby`            | Merged lobby into dev                                                                  | ✅ Merged             |
+| **2025-10-03** | Kyle   | `feature/kyle-play-game`       | Refactored game play into multiple files                                               | ✅ Merged             |
 | **2025-10-03** | Kyle   | `feature/kyle-play-game`       | Add quit button to game play                                                           | ✅ Merged             |
 | **2025-10-03** | Wikus  | `feature/wikus-docker`         | Created multi-stage Dockerfile and Makefile; added Cloudflare Tunnel support           | ✅ Merged             |
 | **2025-10-06** | Kyle   | `feature/scraper`              | Integrate database questions with category selection                                   | ✅ Merged             |
@@ -81,14 +79,14 @@ Merged
 | **2025-10-10** | Kyle   | `feature/public-games`         | Implemented complete/incomplete game validation (stats discarded for incomplete games) | ✅ Merged             |
 | **2025-10-11** | Conrad | `feature/conrad-admin`         | Implemented refresh tokens and the send, receive, accept and decline of game invites.  | ✅ Merged             |
 | **2025-10-12** | Kyle   | `feature/correct`              | Added correct answer viewing after each question and lobby max players                 | ✅ Merged             |
-|**2025-10-12**  | Amy    | `feature/amy-scores`           | Add number-of-matches-played logic; add game wins counting; add best-score logic       | ✅ Merged             |
-|**2025-10-12**  | Amy    | `feature/amy-scores`           | Settings page shows user-specific data (stats)                                         | ✅ Merged             |
+| **2025-10-12** | Amy    | `feature/amy-scores`           | Add number-of-matches-played logic; add game wins counting; add best-score logic       | ✅ Merged             |
+| **2025-10-12** | Amy    | `feature/amy-scores`           | Settings page shows user-specific data (stats)                                         | ✅ Merged             |
 | **2025-10-13** | Amy    | `feature/amy-scores`           | Add leaderboard logic                                                                  | ✅ Merged             |
 | **2025-10-13** | Amy    | `feature/amy-scores`           | Add user match history to Landing page                                                 | ✅ Merged             |
-| **2025-10-15** | Amy    |	`feature/amy-scheduling`       | Initial scheduling logic for creating matches	                                        | ✅ Merged             |
-| **2025-10-16** | Amy	  | `feature/amy-scheduling`       | Working game scheduling; add scheduling UI styling	                                    | ✅ Merged             |
-| **2025-10-18** | Amy    |	`feature/amy-scores`           | Remove notifications on leaderboard (cleanup/UX)                                       | ✅ Merged             |
----
+| **2025-10-15** | Amy    | `feature/amy-scheduling`       | Initial scheduling logic for creating matches                                          | ✅ Merged             |
+| **2025-10-16** | Amy    | `feature/amy-scheduling`       | Working game scheduling; add scheduling UI styling                                     | ✅ Merged             |
+| **2025-10-18** | Amy    | `feature/amy-scores`           | Remove notifications on leaderboard (cleanup/UX)                                       | ✅ Merged             |
+
 
 ## 🕒 Last Updated
 
