@@ -14,14 +14,31 @@ const router = express.Router();
  * Uses QUESTIONS_PER_GAME constant (default: 5) for number of questions.
  */
 router.post("/", authMiddleware, async (req, res) => {
-  const { title, category, difficulty, numQuestions, timeLimit, isPublic, maxPlayers, isScheduled, scheduledDelayMinutes } = req.body;
+  const {
+    title,
+    category,
+    difficulty,
+    numQuestions,
+    timeLimit,
+    isPublic,
+    maxPlayers,
+    isScheduled,
+    scheduledDelayMinutes,
+    questionsPerRound,   
+    totalRounds         
+  } = req.body;
+
   const userId = req.user.id;
 
   try {
     // Validate numQuestions (3-10 range, default to 5)
-    const questionsCount = numQuestions && numQuestions >= 3 && numQuestions <= 10
-      ? numQuestions
-      : 5;
+    // const questionsCount = numQuestions && numQuestions >= 3 && numQuestions <= 10
+    //   ? numQuestions
+    //   : 5;
+
+    const questionsCount = questionsPerRound && questionsPerRound >= 3 && questionsPerRound <= 10
+      ? questionsPerRound
+      : 4;
 
     // Validate timeLimit (5-60 seconds, default to 10)
     const timeLimitSeconds = timeLimit && timeLimit >= 5 && timeLimit <= 60 
