@@ -145,6 +145,23 @@ export function AuthProvider({ children }) {
     console.log('🚀 AuthContext: Initializing auth system...');
     fetchCurrentUser();
 
+    // Listen for localStorage changes (when tokens are stored)
+    const handleStorageChange = (e) => {
+      if (e.key === 'accessToken' || e.key === 'refreshToken') {
+        console.log('🔄 AuthContext: Token storage detected, refreshing user data...');
+        fetchCurrentUser();
+      }
+    };
+
+    // Listen for manual storage events (same window)
+    const handleManualStorageChange = () => {
+      console.log('🔄 AuthContext: Manual token storage detected, refreshing user data...');
+      fetchCurrentUser();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('tokenStored', handleManualStorageChange);
+
     // Set up interval to check token validity and log status
     const interval = setInterval(() => {
       console.log('⏰ AuthContext: Periodic token check...');
@@ -189,6 +206,8 @@ export function AuthProvider({ children }) {
 
     return () => {
       console.log('🛑 AuthContext: Cleaning up auth system...');
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('tokenStored', handleManualStorageChange);
       clearInterval(interval);
     };
   }, []);

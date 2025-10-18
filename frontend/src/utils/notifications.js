@@ -26,6 +26,46 @@ export async function fetchNotifications() {
 }
 
 /**
+ * Send a game invite via email to a user
+ * @param {string} email - Email address of user to invite
+ * @param {number} matchId - ID of match to invite to
+ * @param {string} message - Optional custom message
+ * @returns {Promise<Object>} - Invite response
+ */
+export async function sendEmailInvite(email, matchId, message = null) {
+  try {
+    console.log(`📧 Sending email invite to ${email} for match ${matchId}`);
+    
+    const response = await authenticatedFetch("/api/notifications/invites/email", {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+        matchId,
+        message,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`✅ Email invite sent successfully to ${email}`);
+      return { 
+        success: true, 
+        notification: data.notification,
+        emailSent: data.emailSent,
+        recipient: data.recipient
+      };
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("❌ Failed to send email invite:", response.status, errorData);
+      return { success: false, error: errorData.error || "Failed to send email invite" };
+    }
+  } catch (error) {
+    console.error("❌ Error sending email invite:", error);
+    return { success: false, error: "Network error while sending email invite" };
+  }
+}
+
+/**
  * Send a game invite to another user
  * @param {number} receiverId - ID of user to invite
  * @param {number} matchId - ID of match to invite to

@@ -5,6 +5,7 @@ FROM node:20-alpine AS dev
 
 WORKDIR /app
 
+
 # Install dependencies
 COPY package*.json ./
 RUN npm install

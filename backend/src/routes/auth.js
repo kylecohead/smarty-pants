@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -73,8 +74,8 @@ router.post("/login", async (req, res) => {
     if (!valid) return res.status(400).json({ error: "Invalid credentials" });
 
     const payload = { id: user.id, role: user.role };
-    const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
-    const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
+    const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "1m" });
+    const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "2m" });
 
     console.log(`🔑 LOGIN: Created new tokens for user ${user.username} (ID: ${user.id})`);
     console.log(`   Access Token: ${accessToken.substring(0, 20)}...`);
@@ -135,6 +136,33 @@ router.post("/refresh", (req, res) => {
 
     res.json({ accessToken: newAccessToken, role: user.role });
   });
+});
+
+// --- GET CURRENT USER ---
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        avatarUrl: true,
+        createdAt: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    console.log(`🔍 GET ME: Retrieved user info for ${user.username} (ID: ${user.id})`);
+    res.json({ user });
+  } catch (error) {
+    console.error("❌ Error getting current user:", error);
+    res.status(500).json({ error: "Failed to get current user" });
+  }
 });
 
 export default router;

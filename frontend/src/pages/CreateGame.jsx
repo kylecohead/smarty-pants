@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import backgroundCreate from "../assets/background_create.jpg";
-import { sendGameInvite } from "../utils/notifications.js";
+import { sendGameInvite, sendEmailInvite } from "../utils/notifications.js";
 import { authenticatedFetch } from "../utils/auth.js";
 
 // "Smart" palette — tweak freely to match your design system
@@ -109,6 +109,8 @@ export default function CreateGame() {
   const [maxPlayers, setMaxPlayers] = useState(6); // Maximum number of players allowed
   const [usernameQuery, setUsernameQuery] = useState(""); // Search query for finding users to invite
   const [invited, setInvited] = useState([]); // Array of invited user objects {id, username}
+  const [emailQuery, setEmailQuery] = useState(""); // Email address for sending invites
+  const [emailInvited, setEmailInvited] = useState([]); // Array of email addresses that were invited
   const [modeIndex, setModeIndex] = useState(0); // Currently selected game mode index
   const [username, setUsername] = useState(""); // Current user's username
 
@@ -209,6 +211,24 @@ export default function CreateGame() {
     setInvited((xs) => xs.filter((x) => x.id !== userId));
 
   /**
+   * Add an email to the email invite list
+   * @param {string} email - Email address to invite
+   */
+  const addEmailInvite = (email) => {
+    if (email && !emailInvited.includes(email)) {
+      setEmailInvited((xs) => [...xs, email]);
+      setEmailQuery("");
+    }
+  };
+
+  /**
+   * Remove an email from the email invite list
+   * @param {string} email - Email address to remove
+   */
+  const removeEmailInvite = (email) =>
+    setEmailInvited((xs) => xs.filter((x) => x !== email));
+
+  /**
    * Navigate to previous game mode in carousel
    * Uses modulo to wrap around to end when at beginning
    */
@@ -285,6 +305,26 @@ export default function CreateGame() {
           } catch (inviteError) {
             console.error(
               `❌ Failed to send invite to ${user.username}:`,
+              inviteError
+            );
+          }
+        }
+      }
+
+      // 🔹 Send email invites if any
+      if (emailInvited.length > 0) {
+        console.log(`📧 Sending email invites to ${emailInvited.length} email(s)...`);
+
+        for (const email of emailInvited) {
+          try {
+            const matchName = title || "Untitled Match";
+            const message = `${currentUsername} invited you to join "${matchName}" (${mode.label})`;
+
+            await sendEmailInvite(email, match.id, message);
+            console.log(`✅ Email invite sent to ${email}`);
+          } catch (inviteError) {
+            console.error(
+              `❌ Failed to send email invite to ${email}:`,
               inviteError
             );
           }
@@ -418,15 +458,60 @@ export default function CreateGame() {
                       </div>
                     )}
                   </div>
+                  <div className="relative grow sm:grow-0">
+                    <input
+                      value={emailQuery}
+                      onChange={(e) => setEmailQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && emailQuery.trim() && emailQuery.includes('@')) {
+                          addEmailInvite(emailQuery.trim());
+                        }
+                      }}
+                      placeholder="Email address"
+                      type="email"
+                      className="pl-9 pr-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 w-full sm:w-64 outline-none"
+                    />
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white/60">
+                      📧
+                    </span>
+                    {emailQuery.trim() && emailQuery.includes('@') && (
+                      <button
+                        onClick={() => addEmailInvite(emailQuery.trim())}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white text-sm"
+                      >
+                        Add
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {/* Email invites */}
+                {emailInvited.length > 0 && (
+                  <div className="mt-3">
+                    <label className="block text-white/90 text-sm mb-2">Email Invites</label>
+                    <div className="flex flex-wrap gap-2">
+                      {emailInvited.map((email) => (
+                        <div key={email} className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1 text-sm text-white">
+                          <span>📧 {email}</span>
+                          <button
+                            onClick={() => removeEmailInvite(email)}
+                            className="text-white/60 hover:text-white"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Stacked invited avatars */}
                 <div className="mt-4">
                   <label className="block text-white/90 text-sm">Players</label>
                   <div className="flex items-center gap-2 mt-2">
-                    {invited.length === 0 && (
+                    {invited.length === 0 && emailInvited.length === 0 && (
                       <p className="text-sm text-white/60">
-                        Invite users by username or send the link.
+                        Invite users by username, email, or send the link.
                       </p>
                     )}
                     <div className="flex -space-x-3">
