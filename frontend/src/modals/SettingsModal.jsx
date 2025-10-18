@@ -852,7 +852,7 @@ export default function SettingsModal() {
                 ) : historyError ? (
                   <p className="text-smart-purple">Error: {historyError}</p>
                 ) : matchHistory.length === 0 ? (
-                  <p className="text-smart-purple">No matches yet—go play a game!</p>
+                  <p className="text-smart-purple">No matches yet - go play a game!</p>
                 ) : (
                   <div className="flex-1 overflow-y-auto max-h-96 pr-2 settings-scrollbar">
                     <div className="grid gap-4 md:grid-cols-2">
