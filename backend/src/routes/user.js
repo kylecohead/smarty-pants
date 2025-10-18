@@ -118,7 +118,10 @@ router.get('/me/history', authMiddleware, async (req, res) => {
 
     // Get the user's recent match-player rows (score, category, placement, date played)
     const myRows = await prisma.matchPlayer.findMany({
-      where: { userId },
+      where: { 
+        userId,
+        match: {  completed: true },
+      },
       orderBy: { joinedAt: 'desc' },
       take: limit,
       select: {
