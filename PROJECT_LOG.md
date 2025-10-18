@@ -88,8 +88,15 @@
 | **2025-10-17** | Kyle   | `feature/difficulty`           | Add question difficulty selecting and seed 20 Q's/cat                                  | ✅ Merged             |
 | **2025-10-18** | Amy    | `feature/amy-scores`           | Remove notifications on leaderboard (cleanup/UX)                                       | ✅ Merged             |
 | **2025-10-18** | Kyle   | `feature/adminEdit`            | Add admin feature: edit questions manually                                             | ✅ Merged             |
+| **2025-10-18** | Conrad   | `feature/conrad-admin`       | Added email invites and fixed auth                                                     | ✅ Merged             |
+| **2025-10-18** | Conrad   | `feature/conrad-admin`       | Added scheduling for private games                                                     | ✅ Merged             |
+| **2025-10-18** | Conrad   | `feature/conrad-admin`       | Added multiple rounds                                                                  | ✅ Merged             |
+
 
 ## 🕒 Last Updated
+
+**Timestamp** 2025-10-18 20:45
+**Updated by** Conrad Joubert
 
 **Timestamp** 2025-10-18 14:00
 **Updated by** Kyle Cohead
