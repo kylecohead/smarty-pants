@@ -261,7 +261,7 @@ function showRoundSummary(io, matchId) {
   if (!match) return;
 
   const currentRound = match.roundIndex + 1;
-  console.log(`🏁 Round ${currentRound} finished for match ${matchId}`);
+  console.log(` Round ${currentRound} finished for match ${matchId}`);
 
   // Send round summary event to all players
   io.to(`match-${matchId}`).emit("roundSummary", {
