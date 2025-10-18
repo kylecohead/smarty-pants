@@ -13,7 +13,7 @@
 | -------------------- | -------------- | ------------------------------- | ------------------------------------------------------------------------------------------------- |
 | **Conrad Joubert**   | 26989581       | Game invites and authentication | Send, receive, accept and decline invitations to games to and from players, Refresh token control |
 | **Nina Swart**       | **26970341**   | Frontend Developer              | Styling, landing page, create & join game frontend                                                |
-| **Amy McDermott**    | **26911264**   | idk                             | leaderboard, game scheduling, match history                                              |
+| **Amy McDermott**    | **26911264**   | idk                             | leaderboard, game scheduling, match history                                                       |
 | **Kyle Cohead**      | **25964917**   | Real-time Systems               | Socket.IO setup, live gameplay logic                                                              |
 | **Wikus van Biljon** | **26927543**   | authentication                  | Login and signup, Docker, Socket.IO, version control                                              |
 
@@ -85,10 +85,16 @@
 | **2025-10-13** | Amy    | `feature/amy-scores`           | Add user match history to Landing page                                                 | ✅ Merged             |
 | **2025-10-15** | Amy    | `feature/amy-scheduling`       | Initial scheduling logic for creating matches                                          | ✅ Merged             |
 | **2025-10-16** | Amy    | `feature/amy-scheduling`       | Working game scheduling; add scheduling UI styling                                     | ✅ Merged             |
+| **2025-10-17** | Kyle   | `feature/difficulty`           | Add question difficulty selecting and seed 20 Q's/cat                                  | ✅ Merged             |
 | **2025-10-18** | Amy    | `feature/amy-scores`           | Remove notifications on leaderboard (cleanup/UX)                                       | ✅ Merged             |
 
-
 ## 🕒 Last Updated
+
+**Timestamp** 2025-10-18 13:00
+**Updated by** Kyle Cohead
+
+**Timestamp** 2025-10-18 12:00
+**Updated by** Amy McDermott
 
 **Timestamp:** 2025-10-11 15:30
 **Updated by:** Conrad Joubert
@@ -104,6 +110,3 @@
 
 **Timestamp:** 2025-10-09 9:00
 **Updated by:** Kyle Cohead
-
-**Timestamp** 2025-10-18 12:00
-**Updated by** Amy McDermott
