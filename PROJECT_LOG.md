@@ -87,10 +87,11 @@
 | **2025-10-16** | Amy    | `feature/amy-scheduling`       | Working game scheduling; add scheduling UI styling                                     | ✅ Merged             |
 | **2025-10-17** | Kyle   | `feature/difficulty`           | Add question difficulty selecting and seed 20 Q's/cat                                  | ✅ Merged             |
 | **2025-10-18** | Amy    | `feature/amy-scores`           | Remove notifications on leaderboard (cleanup/UX)                                       | ✅ Merged             |
+| **2025-10-18** | Kyle   | `feature/adminEdit`            | Add admin feature: edit questions manually                                             | ✅ Merged             |
 
 ## 🕒 Last Updated
 
-**Timestamp** 2025-10-18 13:00
+**Timestamp** 2025-10-18 14:00
 **Updated by** Kyle Cohead
 
 **Timestamp** 2025-10-18 12:00
