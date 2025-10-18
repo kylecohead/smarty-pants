@@ -74,7 +74,9 @@ router.post("/", authMiddleware, async (req, res) => {
       data: {
         title,
         category,
-  difficulty: normDifficulty,
+        questionsPerRound,  
+        totalRounds,    
+        difficulty: normDifficulty,
         timeLimit: timeLimitSeconds,
         isPublic: isPublic !== undefined ? Boolean(isPublic) : true,
         maxPlayers: maxPlayers && maxPlayers >= 1 && maxPlayers <= 20 ? maxPlayers : 5,

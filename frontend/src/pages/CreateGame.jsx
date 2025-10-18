@@ -265,8 +265,11 @@ export default function CreateGame() {
           difficulty,
           isPublic: isPublic,
           maxPlayers: maxPlayers,
-          numQuestions: numQuestions,
+          // numQuestions: numQuestions,
           timeLimit: secPerQ, // seconds per question
+
+          questionsPerRound: numQuestions,   // how many per round
+          totalRounds: 3, 
 
           isScheduled: scheduleMode === "schedule", // defines whether the match is scheduled or not
           scheduledDelayMinutes:

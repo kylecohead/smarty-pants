@@ -209,43 +209,76 @@ function sendQuestion(io, matchId) {
   const match = activeMatches.get(matchId);
   if (!match) return;
 
-  if (
-    match.questionIndex >= match.questions.length ||
-    !match.questions[match.questionIndex]
-  ) {
-    endMatch(io, matchId); // Use existing endMatch function for proper cleanup
+  const { questionIndex, questionsPerRound, totalRounds, roundIndex } = match;
+
+  // check for round or match completion
+  if (questionIndex >= (roundIndex + 1) * questionsPerRound) {
+    if (roundIndex + 1 >= totalRounds) {
+      // All rounds done → end match
+      endMatch(io, matchId);
+    } else {
+      // End of current round → show summary screen
+      showRoundSummary(io, matchId);
+    }
     return;
   }
 
-  // Clear any pending "advance to next" timer before sending a fresh Q
-  clearAdvanceTimeout(match);
+  if (!match.questions[questionIndex]) {
+    endMatch(io, matchId);
+    return;
+  }
 
-  // Reset responses for this question
+  // Continue normal question sending below
+  clearAdvanceTimeout(match);
   match.currentQuestionResponses = new Map();
 
-  // Use the match's configured time limit (stored in seconds, convert to ms)
   const questionDurationMs = (match.timeLimit || 10) * 1000;
 
   console.log(
-    `Sending question ${match.questionIndex + 1}/${
-      match.questions.length
-    } for match ${matchId} (${match.timeLimit}s)`
+    `Sending question ${questionIndex + 1}/${match.questions.length} (Round ${match.roundIndex + 1}/${match.totalRounds})`
   );
+
   io.to(`match-${matchId}`).emit("newQuestion", {
-    index: match.questionIndex,
+    index: questionIndex,
     total: match.questions.length,
-    q: match.questions[match.questionIndex].q,
-    options: match.questions[match.questionIndex].options,
-    timeLimit: questionDurationMs, // ms
+    round: match.roundIndex + 1, 
+    q: match.questions[questionIndex].q,
+    options: match.questions[questionIndex].options,
+    timeLimit: questionDurationMs,
   });
 
-  // Start timer for synchronized leaderboard display
-  // Leaderboard shows ONLY when timer expires, not when all players answer
   match.questionTimer = setTimeout(() => {
     console.log(`Question timer expired - showing synchronized leaderboard`);
     showQuestionResults(io, matchId);
   }, questionDurationMs);
 }
+
+// =============================================================
+//  ROUND SUMMARY HANDLER 
+// =============================================================
+function showRoundSummary(io, matchId) {
+  const match = activeMatches.get(matchId);
+  if (!match) return;
+
+  const currentRound = match.roundIndex + 1;
+  console.log(`🏁 Round ${currentRound} finished for match ${matchId}`);
+
+  // Send round summary event to all players
+  io.to(`match-${matchId}`).emit("roundSummary", {
+    round: currentRound,
+    totalRounds: match.totalRounds,
+    scores: match.scores,
+  });
+
+  // Wait 8 seconds, then start next round
+  match.advanceTimeout = setTimeout(() => {
+    match.roundIndex++;
+    match.questionIndex = match.roundIndex * match.questionsPerRound;
+    console.log(`➡️ Starting round ${match.roundIndex + 1} for match ${matchId}`);
+    sendQuestion(io, matchId);
+  }, 8000);
+}
+
 
 async function handlePlayerLeave(io, socket, matchId, manual = false) {
   const { userId, username } = socket;
@@ -415,8 +448,14 @@ export default function setupSocket(server) {
 
         const dbMatch = await prisma.match.findUnique({
           where: { id: Number(matchId) },
-          select: { id: true, status: true, hostId: true },
+          select: {
+            hostId: true,
+            timeLimit: true,
+            questionsPerRound: true, 
+            totalRounds: true,       
+          },
         });
+
         if (!dbMatch) throw new Error("Match not found");
         if (dbMatch.status === "FINISHED")
           throw new Error("Match already ended");
@@ -425,6 +464,9 @@ export default function setupSocket(server) {
           activeMatches.set(matchId, {
             hostId: dbMatch.hostId,
             questionIndex: 0,
+            roundIndex: 0,            
+            totalRounds: 3,           
+            questionsPerRound: 4, 
             questions: [],
             scores: {},
             started: false,
@@ -511,6 +553,8 @@ export default function setupSocket(server) {
       match.started = true;
       match.questionIndex = 0;
       match.timeLimit = dbMatch.timeLimit || 10; // Store timeLimit in seconds
+      match.questionsPerRound = dbMatch.questionsPerRound || 4; 
+      match.totalRounds = dbMatch.totalRounds || 3;   
       clearAdvanceTimeout(match);
 
       await prisma.match.update({
@@ -546,7 +590,12 @@ export default function setupSocket(server) {
         `Loaded ${match.questions.length} questions for match ${matchId}`
       );
 
-      io.to(`match-${matchId}`).emit("matchStarted", { started: true });
+      io.to(`match-${matchId}`).emit("matchStarted", {
+        started: true,
+        totalRounds: match.totalRounds,
+        questionsPerRound: match.questionsPerRound,
+      });
+
       sendQuestion(io, matchId);
     });
 
