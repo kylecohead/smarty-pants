@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import backgroundCreate from "../assets/background_create.jpg";
-import { sendGameInvite } from "../utils/notifications.js";
+import { sendGameInvite, sendEmailInvite } from "../utils/notifications.js";
 import { authenticatedFetch } from "../utils/auth.js";
 
 // "Smart" palette — tweak freely to match your design system
@@ -109,6 +109,8 @@ export default function CreateGame() {
   const [maxPlayers, setMaxPlayers] = useState(6); // Maximum number of players allowed
   const [usernameQuery, setUsernameQuery] = useState(""); // Search query for finding users to invite
   const [invited, setInvited] = useState([]); // Array of invited user objects {id, username}
+  const [emailQuery, setEmailQuery] = useState(""); // Email address for sending invites
+  const [emailInvited, setEmailInvited] = useState([]); // Array of email addresses that were invited
   const [modeIndex, setModeIndex] = useState(0); // Currently selected game mode index
   const [username, setUsername] = useState(""); // Current user's username
   const [scheduleMode, setScheduleMode] = useState("now");
@@ -213,6 +215,24 @@ export default function CreateGame() {
     setInvited((xs) => xs.filter((x) => x.id !== userId));
 
   /**
+   * Add an email to the email invite list
+   * @param {string} email - Email address to invite
+   */
+  const addEmailInvite = (email) => {
+    if (email && !emailInvited.includes(email)) {
+      setEmailInvited((xs) => [...xs, email]);
+      setEmailQuery("");
+    }
+  };
+
+  /**
+   * Remove an email from the email invite list
+   * @param {string} email - Email address to remove
+   */
+  const removeEmailInvite = (email) =>
+    setEmailInvited((xs) => xs.filter((x) => x !== email));
+
+  /**
    * Navigate to previous game mode in carousel
    * Uses modulo to wrap around to end when at beginning
    */
@@ -299,6 +319,26 @@ export default function CreateGame() {
         }
       }
 
+      // 🔹 Send email invites if any
+      if (emailInvited.length > 0) {
+        console.log(`📧 Sending email invites to ${emailInvited.length} email(s)...`);
+
+        for (const email of emailInvited) {
+          try {
+            const matchName = title || "Untitled Match";
+            const message = `${currentUsername} invited you to join "${matchName}" (${mode.label})`;
+
+            await sendEmailInvite(email, match.id, message);
+            console.log(`✅ Email invite sent to ${email}`);
+          } catch (inviteError) {
+            console.error(
+              `❌ Failed to send email invite to ${email}:`,
+              inviteError
+            );
+          }
+        }
+      }
+
       navigate(`/lobby/${match.id}`);
     } catch (err) {
       console.error("❌ Error creating match:", err);
@@ -367,79 +407,85 @@ export default function CreateGame() {
               </button>
             </div>
 
-            {/* Public vs Private controls */}
-            {isPublic ? (
-              <div className="mt-4 space-y-6">
-                <div>
+            {/* Max Players setting (available for both public and private) */}
+            <div className="mt-4">
+              <label className="block text-white/90 text-sm">
+                Max players
+              </label>
+              <div className="flex items-center gap-4 mt-1">
+                <input
+                  type="range"
+                  min={1}
+                  max={20}
+                  step={1}
+                  value={maxPlayers}
+                  onChange={(e) => setMaxPlayers(parseInt(e.target.value))}
+                  className="w-full accent-white"
+                />
+                <span className="inline-block rounded-xl border border-white/20 bg-white/10 text-white text-xs px-2 py-1">
+                  {maxPlayers}
+                </span>
+              </div>
+            </div>
+
+            {/** Schedule (available for both public and private games) */}
+            <div className="mt-6">
+              <SectionTitle color="#1740d1ff">Start Time</SectionTitle>
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="scheduleMode"
+                    value="now"
+                    checked={scheduleMode === "now"}
+                    onChange={() => setScheduleMode("now")}
+                  />
+                  <span>Start now</span>
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="scheduleMode"
+                    value="schedule"
+                    checked={scheduleMode === "schedule"}
+                    onChange={() => setScheduleMode("schedule")}
+                  />
+                  <span>Schedule start</span>
+                </label>
+              </div>
+
+              {scheduleMode === "schedule" && (
+                <div className="mt-3">
                   <label className="block text-white/90 text-sm">
-                    Max players
+                    Starts in (minutes)
                   </label>
                   <div className="flex items-center gap-4 mt-1">
                     <input
                       type="range"
                       min={1}
-                      max={20}
+                      max={60}
                       step={1}
-                      value={maxPlayers}
-                      onChange={(e) => setMaxPlayers(parseInt(e.target.value))}
+                      value={delayMinutes}
+                      onChange={(e) =>
+                        setDelayMinutes(parseInt(e.target.value, 10))
+                      }
                       className="w-full accent-white"
                     />
                     <span className="inline-block rounded-xl border border-white/20 bg-white/10 text-white text-xs px-2 py-1">
-                      {maxPlayers}
+                      {delayMinutes} min
                     </span>
                   </div>
                 </div>
-                {/** Schedule */}
-                <div className="mt-6">
-                  <SectionTitle color="#1740d1ff">Start Time</SectionTitle>
-                  <div className="flex items-center gap-6">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="scheduleMode"
-                        value="now"
-                        checked={scheduleMode === "now"}
-                        onChange={() => setScheduleMode("now")}
-                      />
-                      <span>Start now</span>
-                    </label>
+              )}
+            </div>
 
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="scheduleMode"
-                        value="schedule"
-                        checked={scheduleMode === "schedule"}
-                        onChange={() => setScheduleMode("schedule")}
-                      />
-                      <span>Schedule start</span>
-                    </label>
-                  </div>
-
-                  {scheduleMode === "schedule" && (
-                    <div className="mt-3">
-                      <label className="block text-white/90 text-sm">
-                        Starts in (minutes)
-                      </label>
-                      <div className="flex items-center gap-4 mt-1">
-                        <input
-                          type="range"
-                          min={1}
-                          max={60}
-                          step={1}
-                          value={delayMinutes}
-                          onChange={(e) =>
-                            setDelayMinutes(parseInt(e.target.value, 10))
-                          }
-                          className="w-full accent-white"
-                        />
-                        <span className="inline-block rounded-xl border border-white/20 bg-white/10 text-white text-xs px-2 py-1">
-                          {delayMinutes} min
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+            {/* Public vs Private specific controls */}
+            {isPublic ? (
+              <div className="mt-4">
+                <p className="text-sm text-white/70">
+                  🌐 Public games are discoverable by all players
+                </p>
               </div>
             ) : (
               <div className="mt-4">
@@ -478,15 +524,60 @@ export default function CreateGame() {
                       </div>
                     )}
                   </div>
+                  <div className="relative grow sm:grow-0">
+                    <input
+                      value={emailQuery}
+                      onChange={(e) => setEmailQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && emailQuery.trim() && emailQuery.includes('@')) {
+                          addEmailInvite(emailQuery.trim());
+                        }
+                      }}
+                      placeholder="Email address"
+                      type="email"
+                      className="pl-9 pr-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 w-full sm:w-64 outline-none"
+                    />
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white/60">
+                      📧
+                    </span>
+                    {emailQuery.trim() && emailQuery.includes('@') && (
+                      <button
+                        onClick={() => addEmailInvite(emailQuery.trim())}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white text-sm"
+                      >
+                        Add
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {/* Email invites */}
+                {emailInvited.length > 0 && (
+                  <div className="mt-3">
+                    <label className="block text-white/90 text-sm mb-2">Email Invites</label>
+                    <div className="flex flex-wrap gap-2">
+                      {emailInvited.map((email) => (
+                        <div key={email} className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1 text-sm text-white">
+                          <span>📧 {email}</span>
+                          <button
+                            onClick={() => removeEmailInvite(email)}
+                            className="text-white/60 hover:text-white"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Stacked invited avatars */}
                 <div className="mt-4">
                   <label className="block text-white/90 text-sm">Players</label>
                   <div className="flex items-center gap-2 mt-2">
-                    {invited.length === 0 && (
+                    {invited.length === 0 && emailInvited.length === 0 && (
                       <p className="text-sm text-white/60">
-                        Invite users by username or send the link.
+                        Invite users by username, email, or send the link.
                       </p>
                     )}
                     <div className="flex -space-x-3">

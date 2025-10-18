@@ -5,6 +5,9 @@ WORKDIR /app
 # Install Postgres client (needed for pg_isready in entrypoint.sh)
 RUN apk add --no-cache postgresql-client
 
+RUN apk add --no-cache ca-certificates && update-ca-certificates
+
+
 # Install Node dependencies
 COPY package*.json ./
 RUN npm install
