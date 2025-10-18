@@ -1,0 +1,51 @@
+{
+	"info": {
+		"_postman_id": "25a34cc3-95f5-48cb-9bee-586db60fbbcb",
+		"name": "Trivia Game - OpenTDB API",
+		"description": "This collection documents and tests the API endpoint from the Open Trivia Database (OpenTDB) that our application uses to fetch questions for the game's database seeding process.\n\n### **Request: Fetch Trivia Questions**\n\nThis endpoint retrieves a specified number of multiple-choice trivia questions for a given category.\n\n**Method:** `GET`**URL:** `https://opentdb.com/api.php`\n\n### Query Parameters\n\n- `amount` (integer, **required**): The number of questions to fetch. Our application uses a value of 20 per category during the seeding process.\n    \n- `type` (string, **required**): The type of questions. We always use `multiple` to ensure we get multiple-choice questions.\n    \n- `category` (integer, **required**): The ID of the category to fetch questions from. Example IDs used in our app include `9` for General Knowledge, `21` for Sports, and `23` for History.\n    \n\n### Responses\n\n- **Success (**`response_code: 0`**):** A successful request will return a JSON object containing an array of question objects under the `results` key.\n    \n- **Rate Limit Error (**`response_code: 5`**):** If too many requests are made in a short period, the API will return this code. Our application's `opentdb.js` file is designed to handle this error by pausing and retrying the request (a technique called exponential backoff).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "49374167",
+		"_collection_link": "https://supply-pilot-12203043-7538617.postman.co/workspace/52147854-304e-4bdb-8047-cd2a16e05367/collection/49374167-25a34cc3-95f5-48cb-9bee-586db60fbbcb?action=share&source=collection_link&creator=49374167"
+	},
+	"item": [
+		{
+			"name": "Fetch Trivia Questions",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://opentdb.com/api.php?amount=20&type=multiple&category=9",
+					"protocol": "https",
+					"host": [
+						"opentdb",
+						"com"
+					],
+					"path": [
+						"api.php"
+					],
+					"query": [
+						{
+							"key": "amount",
+							"value": "20",
+							"description": "(Required) The number of questions to fetch."
+						},
+						{
+							"key": "type",
+							"value": "multiple",
+							"description": "(Required) The type of question. We always use 'multiple'."
+						},
+						{
+							"key": "category",
+							"value": "9",
+							"description": "(Required) The ID for the category (e.g., 9 is \"General Knowledge\")."
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
