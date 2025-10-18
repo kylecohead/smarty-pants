@@ -160,6 +160,19 @@ export const api = {
     return fetchWithAuth(`/questions/random/${encodeURIComponent(category)}/${count}`);
   },
 
+  /**
+   * Update an existing question (admin only)
+   * @param {number} id question id
+   * @param {object} data fields to update
+   */
+  async updateQuestion(id, data) {
+    return fetchWithAuth(`/questions/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  },
+
   // ===========================
   // Match Endpoints
   // ===========================

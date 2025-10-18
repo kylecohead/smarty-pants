@@ -39,6 +39,8 @@ export default function Admin() {
   const [importing, setImporting] = useState(false); // Import operation in progress
   const [resetting, setResetting] = useState(false); // Reset operation in progress
   const [error, setError] = useState(null); // Error message display
+  const [editingId, setEditingId] = useState(null);
+  const [editingPayload, setEditingPayload] = useState(null);
 
   // Derived state
   const categoryCount = Math.max(categories.length - 1, 0); // Exclude "All" from count
@@ -537,52 +539,215 @@ export default function Admin() {
               No questions yet. Use the import button to fetch trivia.
             </div>
           ) : (
-            filteredQuestions.map((question) => (
-              <article
-                key={question.id}
-                className="rounded-xl border border-white/10 bg-white/5 p-5 shadow"
-              >
-                <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-sm uppercase tracking-wide text-white/60">
-                      {question.category} · {question.difficulty ?? "unknown"}
-                    </p>
-                    <h2 className="text-lg font-semibold text-white">
-                      {question.question}
-                    </h2>
-                  </div>
-                  <button
-                    onClick={() => handleDelete(question.id)}
-                    disabled={isBusy}
-                    className="rounded-md border border-red-400 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Delete
-                  </button>
-                </header>
-                <ul className="grid gap-2 md:grid-cols-2">
-                  {question.options.map((option) => {
-                    const isCorrect = option === question.correct;
-                    return (
-                      <li
-                        key={option}
-                        className={`rounded-md border px-3 py-2 text-sm ${
-                          isCorrect
-                            ? "border-green-400 bg-green-500/10 text-green-200"
-                            : "border-white/10 bg-black/20 text-white/80"
-                        }`}
-                      >
-                        {option}
-                        {isCorrect && (
-                          <span className="ml-2 text-xs uppercase">
-                            (correct)
-                          </span>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </article>
-            ))
+            filteredQuestions.map((question) => {
+              const isEditing = editingId === question.id;
+              return (
+                <article
+                  key={question.id}
+                  className="rounded-xl border border-white/10 bg-white/5 p-5 shadow"
+                >
+                  <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="text-sm uppercase tracking-wide text-white/60">
+                        {question.category} · {question.difficulty ?? "unknown"}
+                      </p>
+                      {!isEditing ? (
+                        <h2 className="text-lg font-semibold text-white">
+                          {question.question}
+                        </h2>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <select
+                            value={editingPayload?.category ?? ""}
+                            onChange={(e) =>
+                              setEditingPayload((p) => ({
+                                ...p,
+                                category: e.target.value,
+                              }))
+                            }
+                            className="w-44 rounded-md border border-white/20 bg-black/20 px-3 py-2 text-sm text-white"
+                          >
+                            {categories
+                              .filter((c) => c !== "All")
+                              .map((cat) => (
+                                <option key={cat} value={cat}>
+                                  {cat}
+                                </option>
+                              ))}
+                          </select>
+
+                          <select
+                            value={editingPayload?.difficulty ?? ""}
+                            onChange={(e) =>
+                              setEditingPayload((p) => ({
+                                ...p,
+                                difficulty: e.target.value,
+                              }))
+                            }
+                            className="w-40 rounded-md border border-white/20 bg-black/20 px-3 py-2 text-sm text-white"
+                          >
+                            <option value="easy">easy</option>
+                            <option value="medium">medium</option>
+                            <option value="hard">hard</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!isEditing ? (
+                        <>
+                          <button
+                            onClick={() => {
+                              setEditingId(question.id);
+                              setEditingPayload({
+                                category: question.category,
+                                difficulty: question.difficulty ?? "",
+                                question: question.question,
+                                correct: question.correct,
+                                options: question.options,
+                              });
+                            }}
+                            className="rounded-md border border-yellow-400 px-3 py-1 text-xs font-semibold text-yellow-200"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(question.id)}
+                            disabled={isBusy}
+                            className="rounded-md border border-red-400 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={async () => {
+                              // Save changes
+                              try {
+                                const payload = { ...editingPayload };
+                                // Ensure options is an array of strings
+                                if (typeof payload.options === "string") {
+                                  payload.options = payload.options
+                                    .split("||")
+                                    .map((s) => s.trim());
+                                }
+
+                                await api.updateQuestion(question.id, payload);
+                                // Update local state
+                                setQuestions((qs) =>
+                                  qs.map((q) =>
+                                    q.id === question.id
+                                      ? { ...q, ...payload }
+                                      : q
+                                  )
+                                );
+                                setEditingId(null);
+                                setEditingPayload(null);
+                              } catch (err) {
+                                console.error(err);
+                                alert("Failed to save changes. See console.");
+                              }
+                            }}
+                            className="rounded-md bg-green-500 px-3 py-1 text-xs font-semibold text-white"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingId(null);
+                              setEditingPayload(null);
+                            }}
+                            className="rounded-md border border-white/20 px-3 py-1 text-xs font-semibold"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </header>
+
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div>
+                        <input
+                          value={editingPayload?.question ?? ""}
+                          onChange={(e) =>
+                            setEditingPayload((p) => ({
+                              ...p,
+                              question: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-md border border-white/20 bg-black/20 px-3 py-2 text-sm text-white"
+                          placeholder="Question"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs text-white/60">
+                          Correct answer
+                        </label>
+                        <input
+                          value={editingPayload?.correct ?? ""}
+                          onChange={(e) =>
+                            setEditingPayload((p) => ({
+                              ...p,
+                              correct: e.target.value,
+                            }))
+                          }
+                          className="mt-1 w-full rounded-md border border-white/20 bg-black/20 px-3 py-2 text-sm text-white"
+                          placeholder="Correct answer"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs text-white/60">
+                          Options (separate by double-pipe '||')
+                        </label>
+                        <input
+                          value={
+                            Array.isArray(editingPayload?.options)
+                              ? editingPayload.options.join("||")
+                              : editingPayload?.options ?? ""
+                          }
+                          onChange={(e) =>
+                            setEditingPayload((p) => ({
+                              ...p,
+                              options: e.target.value,
+                            }))
+                          }
+                          className="mt-1 w-full rounded-md border border-white/20 bg-black/20 px-3 py-2 text-sm text-white"
+                          placeholder="option1 || option2 || option3 || option4"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <ul className="grid gap-2 md:grid-cols-2">
+                      {question.options.map((option) => {
+                        const isCorrect = option === question.correct;
+                        return (
+                          <li
+                            key={option}
+                            className={`rounded-md border px-3 py-2 text-sm ${
+                              isCorrect
+                                ? "border-green-400 bg-green-500/10 text-green-200"
+                                : "border-white/10 bg-black/20 text-white/80"
+                            }`}
+                          >
+                            {option}
+                            {isCorrect && (
+                              <span className="ml-2 text-xs uppercase">
+                                (correct)
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </article>
+              );
+            })
           )}
         </section>
       </main>
