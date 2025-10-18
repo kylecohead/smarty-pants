@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
+// Runtime reference to Socket.IO server so admin routes can emit and inspect matches
+let ioServer = null;
 
 /**
  * In-memory runtime session store
@@ -43,7 +45,7 @@ async function getQuestionsFromDB() {
       answer: q.correct,
     }));
   } catch (err) {
-    console.error("❌ Failed to fetch questions from DB:", err);
+    console.error("Failed to fetch questions from DB:", err);
     return [];
   }
 }
@@ -160,15 +162,34 @@ function endMatch(io, matchId, completed = true) {
   });
 
   if (isTie) {
-    console.log(`🤝 Match ${matchId} ended in a ${tiedPlayers.length}-way tie between: ${tiedPlayers.map(p => p.username).join(', ')}`);
+    console.log(`Match ${matchId} ended in a ${tiedPlayers.length}-way tie between: ${tiedPlayers.map(p => p.username).join(', ')}`);
   } else {
-    console.log(`🏆 Match ${matchId} winner: ${winner.username} (${winner.score} pts, ${winner.correctCount} correct, ${winner.avgTime}ms avg)`);
+    console.log(`Match ${matchId} winner: ${winner.username} (${winner.score} pts, ${winner.correctCount} correct, ${winner.avgTime}ms avg)`);
   }
 
   // Log full ranking for debugging
-  console.log(`📊 Final ranking for match ${matchId}:`);
+  console.log(`Final ranking for match ${matchId}:`);
   ranking.forEach((player, index) => {
     console.log(`  ${index + 1}. ${player.username}: ${player.score} pts, ${player.correctCount}/${player.totalAnswers} correct, ${player.avgTime}ms avg`);
+  });
+
+  // UPDATE ALL PLAYER SCORES IN DATABASE
+  const scoreUpdates = Object.keys(match.scores).map(username => {
+    const player = [...match.players.values()].find(p => p.username === username);
+    if (player) {
+      return prisma.matchPlayer.updateMany({
+        where: { 
+          matchId: Number(matchId), 
+          userId: player.userId 
+        },
+        data: { score: match.scores[username] || 0 }
+      });
+    }
+  }).filter(Boolean);
+
+  // Execute all score updates
+  Promise.all(scoreUpdates).catch(err => {
+    console.error("Failed to update final scores in DB:", err);
   });
 
   activeMatches.delete(matchId);
@@ -206,7 +227,7 @@ function sendQuestion(io, matchId) {
   const questionDurationMs = (match.timeLimit || 10) * 1000;
 
   console.log(
-    `🧠 Sending question ${match.questionIndex + 1}/${
+    `Sending question ${match.questionIndex + 1}/${
       match.questions.length
     } for match ${matchId} (${match.timeLimit}s)`
   );
@@ -221,7 +242,7 @@ function sendQuestion(io, matchId) {
   // Start timer for synchronized leaderboard display
   // Leaderboard shows ONLY when timer expires, not when all players answer
   match.questionTimer = setTimeout(() => {
-    console.log(`⏰ Question timer expired - showing synchronized leaderboard`);
+    console.log(`Question timer expired - showing synchronized leaderboard`);
     showQuestionResults(io, matchId);
   }, questionDurationMs);
 }
@@ -231,7 +252,7 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
   if (!matchId || !userId) return;
 
   console.log(
-    `🚪 ${username || socket.id} ${
+    `${username || socket.id} ${
       manual ? "manually left" : "disconnected from"
     } match ${matchId}`
   );
@@ -253,7 +274,7 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
         (p) => p.userId === userId
       );
       if (player && !player.disconnected) {
-        console.log(`🔄 ${username} reconnected to match ${matchId}`);
+        console.log(`${username} reconnected to match ${matchId}`);
         return;
       }
 
@@ -267,7 +288,7 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
       // If host leaves, end the match for everyone
       if (match.hostId === userId) {
         console.log(
-          `👑 Host ${username} left match ${matchId} - ending game for all players`
+          `Host ${username} left match ${matchId} - ending game for all players`
         );
 
         // Clear all timers
@@ -297,7 +318,7 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
         // Clean up the match from memory
         activeMatches.delete(matchId);
         console.log(
-          `❌ Match ${matchId} marked as incomplete - stats discarded`
+          `Match ${matchId} marked as incomplete - stats discarded`
         );
         return; // Exit early since match is ended
       }
@@ -305,7 +326,7 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
       // If non-host player leaves during active game, mark match as incomplete
       if (match.status === "ACTIVE") {
         console.log(
-          `⚠️ Player ${username} left active match ${matchId} - marking as incomplete`
+          `Player ${username} left active match ${matchId} - marking as incomplete`
         );
         // Don't end the match, but mark it as incomplete so stats won't count
         await prisma.match.update({
@@ -329,11 +350,11 @@ async function handlePlayerLeave(io, socket, matchId, manual = false) {
             finishedAt: new Date(),
           },
         });
-        console.log(`🧹 Cleared empty match ${matchId} - marked incomplete`);
+        console.log(`Cleared empty match ${matchId} - marked incomplete`);
       }
     }, 10000);
   } catch (err) {
-    console.error("❌ Error during player leave:", err.message);
+    console.error("Error during player leave:", err.message);
   }
 }
 
@@ -346,7 +367,7 @@ export default function setupSocket(server) {
       origin: (origin, callback) => {
         if (!origin) return callback(null, true);
 
-        // ✅ Allow localhost + any Cloudflare quick tunnel
+        //  Allow localhost + any Cloudflare quick tunnel
         const allowed = origin.match(
           /^(http:\/\/localhost(:\d+)?|http:\/\/127\.0\.0\.1(:\d+)?|https:\/\/.*\.trycloudflare\.com|https:\/\/(www\.)?smartiepants\.art|https:\/\/play\.smartiepants\.art)$/
         );
@@ -354,7 +375,7 @@ export default function setupSocket(server) {
         if (allowed) {
           callback(null, true);
         } else {
-          console.warn("🚫 [Socket.IO] Blocked origin:", origin);
+          console.warn("[Socket.IO] Blocked origin:", origin);
           callback(new Error("Not allowed by CORS"));
         }
       },
@@ -364,7 +385,7 @@ export default function setupSocket(server) {
   });
 
   io.on("connection", (socket) => {
-    console.log("⚡ Socket connected:", socket.id);
+    console.log(" Socket connected:", socket.id);
 
     // ---------------- JOIN MATCH ----------------
     socket.on("joinMatch", async ({ matchId, token }) => {
@@ -413,7 +434,7 @@ export default function setupSocket(server) {
             currentQuestionResponses: new Map(),
             playerStats: {}, // ← NEW: Track stats for tiebreaker
           });
-          console.log(`🆕 Created in-memory session for match ${matchId}`);
+          console.log(`Created in-memory session for match ${matchId}`);
         }
 
         socket.join(`match-${matchId}`);
@@ -459,9 +480,9 @@ export default function setupSocket(server) {
           .catch(console.error);
 
         emitPlayers(io, matchId);
-        console.log(`✅ ${user.username} joined match ${matchId}`);
+        console.log(`${user.username} joined match ${matchId}`);
       } catch (err) {
-        console.error("❌ joinMatch error:", err.message);
+        console.error("joinMatch error:", err.message);
         socket.emit("error", { message: err.message });
       }
     });
@@ -498,7 +519,7 @@ export default function setupSocket(server) {
       });
 
       console.log(
-        `🎮 Host started match ${matchId} with ${match.timeLimit}s per question`
+        ` Host started match ${matchId} with ${match.timeLimit}s per question`
       );
 
       // Fetch questions assigned to this specific match
@@ -522,7 +543,7 @@ export default function setupSocket(server) {
       match.questionIndex = 0;
 
       console.log(
-        `📚 Loaded ${match.questions.length} questions for match ${matchId}`
+        `Loaded ${match.questions.length} questions for match ${matchId}`
       );
 
       io.to(`match-${matchId}`).emit("matchStarted", { started: true });
@@ -543,7 +564,7 @@ export default function setupSocket(server) {
         return;
       }
 
-      console.log(`📤 [RESEND] Current question for match ${matchId}`);
+      console.log(`[RESEND] Current question for match ${matchId}`);
       socket.emit("newQuestion", {
         index: match.questionIndex,
         total: match.questions.length,
@@ -568,7 +589,7 @@ export default function setupSocket(server) {
 
       // Check if player already answered this question
       if (match.currentQuestionResponses.has(socket.username)) {
-        console.log(`⚠️ ${socket.username} already answered this question`);
+        console.log(`${socket.username} already answered this question`);
         return;
       }
 
@@ -586,7 +607,7 @@ export default function setupSocket(server) {
       match.scores[socket.username] =
         (match.scores[socket.username] || 0) + points;
 
-      // ✨ Track stats for tiebreaker logic
+      // Track stats for tiebreaker logic
       if (!match.playerStats[socket.username]) {
         match.playerStats[socket.username] = {
           correctCount: 0,
@@ -610,7 +631,7 @@ export default function setupSocket(server) {
       });
 
       console.log(
-        `📝 ${socket.username} answered (${match.currentQuestionResponses.size}/${match.players.size}) - waiting for timer`
+        `${socket.username} answered (${match.currentQuestionResponses.size}/${match.players.size}) - waiting for timer`
       );
 
       // Send immediate feedback to just this player
@@ -636,7 +657,10 @@ export default function setupSocket(server) {
     });
   });
 
-  console.log("🎯 Socket.IO setup complete with tiebreaker logic");
+  // Store runtime io reference for admin helpers
+  ioServer = io;
+
+  console.log(" Socket.IO setup complete with tiebreaker logic");
   return io;
 }
 
@@ -702,7 +726,7 @@ function showQuestionResults(io, matchId) {
   });
 
   console.log(
-    `📊 Question ${match.questionIndex + 1} results sent to all players`
+    `Question ${match.questionIndex + 1} results sent to all players`
   );
 
   // Clear responses for next question
@@ -716,4 +740,162 @@ function showQuestionResults(io, matchId) {
     stillThere.advanceTimeout = null;
     sendQuestion(io, matchId);
   }, 5000); // 5 seconds to view results
+}
+
+/**
+ * Return a summary of active matches for admin UI
+ */
+export function getActiveMatchesSummary() {
+  const out = [];
+  for (const [matchId, match] of activeMatches.entries()) {
+    const players = [...match.players.values()].map((p) => ({
+      userId: p.userId,
+      username: p.username,
+      avatarUrl: p.avatarUrl,
+      score: match.scores[p.username] || 0,
+    }));
+
+    const hostPlayer = players.find((p) => p.userId === match.hostId) || null;
+
+    out.push({
+      matchId,
+      hostId: match.hostId,
+      hostUsername: hostPlayer?.username || null,
+      status: match.status || "UNKNOWN",
+      started: !!match.started,
+      questionIndex: match.questionIndex || 0,
+      totalQuestions: match.questions?.length || 0,
+      players,
+    });
+  }
+  return out;
+}
+
+/**
+ * Admin: Kick a player from an active match. Sends a direct socket message to the player's sockets.
+ * Marks match as incomplete (completed=false) so stats won't be saved.
+ */
+export async function adminKickPlayer(matchId, userId) {
+  if (!ioServer) throw new Error("Socket server not initialized");
+  const match = activeMatches.get(String(matchId));
+  if (!match) {
+    throw new Error("Match not found or not active");
+  }
+
+  // Find all socketIds for this user in the match
+  const kickedSockets = [];
+  for (const [socketId, p] of match.players.entries()) {
+    if (p.userId === Number(userId)) {
+      const sock = ioServer.sockets.sockets.get(socketId);
+      if (sock) {
+        // Notify the kicked socket directly
+        sock.emit("kickedByAdmin", {
+          message: "You were removed from the match by an administrator. This game will not count in your stats.",
+          matchId: Number(matchId),
+        });
+        try {
+          // Ensure the socket leaves the room so it no longer receives room broadcasts
+          sock.leave(`match-${matchId}`);
+        } catch (e) {
+          /* ignore */
+        }
+        try {
+          // Forcefully disconnect the socket to ensure client cleans up
+          sock.disconnect(true);
+        } catch (e) {
+          /* ignore */
+        }
+      }
+      kickedSockets.push(socketId);
+      // Remove from players map
+      match.players.delete(socketId);
+    }
+  }
+
+  // Update DB: mark match as incomplete if it is active
+  try {
+    if (match.status === "ACTIVE") {
+      await prisma.match.update({
+        where: { id: Number(matchId) },
+        data: { completed: false },
+      });
+    }
+
+    // Also mark the matchPlayer row as disconnected/removed
+    await prisma.matchPlayer.updateMany({
+      where: { matchId: Number(matchId), userId: Number(userId) },
+      data: { connected: false },
+    });
+  } catch (err) {
+    console.error("Error updating DB during adminKickPlayer:", err);
+  }
+
+  // Broadcast updated players list to remaining participants
+  emitPlayers(ioServer, String(matchId));
+
+  // If match has no players left, clean up
+  if (match.players.size === 0) {
+    clearAdvanceTimeout(match);
+    if (match.questionTimer) {
+      clearTimeout(match.questionTimer);
+      match.questionTimer = null;
+    }
+    activeMatches.delete(String(matchId));
+    try {
+      await prisma.match.update({
+        where: { id: Number(matchId) },
+        data: {
+          status: "FINISHED",
+          completed: false,
+          finishedAt: new Date(),
+        },
+      });
+    } catch (err) {
+      console.error("Error marking empty match finished after admin kick:", err);
+    }
+  }
+
+  return { kickedSockets };
+}
+
+/**
+ * Admin: End a match immediately. Do not compute or save stats for this match.
+ */
+export async function adminEndMatch(matchId) {
+  if (!ioServer) throw new Error("Socket server not initialized");
+  const match = activeMatches.get(String(matchId));
+  if (!match) {
+    throw new Error("Match not found or not active");
+  }
+
+  // Notify all connected sockets in the room about admin termination
+  ioServer.to(`match-${matchId}`).emit("adminEnded", {
+    message: "An administrator has ended this match. No stats will be saved for this game.",
+    matchId: Number(matchId),
+  });
+
+  // Clear timers and remove from memory
+  clearAdvanceTimeout(match);
+  if (match.questionTimer) {
+    clearTimeout(match.questionTimer);
+    match.questionTimer = null;
+  }
+
+  activeMatches.delete(String(matchId));
+
+  // Persist match as finished but incomplete (stats discarded)
+  try {
+    await prisma.match.update({
+      where: { id: Number(matchId) },
+      data: {
+        status: "FINISHED",
+        completed: false,
+        finishedAt: new Date(),
+      },
+    });
+  } catch (err) {
+    console.error("Error updating DB during adminEndMatch:", err);
+  }
+
+  return { ended: true };
 }

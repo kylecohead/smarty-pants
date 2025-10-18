@@ -29,7 +29,7 @@ router.get("/me", authMiddleware, async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json({ user });
   } catch (err) {
-    console.error("❌ GET /me error:", err);
+    console.error("GET /me error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -85,7 +85,7 @@ router.put("/me", authMiddleware, async (req, res) => {
 
     res.json({ user });
   } catch (err) {
-    console.error("❌ PUT /me error:", err);
+    console.error("PUT /me error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -105,7 +105,7 @@ router.delete("/me", authMiddleware, async (req, res) => {
       message: "Account deleted successfully" 
     });
   } catch (err) {
-    console.error("❌ DELETE /me error:", err);
+    console.error("DELETE /me error:", err);
     res.status(500).json({ error: "Failed to delete account" });
   }
 });
@@ -118,7 +118,10 @@ router.get('/me/history', authMiddleware, async (req, res) => {
 
     // Get the user's recent match-player rows (score, category, placement, date played)
     const myRows = await prisma.matchPlayer.findMany({
-      where: { userId },
+      where: { 
+        userId,
+        match: {  completed: true },
+      },
       orderBy: { joinedAt: 'desc' },
       take: limit,
       select: {
@@ -221,7 +224,7 @@ router.get("/search", authMiddleware, async (req, res) => {
 
     res.json({ users });
   } catch (err) {
-    console.error("❌ GET /search error:", err);
+    console.error("GET /search error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });

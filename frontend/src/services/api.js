@@ -30,13 +30,13 @@ const getToken = () => {
 };
 
 /**
- * Make an authenticated API request
+ * Make an authenticated API request with automatic token refresh
  * @param {string} endpoint - API endpoint (e.g., "/users/me")
  * @param {object} options - Fetch options
  * @returns {Promise<any>} - Parsed JSON response
  * @throws {Error} - If response is not ok
  */
-const fetchWithAuth = async (endpoint, options = {}) => {
+const fetchWithAuth = async (endpoint, options = {}, isRetry = false) => {
   const token = getToken();
   const headers = {
     ...options.headers,
@@ -50,6 +50,53 @@ const fetchWithAuth = async (endpoint, options = {}) => {
     ...options,
     headers,
   });
+
+  // If 401 and we haven't already retried, try to refresh token
+  if (response.status === 401 && !isRetry) {
+    try {
+      console.log("🔄 Access token expired, attempting refresh...");
+      
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      // Call refresh endpoint
+      const refreshResponse = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!refreshResponse.ok) {
+        throw new Error('Token refresh failed');
+      }
+
+      const refreshData = await refreshResponse.json();
+      
+      // Update stored token
+      localStorage.setItem('accessToken', refreshData.accessToken);
+      
+      console.log("✅ Token refreshed successfully, retrying original request");
+      
+      // Retry original request with new token
+      return fetchWithAuth(endpoint, options, true);
+      
+    } catch (refreshError) {
+      console.error("❌ Token refresh failed:", refreshError);
+      
+      // Clear tokens and redirect to login
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      
+      // Redirect to login (you might need to handle this differently)
+      window.location.href = '/login';
+      
+      throw new Error('Authentication failed');
+    }
+  }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -111,6 +158,19 @@ export const api = {
    */
   async getRandomQuestions(category, count = 5) {
     return fetchWithAuth(`/questions/random/${encodeURIComponent(category)}/${count}`);
+  },
+
+  /**
+   * Update an existing question (admin only)
+   * @param {number} id question id
+   * @param {object} data fields to update
+   */
+  async updateQuestion(id, data) {
+    return fetchWithAuth(`/questions/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
   },
 
   // ===========================
@@ -241,6 +301,62 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to fetch leaderboard');
     return data;
+  },
+
+  /**
+   * Refresh access token using refresh token
+   * @returns {Promise<object>} - New token data
+   */
+  async refreshAccessToken() {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    const response = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to refresh token');
+    }
+
+    const data = await response.json();
+    
+    // Update stored tokens
+    localStorage.setItem('accessToken', data.accessToken);
+    if (data.refreshToken) {
+      localStorage.setItem('refreshToken', data.refreshToken);
+    }
+
+    return data;
+  },
+
+  // ===========================
+  // Admin Endpoints
+  // ===========================
+
+  async getActiveMatches() {
+    return fetchWithAuth(`/admin/matches`);
+  },
+
+  async adminKickPlayer(matchId, userId) {
+    return fetchWithAuth(`/admin/matches/${matchId}/kick`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+  },
+
+  async adminEndMatch(matchId) {
+    return fetchWithAuth(`/admin/matches/${matchId}/end`, {
+      method: 'POST',
+    });
   },
 };
 

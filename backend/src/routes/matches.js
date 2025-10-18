@@ -14,7 +14,7 @@ const router = express.Router();
  * Uses QUESTIONS_PER_GAME constant (default: 5) for number of questions.
  */
 router.post("/", authMiddleware, async (req, res) => {
-  const { title, category, difficulty, numQuestions, timeLimit, isPublic, maxPlayers } = req.body;
+  const { title, category, difficulty, numQuestions, timeLimit, isPublic, maxPlayers, isScheduled, scheduledDelayMinutes } = req.body;
   const userId = req.user.id;
 
   try {
@@ -28,36 +28,58 @@ router.post("/", authMiddleware, async (req, res) => {
       ? timeLimit 
       : 10;
 
-    // Step 1: Check if category has enough questions
+    // Build question filter (category + optional difficulty)
+    const questionWhere = { category };
+    // Normalize difficulty to lowercase to match stored OpenTDB values ("easy","medium","hard")
+    let normDifficulty = null;
+    if (difficulty && typeof difficulty === "string") {
+      const norm = difficulty.trim();
+      if (norm.length > 0) {
+        normDifficulty = norm.toLowerCase();
+        questionWhere.difficulty = normDifficulty;
+      }
+    }
+
+    // Check if category/difficulty has enough questions
     const availableQuestions = await prisma.question.count({
-      where: { category }
+      where: questionWhere,
     });
 
     if (availableQuestions < questionsCount) {
-      return res.status(400).json({ 
-        error: `Not enough questions in category "${category}". Available: ${availableQuestions}, Required: ${questionsCount}` 
+      return res.status(400).json({
+        error: `Not enough questions in category "${category}"${questionWhere.difficulty ? ` (difficulty: ${questionWhere.difficulty})` : ""}. Available: ${availableQuestions}, Required: ${questionsCount}`,
       });
     }
 
-    // Step 2: Fetch random questions from the selected category
+    // Fetch random questions from the selected category/difficulty
     const allCategoryQuestions = await prisma.question.findMany({
-      where: { category }
+      where: questionWhere,
     });
 
     // Shuffle and take first questionsCount questions
     const shuffledQuestions = shuffle(allCategoryQuestions);
     const selectedQuestions = shuffledQuestions.slice(0, questionsCount);
 
-    // Step 3: Create match with questions assigned
+    // Scheduling: compute scheduled time (nullable)
+    let scheduled = null;
+    const wantScheduled = Boolean(isScheduled);
+    if (wantScheduled) {
+      if (Number.isFinite(Number(scheduledDelayMinutes))) {
+        scheduled = new Date(Date.now() + Number(scheduledDelayMinutes) * 60_000);
+      }
+    }
+
+    //  Create match with questions assigned
     const match = await prisma.match.create({
       data: {
         title,
         category,
-        difficulty,
+  difficulty: normDifficulty,
         timeLimit: timeLimitSeconds,
         isPublic: isPublic !== undefined ? Boolean(isPublic) : true,
-        maxPlayers: maxPlayers && maxPlayers >= 2 && maxPlayers <= 20 ? maxPlayers : 5,
+        maxPlayers: maxPlayers && maxPlayers >= 1 && maxPlayers <= 20 ? maxPlayers : 5,
         hostId: userId,
+        scheduledStartAt: scheduled,
         players: {
           create: { userId } // host auto-joins
         },
@@ -80,7 +102,7 @@ router.post("/", authMiddleware, async (req, res) => {
 
     res.json(match);
   } catch (err) {
-    console.error("❌ Create match failed:", err);
+    console.error("Create match failed:", err);
     res.status(500).json({ error: "Failed to create match" });
   }
 });
@@ -115,7 +137,7 @@ router.get("/", authMiddleware, async (req, res) => {
 
     res.json(matches);
   } catch (err) {
-    console.error("❌ Fetch matches failed:", err);
+    console.error("Fetch matches failed:", err);
     res.status(500).json({ error: "Failed to fetch matches" });
   }
 });
@@ -145,7 +167,7 @@ router.post("/:id/join", authMiddleware, async (req, res) => {
 
     res.json(join);
   } catch (err) {
-    console.error("❌ Join match failed:", err);
+    console.error("Join match failed:", err);
     res.status(500).json({ error: "Failed to join match" });
   }
 });
@@ -172,7 +194,7 @@ router.get("/:id", authMiddleware, async (req, res) => {
     if (!match) return res.status(404).json({ error: "Match not found" });
     res.json(match);
   } catch (err) {
-    console.error("❌ Get match failed:", err);
+    console.error("Get match failed:", err);
     res.status(500).json({ error: "Failed to fetch match" });
   }
 });

@@ -227,6 +227,7 @@ export default function JoinGameLobby() {
                 value={joinInput}
                 onChange={handleInputChange}
                 placeholder="Enter match ID (e.g., 12)"
+                maxLength={20}
                 className="w-full rounded-xl bg-orange-500/20 border-2 border-orange-400/40 text-white placeholder:text-orange-200/70 px-6 py-4 text-lg outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
               />
               {inputError && (

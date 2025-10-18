@@ -14,6 +14,16 @@ import {
   sleep,
   fetchCategoryQuestions,
 } from "../utils/opentdb.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+
+//  admin guard for question management routes
+function requireAdmin(req, res, next) {
+  const role = req.user?.role || null;
+  if (role !== "ADMIN") {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  next();
+}
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -340,6 +350,51 @@ router.delete("/:id", async (req, res) => {
   } catch (error) {
     console.error("Delete failed", error);
     res.status(500).json({ message: "Failed to delete question" });
+  }
+});
+
+/**
+ * PUT /:id
+ *
+ * Update a question. Protected: admin-only.
+ * Accepts partial or full updates for: category, difficulty, question, correct, options
+ */
+router.put("/:id", authMiddleware, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ message: "Invalid question id" });
+  }
+
+  const { category, difficulty, question, correct, options } = req.body || {};
+
+  // Build update object only with provided fields
+  const updateData = {};
+  if (typeof category === "string") updateData.category = category;
+  if (typeof difficulty === "string") updateData.difficulty = difficulty;
+  if (typeof question === "string") updateData.question = question;
+  if (typeof correct === "string") updateData.correct = correct;
+
+  if (Array.isArray(options)) {
+    // Ensure options are strings
+    updateData.options = options.map((o) => String(o));
+  }
+
+  // If provided options don't include the correct answer but correct is provided, ensure it's included
+  if (updateData.correct && updateData.options) {
+    if (!updateData.options.includes(updateData.correct)) {
+      updateData.options = [updateData.correct, ...updateData.options];
+    }
+  }
+
+  try {
+    const updated = await prisma.question.update({
+      where: { id },
+      data: updateData,
+    });
+    res.json({ success: true, question: updated });
+  } catch (error) {
+    console.error("Update question failed", error);
+    res.status(500).json({ message: "Failed to update question" });
   }
 });
 

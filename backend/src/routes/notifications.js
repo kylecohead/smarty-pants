@@ -31,10 +31,10 @@ router.get("/", authMiddleware, async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
 
-    console.log(`📬 Fetched ${notifications.length} notifications for user ${req.user.id}`);
+    console.log(`Fetched ${notifications.length} notifications for user ${req.user.id}`);
     res.json({ notifications });
   } catch (error) {
-    console.error("❌ Error fetching notifications:", error);
+    console.error("Error fetching notifications:", error);
     res.status(500).json({ error: "Failed to fetch notifications" });
   }
 });
@@ -116,10 +116,10 @@ router.post("/invites", authMiddleware, async (req, res) => {
       },
     });
 
-    console.log(`🎯 Game invite sent from user ${senderId} to user ${receiverId} for match ${matchId}`);
+    console.log(`Game invite sent from user ${senderId} to user ${receiverId} for match ${matchId}`);
     res.json({ notification });
   } catch (error) {
-    console.error("❌ Error sending invite:", error);
+    console.error("Error sending invite:", error);
     res.status(500).json({ error: "Failed to send invite" });
   }
 });
@@ -223,14 +223,14 @@ router.put("/invites/:id/accept", authMiddleware, async (req, res) => {
       },
     });
 
-    console.log(`✅ User ${userId} accepted invite ${notificationId} and joined match ${notification.matchId}`);
+    console.log(`User ${userId} accepted invite ${notificationId} and joined match ${notification.matchId}`);
     res.json({ 
       message: "Invite accepted successfully",
       matchId: notification.matchId,
       matchTitle: notification.match.title 
     });
   } catch (error) {
-    console.error("❌ Error accepting invite:", error);
+    console.error("Error accepting invite:", error);
     res.status(500).json({ error: "Failed to accept invite" });
   }
 });
@@ -284,10 +284,10 @@ router.put("/invites/:id/decline", authMiddleware, async (req, res) => {
       },
     });
 
-    console.log(`❌ User ${userId} declined invite ${notificationId}`);
+    console.log(`User ${userId} declined invite ${notificationId}`);
     res.json({ message: "Invite declined successfully" });
   } catch (error) {
-    console.error("❌ Error declining invite:", error);
+    console.error("Error declining invite:", error);
     res.status(500).json({ error: "Failed to decline invite" });
   }
 });
@@ -316,10 +316,10 @@ router.delete("/:id", authMiddleware, async (req, res) => {
       where: { id: notificationId },
     });
 
-    console.log(`🗑️ User ${userId} deleted notification ${notificationId}`);
+    console.log(`User ${userId} deleted notification ${notificationId}`);
     res.json({ message: "Notification deleted successfully" });
   } catch (error) {
-    console.error("❌ Error deleting notification:", error);
+    console.error("Error deleting notification:", error);
     res.status(500).json({ error: "Failed to delete notification" });
   }
 });
@@ -349,10 +349,10 @@ router.put("/:id/read", authMiddleware, async (req, res) => {
       data: { status: "READ", readAt: new Date() },
     });
 
-    console.log(`👁️ User ${userId} marked notification ${notificationId} as read`);
+    console.log(`User ${userId} marked notification ${notificationId} as read`);
     res.json({ notification: updatedNotification });
   } catch (error) {
-    console.error("❌ Error marking notification as read:", error);
+    console.error("Error marking notification as read:", error);
     res.status(500).json({ error: "Failed to mark notification as read" });
   }
 });

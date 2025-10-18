@@ -51,6 +51,8 @@ export default function Lobby() {
   const [maxPlayers, setMaxPlayers] = useState(6);
   const [socketConnected, setSocketConnected] = useState(false);
   const [matchDetails, setMatchDetails] = useState(null);
+  const [remainingMs, setRemainingMs] = useState(null); // count down for scheduled matches
+  const [hasAutoStarted, setHasAutoStarted] = useState(false);
 
   const socketRef = useRef(null);
 
@@ -154,6 +156,23 @@ export default function Lobby() {
       navigate("/game");
     });
 
+    // Admin ended the match for everyone
+    socket.on("adminEnded", ({ message }) => {
+      console.log("\u26d4 Admin ended the match:", message);
+      alert(message || "An administrator has ended this match.");
+      // Return to the main game menu
+      socket.disconnect();
+      navigate("/game");
+    });
+
+    // This client was kicked by an admin
+    socket.on("kickedByAdmin", ({ message }) => {
+      console.log("\u26d4 Kicked by admin:", message);
+      alert(message || "You were removed from the match by an administrator.");
+      socket.disconnect();
+      navigate("/game");
+    });
+
     socket.on("disconnect", () => {
       console.warn("⚠️ Disconnected from server");
       setSocketConnected(false);
@@ -222,6 +241,44 @@ export default function Lobby() {
     })();
   }, [matchId, currentUser]);
 
+  // Compute countdown
+  useEffect(() => {
+    const scheduledStart = matchDetails?.scheduledStartAt;
+    if (!scheduledStart) { setRemainingMs(null); return; }
+
+    const target = new Date(scheduledStart).getTime();
+    const tick = () => {
+      const now = Date.now();
+      setRemainingMs(Math.max(0, target - now));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [matchDetails?.scheduledStartAt]);
+
+  useEffect(() => {
+    // Only auto-start if:
+    // 1. User is the host
+    // 2. We have a valid countdown
+    // 3. Countdown reached zero
+    // 4. We haven't already auto-started
+    if (!isHost || remainingMs === null) return;
+    
+    if (remainingMs === 0 && !hasAutoStarted) {
+      const socket = socketRef.current;
+      if (socket && socket.connected) {
+        console.log('⏱️ Countdown reached zero — auto-starting match');
+        console.log('🔑 Host token being used for auto-start');
+        
+        // This should work since isHost is true and socket has host's token
+        socket.emit("startMatch", { matchId });
+        setHasAutoStarted(true);
+      } else {
+        console.error('❌ Socket not connected for auto-start');
+      }
+    }
+  }, [remainingMs, isHost, hasAutoStarted, matchId]);
+
   const isLobbyFull = players.length >= (maxPlayers || 6);
 
   const handleStartGame = () => {
@@ -236,6 +293,15 @@ export default function Lobby() {
     console.log("🚀 Starting match:", matchId);
     socket.emit("startMatch", { matchId });
   };
+
+  // Helper to format time
+  function formatCountdown(ms) {
+    if (ms == null) return '--:--';
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const m = Math.floor(total / 60).toString().padStart(2, '0');
+    const s = (total % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
 
   return (
     <div
@@ -270,7 +336,7 @@ export default function Lobby() {
           {/* Panel */}
           <div
             className="bg-[#1a237e]/70 border border-[#1a237e]/80 rounded-3xl p-4 shadow-[0_20px_40px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] flex flex-col"
-            style={{ height: "calc(100vh - 140px)" }}
+            style={{ maxHeight: "calc(100vh - 250px)", overflow: "auto" }}
           >
             {/* Panel Header - Player Count and Code */}
             <div className="relative flex justify-center items-center mb-3 flex-shrink-0">
@@ -281,6 +347,17 @@ export default function Lobby() {
                     } / ${maxPlayers}`
                   : "Connecting to server..."}
               </div>
+
+              {/** Countdown if scheduled */}
+              {matchDetails?.scheduledStartAt && (
+                <div className="ml-3 inline-flex items-center gap-2 rounded-lg bg-smart-yellow px-3 py-1">
+                  <span className="text-black text-sm font-semibold">Starts in:</span>
+                  <span className="text-black text-sm font-bold tabular-nums">
+                    {formatCountdown(remainingMs)}
+                  </span>
+                </div>
+              )}
+
               <div className="absolute right-0 inline-block bg-smart-pink rounded-lg px-3 py-1">
                 <span className="text-white text-sm font-semibold mr-2">
                   Code:

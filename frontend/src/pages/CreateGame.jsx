@@ -113,6 +113,8 @@ export default function CreateGame() {
   const [emailInvited, setEmailInvited] = useState([]); // Array of email addresses that were invited
   const [modeIndex, setModeIndex] = useState(0); // Currently selected game mode index
   const [username, setUsername] = useState(""); // Current user's username
+  const [scheduleMode, setScheduleMode] = useState("now");
+  const [delayMinutes, setDelayMinutes] = useState(5);
 
   const [secPerQ, setSecPerQ] = useState(() => {
     if (typeof window !== "undefined") {
@@ -132,6 +134,8 @@ export default function CreateGame() {
     }
   }, [secPerQ]);
   const [numQuestions, setNumQuestions] = useState(5); // Number of questions per game (5-10)
+  // Use lowercase values to match backend/OpenTDB storage: 'easy', 'medium', 'hard'
+  const [difficulty, setDifficulty] = useState("easy"); // Default difficulty selection
 
   // Current selected game mode object
   const mode = MODES[modeIndex];
@@ -278,11 +282,15 @@ export default function CreateGame() {
         body: JSON.stringify({
           title: title || "Untitled Match",
           category: mode.label,
-          difficulty: "Easy",
+          difficulty,
           isPublic: isPublic,
           maxPlayers: maxPlayers,
           numQuestions: numQuestions,
           timeLimit: secPerQ, // seconds per question
+
+          isScheduled: scheduleMode === "schedule", // defines whether the match is scheduled or not
+          scheduledDelayMinutes:
+            scheduleMode === "schedule" ? delayMinutes : undefined,
         }),
       });
 
@@ -369,6 +377,7 @@ export default function CreateGame() {
               onChange={(e) => setTitle(e.target.value)}
               className="w-full max-w-md text-center rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 px-4 py-3 outline-none text-lg font-semibold placeholder:font-semibold placeholder:uppercase"
               placeholder="GAME NAME"
+              maxLength={20}
             />
           </div>
 
@@ -398,28 +407,85 @@ export default function CreateGame() {
               </button>
             </div>
 
-            {/* Public vs Private controls */}
-            {isPublic ? (
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+            {/* Max Players setting (available for both public and private) */}
+            <div className="mt-4">
+              <label className="block text-white/90 text-sm">
+                Max players
+              </label>
+              <div className="flex items-center gap-4 mt-1">
+                <input
+                  type="range"
+                  min={1}
+                  max={20}
+                  step={1}
+                  value={maxPlayers}
+                  onChange={(e) => setMaxPlayers(parseInt(e.target.value))}
+                  className="w-full accent-white"
+                />
+                <span className="inline-block rounded-xl border border-white/20 bg-white/10 text-white text-xs px-2 py-1">
+                  {maxPlayers}
+                </span>
+              </div>
+            </div>
+
+            {/** Schedule (available for both public and private games) */}
+            <div className="mt-6">
+              <SectionTitle color="#1740d1ff">Start Time</SectionTitle>
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="scheduleMode"
+                    value="now"
+                    checked={scheduleMode === "now"}
+                    onChange={() => setScheduleMode("now")}
+                  />
+                  <span>Start now</span>
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="scheduleMode"
+                    value="schedule"
+                    checked={scheduleMode === "schedule"}
+                    onChange={() => setScheduleMode("schedule")}
+                  />
+                  <span>Schedule start</span>
+                </label>
+              </div>
+
+              {scheduleMode === "schedule" && (
+                <div className="mt-3">
                   <label className="block text-white/90 text-sm">
-                    Max players
+                    Starts in (minutes)
                   </label>
                   <div className="flex items-center gap-4 mt-1">
                     <input
                       type="range"
-                      min={2}
-                      max={20}
+                      min={1}
+                      max={60}
                       step={1}
-                      value={maxPlayers}
-                      onChange={(e) => setMaxPlayers(parseInt(e.target.value))}
+                      value={delayMinutes}
+                      onChange={(e) =>
+                        setDelayMinutes(parseInt(e.target.value, 10))
+                      }
                       className="w-full accent-white"
                     />
                     <span className="inline-block rounded-xl border border-white/20 bg-white/10 text-white text-xs px-2 py-1">
-                      {maxPlayers}
+                      {delayMinutes} min
                     </span>
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* Public vs Private specific controls */}
+            {isPublic ? (
+              <div className="mt-4">
+                <p className="text-sm text-white/70">
+                  🌐 Public games are discoverable by all players
+                </p>
               </div>
             ) : (
               <div className="mt-4">
@@ -636,6 +702,23 @@ export default function CreateGame() {
                   <span className="inline-block rounded-xl border border-white/20 bg-white/10 text-white text-xs px-2 py-1">
                     {numQuestions}
                   </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-white/90 text-sm">
+                  Difficulty
+                </label>
+                <div className="mt-1">
+                  <select
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
+                    className="rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm text-white w-full"
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
                 </div>
               </div>
 
