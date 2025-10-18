@@ -48,6 +48,44 @@ router.get("/all", async (_req, res) => {
   }
 });
 
+router.get("/max-rounds", async (req, res) => {
+  const { category, difficulty, questionsPerRound = 4 } = req.query;
+
+  if (!category) {
+    return res.status(400).json({ error: "Category is required" });
+  }
+
+  try {
+    // Build question filter
+    const questionWhere = { category };
+    
+    // Normalize difficulty if provided
+    if (difficulty && difficulty.trim().length > 0) {
+      questionWhere.difficulty = difficulty.toLowerCase();
+    }
+
+    // Count available questions
+    const availableQuestions = await prisma.question.count({
+      where: questionWhere,
+    });
+
+    const questionsPerRoundNum = Math.max(3, Math.min(10, parseInt(questionsPerRound)));
+    const maxRounds = Math.floor(availableQuestions / questionsPerRoundNum);
+    const cappedMaxRounds = Math.min(maxRounds, 5); // Cap at 5 rounds max
+
+    res.json({
+      availableQuestions,
+      questionsPerRound: questionsPerRoundNum,
+      maxPossibleRounds: cappedMaxRounds,
+      category,
+      difficulty: difficulty || null
+    });
+  } catch (error) {
+    console.error("Error calculating max rounds:", error);
+    res.status(500).json({ error: "Failed to calculate maximum rounds" });
+  }
+});
+
 router.get("/categories", async (_req, res) => {
   try {
     const categories = await prisma.question.findMany({

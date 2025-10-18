@@ -93,6 +93,8 @@ model Match {
 
   players       MatchPlayer[]
   questions     MatchQuestion[]
+  questionsPerRound  Int       @default(4)
+  totalRounds        Int       @default(3)
   answers       Answer[]
   notifications Notification[]
 }

@@ -8,6 +8,8 @@ export default function GameHeader({
   score,
   currentQuestion,
   totalQuestions,
+  round,
+  totalRounds,
   onQuit,
 }) {
   const isFinished = currentQuestion >= totalQuestions;
@@ -21,10 +23,17 @@ export default function GameHeader({
         <span className="font-heading text-5xl font-black text-smart-green drop-shadow-lg">
           {score}
         </span>
-        {!isFinished && (
-          <p className="mt-2 text-sm uppercase tracking-[0.35em] text-white/60 font-semibold">
-            Question {currentQuestion + 1} / {totalQuestions}
-          </p>
+                {!isFinished && (
+          <div className="mt-2 space-y-1">
+            <p className="text-sm uppercase tracking-[0.35em] text-white/60 font-semibold">
+              Question {currentQuestion + 1} / {totalQuestions}
+            </p>
+            {round && totalRounds && (
+              <p className="text-xs uppercase tracking-[0.35em] text-smart-green/80 font-semibold">
+                Round {round} of {totalRounds}
+              </p>
+            )}
+          </div>
         )}
       </div>
       <button

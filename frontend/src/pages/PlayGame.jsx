@@ -38,6 +38,11 @@ export default function PlayGame() {
   const [isTie, setIsTie] = useState(false);
   const [tiedPlayers, setTiedPlayers] = useState([]);
 
+  // 🆕 Round tracking
+  const [currentRound, setCurrentRound] = useState(1);
+  const [totalRounds, setTotalRounds] = useState(1);
+  const [showRoundSummary, setShowRoundSummary] = useState(false);
+
   const socketRef = useRef(null);
   const timerRef = useRef(null);
   const timeoutGuardRef = useRef(null);
@@ -48,42 +53,32 @@ export default function PlayGame() {
     isAnsweredRef.current = isAnswered;
   }, [isAnswered]);
 
-  // Fetch user
+  // Fetch current user with token refresh fallback
   const fetchCurrentUser = async () => {
     try {
-      // Use the same token refresh logic as other components
       const data = await api.getCurrentUser();
       setCurrentUser(data.user);
     } catch (err) {
       console.error("❌ Failed to fetch user:", err);
-      
-      // If token is invalid, try to refresh or redirect to login
-      if (err.message.includes('Invalid token') || err.message.includes('Unauthorized')) {
+
+      if (err.message.includes("Invalid token") || err.message.includes("Unauthorized")) {
         console.log("🔄 Token expired, attempting refresh...");
-        
-        const refreshToken = localStorage.getItem('refreshToken');
+        const refreshToken = localStorage.getItem("refreshToken");
         if (refreshToken) {
           try {
-            // Try to refresh the token
-            const refreshResponse = await api.refreshAccessToken();
-            console.log("✅ Token refreshed successfully");
-            
-            // Retry fetching user data with new token
+            await api.refreshAccessToken();
             const data = await api.getCurrentUser();
             setCurrentUser(data.user);
-            console.log("✅ User data fetched after token refresh");
           } catch (refreshErr) {
             console.error("❌ Token refresh failed:", refreshErr);
-            // Clear invalid tokens and redirect
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            navigate('/login');  
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            navigate("/login");
           }
         } else {
           console.log("❌ No refresh token available");
-          // No refresh token, redirect to login
-          localStorage.removeItem('accessToken');
-          navigate('/login');  // ← Changed from '/auth/login' to '/login'
+          localStorage.removeItem("accessToken");
+          navigate("/login");
         }
       }
     }
@@ -93,15 +88,14 @@ export default function PlayGame() {
     fetchCurrentUser();
   }, []);
 
-  // Listen for user data refresh events from settings modal
+  // Listen for user data refresh (e.g., from settings)
   useEffect(() => {
     const handleUserRefresh = () => {
       console.log("🔄 Refreshing user data in game after settings update...");
       fetchCurrentUser();
     };
     window.addEventListener("refreshUserData", handleUserRefresh);
-    return () =>
-      window.removeEventListener("refreshUserData", handleUserRefresh);
+    return () => window.removeEventListener("refreshUserData", handleUserRefresh);
   }, []);
 
   // Socket setup
@@ -121,14 +115,15 @@ export default function PlayGame() {
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
       setQuestion(data);
+      // Update round info if provided
+      if (data.round) setCurrentRound(data.round);
+      if (data.totalRounds) setTotalRounds(data.totalRounds);
       setCurrentCorrectAnswer(null);
       setIsAnswered(false);
       setShowRecap(false);
       setRecapData(null);
-      timeoutGuardRef.current = setTimeout(
-        () => startTimer(data.timeLimit || 10000),
-        200
-      );
+      setShowRoundSummary(false); // hide if it was showing
+      timeoutGuardRef.current = setTimeout(() => startTimer(data.timeLimit || 10000), 200);
     });
 
     // Handle answer confirmation
@@ -136,11 +131,7 @@ export default function PlayGame() {
       if (!isAnswered) {
         setIsAnswered(true);
         clearTimeout(timeoutGuardRef.current);
-        console.log(
-          `🧠 Answer submitted: ${
-            correct ? "✅ Correct" : "❌ Wrong"
-          } (+${points})`
-        );
+        console.log(`🧠 Answer submitted: ${correct ? "✅ Correct" : "❌ Wrong"} (+${points})`);
       }
     });
 
@@ -148,16 +139,12 @@ export default function PlayGame() {
     socket.on("questionResults", ({ responses, scores, correctAnswer }) => {
       setScores(scores);
       setCurrentCorrectAnswer(correctAnswer || null);
-      const yourResponse = responses.find(
-        (r) => r.username === currentUser.username
-      );
+      const yourResponse = responses.find((r) => r.username === currentUser.username);
 
       const currentLeaderboard = Object.entries(scores)
         .sort((a, b) => b[1] - a[1])
         .map(([playerName, totalScore], index) => {
-          const playerResponse = responses.find(
-            (r) => r.username === playerName
-          );
+          const playerResponse = responses.find((r) => r.username === playerName);
           return {
             id: index,
             name: playerName,
@@ -189,6 +176,22 @@ export default function PlayGame() {
       else show();
     });
 
+    // Handle match started - get initial round info
+    socket.on("matchStarted", ({ totalRounds, questionsPerRound }) => {
+      console.log(`🎮 Match started with ${totalRounds} rounds, ${questionsPerRound} questions per round`);
+      setTotalRounds(totalRounds);
+    });
+
+    // 🆕 Handle round summary
+    socket.on("roundSummary", ({ round, totalRounds, scores }) => {
+      console.log(`🏁 Round ${round} of ${totalRounds} finished`);
+      setCurrentRound(round);
+      setTotalRounds(totalRounds);
+      setScores(scores || {});
+      setShowRoundSummary(true);
+      setTimeout(() => setShowRoundSummary(false), 7000);
+    });
+
     // Handle player updates
     socket.on("playersUpdate", ({ players }) => {
       const map = {};
@@ -204,7 +207,6 @@ export default function PlayGame() {
       setIsTie(!!isTie);
       setTiedPlayers(tiedPlayers || []);
       setMatchEnded(true);
-
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
 
@@ -232,25 +234,19 @@ export default function PlayGame() {
       alert(message);
     });
 
-    // Handle admin forcibly ending the match for everyone
-    socket.on("adminEnded", ({ message, matchId: endedMatchId }) => {
-      console.log("\u26d4 Admin ended match:", message);
-      // Show message to player and navigate back to landing/lobby
+    // Admin forcibly ends match
+    socket.on("adminEnded", ({ message }) => {
       alert(message || "An administrator has ended this match.");
-      // Ensure we don't attempt to save stats for admin-terminated matches
       setMatchEnded(true);
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
-      // Disconnect and go back to landing/menu
       socket.disconnect();
       navigate("/landing");
     });
 
-    // Handle admin kicking this specific player
-    socket.on("kickedByAdmin", ({ message, matchId: kickedFrom }) => {
-      console.log("\u26d4 Kicked by admin:", message);
+    // Admin kicks this player
+    socket.on("kickedByAdmin", ({ message }) => {
       alert(message || "You were removed from the match by an administrator.");
-      // Clean up and return to lobby/menu
       setMatchEnded(true);
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
@@ -336,23 +332,12 @@ export default function PlayGame() {
     const winner = formattedLeaderboard[0];
 
     return (
-      <div
-        className="min-h-screen flex items-center justify-center text-white"
-        style={{ backgroundColor: colors.darkBlue }}
-      >
+      <div className="min-h-screen flex items-center justify-center text-white" style={{ backgroundColor: colors.darkBlue }}>
         <GameOverScreen
           winner={
             isTie
-              ? {
-                  name: "🤝 It's a Tie!",
-                  score: winner?.total || 0,
-                  isYou: false,
-                }
-              : {
-                  name: winner.name,
-                  score: winner.total,
-                  isYou: winner.name === currentUser?.username,
-                }
+              ? { name: "🤝 It's a Tie!", score: winner?.total || 0, isYou: false }
+              : { name: winner.name, score: winner.total, isYou: winner.name === currentUser?.username }
           }
           score={scores[currentUser?.username] || 0}
           finalLeaderboard={formattedLeaderboard}
@@ -383,15 +368,14 @@ export default function PlayGame() {
 
   // ================== QUESTION DISPLAY ==================
   return (
-    <div
-      className="min-h-screen text-white relative bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${backgroundGamePlay})` }}
-    >
+    <div className="min-h-screen text-white relative bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${backgroundGamePlay})` }}>
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8">
         <GameHeader
           score={scores[currentUser?.username] || 0}
           currentQuestion={question.index}
           totalQuestions={question.total || 5}
+          round={question.round || currentRound}
+          totalRounds={totalRounds}
           onQuit={handleQuitGame}
         />
 
@@ -399,10 +383,7 @@ export default function PlayGame() {
           <QuestionCard
             question={{
               text: question.q,
-              options: question.options.map((opt) => ({
-                id: opt,
-                label: opt,
-              })),
+              options: question.options.map((opt) => ({ id: opt, label: opt })),
             }}
             timeLeftMs={timeLeft}
             questionDurationMs={question.timeLimit || 10000}
@@ -415,6 +396,30 @@ export default function PlayGame() {
           />
         </main>
       </div>
+
+      {/* 🆕 Round Summary Overlay */}
+      {showRoundSummary && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
+          <div className="text-center">
+            <h1 className="text-5xl font-bold mb-4 animate-pulse">🏁 ROUND {currentRound} COMPLETE!</h1>
+            <p className="text-xl mb-2 text-smart-green">Round {currentRound} of {totalRounds}</p>
+            {currentRound < totalRounds ? (
+              <p className="text-2xl mb-6">Round {currentRound + 1} starts soon...</p>
+            ) : (
+              <p className="text-2xl mb-6 text-yellow-400">Final round complete! Game ending...</p>
+            )}
+            <div className="space-y-2 text-lg">
+              {Object.entries(scores)
+                .sort((a, b) => b[1] - a[1])
+                .map(([player, score]) => (
+                  <p key={player}>
+                    <span className="font-bold">{player}</span>: {score} pts
+                  </p>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recap */}
       {showRecap && recapData && (
@@ -436,10 +441,7 @@ export default function PlayGame() {
       {showQuitConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-md">
-            <QuitConfirmModal
-              onConfirm={confirmQuitGame}
-              onCancel={cancelQuit}
-            />
+            <QuitConfirmModal onConfirm={confirmQuitGame} onCancel={cancelQuit} />
           </div>
         </div>
       )}
@@ -447,11 +449,7 @@ export default function PlayGame() {
       {/* Game Over Modal (backup) */}
       {matchEnded && (
         <div className="fixed inset-0 z-50">
-          <GameOverModal
-            scores={scores}
-            currentUser={currentUser}
-            onClose={() => navigate("/landing")}
-          />
+          <GameOverModal scores={scores} currentUser={currentUser} onClose={() => navigate("/landing")} />
         </div>
       )}
     </div>

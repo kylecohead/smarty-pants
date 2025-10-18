@@ -68,7 +68,7 @@ export default function QuestionRecapModal({
       {/* Header */}
       <header className="text-center">
         <p className="text-4xl uppercase tracking-[0.35em] font-heading font-black mb-4 mt-4 text-white/60">
-          ROUND {questionIndex + 1}
+          QUESTION {questionIndex + 1}
         </p>
         <h2
           className="font-heading text-4xl font-black drop-shadow mb-1"
@@ -108,7 +108,7 @@ export default function QuestionRecapModal({
           }}
         >
           <h3 className="text-left text-lg uppercase tracking-[0.35em] font-bold text-white">
-            WINNERS OF ROUND {questionIndex + 1}
+            WINNERS OF QUESTION {questionIndex + 1}
           </h3>
           <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:items-start">
             {(() => {
