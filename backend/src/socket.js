@@ -239,9 +239,10 @@ function sendQuestion(io, matchId) {
   );
 
   io.to(`match-${matchId}`).emit("newQuestion", {
-    index: questionIndex,
-    total: match.questions.length,
-    round: match.roundIndex + 1, 
+    index: questionIndex % questionsPerRound, // question index within current round
+    total: questionsPerRound, // questions per round, not total questions
+    round: match.roundIndex + 1,
+    totalRounds: match.totalRounds,
     q: match.questions[questionIndex].q,
     options: match.questions[questionIndex].options,
     timeLimit: questionDurationMs,
@@ -465,8 +466,8 @@ export default function setupSocket(server) {
             hostId: dbMatch.hostId,
             questionIndex: 0,
             roundIndex: 0,            
-            totalRounds: 3,           
-            questionsPerRound: 4, 
+            totalRounds: dbMatch.totalRounds || 3,           
+            questionsPerRound: dbMatch.questionsPerRound || 4, 
             questions: [],
             scores: {},
             started: false,
@@ -542,6 +543,8 @@ export default function setupSocket(server) {
         select: {
           hostId: true,
           timeLimit: true, // Get the time limit per question
+          questionsPerRound: true, // Get questions per round
+          totalRounds: true, // Get total rounds
         },
       });
 
@@ -615,8 +618,10 @@ export default function setupSocket(server) {
 
       console.log(`[RESEND] Current question for match ${matchId}`);
       socket.emit("newQuestion", {
-        index: match.questionIndex,
-        total: match.questions.length,
+        index: match.questionIndex % match.questionsPerRound, // question index within current round
+        total: match.questionsPerRound, // questions per round
+        round: match.roundIndex + 1,
+        totalRounds: match.totalRounds,
         q: current.q,
         options: current.options,
         timeLimit: (match.timeLimit || 10) * 1000, // Use match's time limit (convert to ms)

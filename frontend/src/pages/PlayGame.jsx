@@ -115,6 +115,9 @@ export default function PlayGame() {
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
       setQuestion(data);
+      // Update round info if provided
+      if (data.round) setCurrentRound(data.round);
+      if (data.totalRounds) setTotalRounds(data.totalRounds);
       setCurrentCorrectAnswer(null);
       setIsAnswered(false);
       setShowRecap(false);
@@ -171,6 +174,12 @@ export default function PlayGame() {
       };
       if (timeRemaining > 100) setTimeout(show, timeRemaining);
       else show();
+    });
+
+    // Handle match started - get initial round info
+    socket.on("matchStarted", ({ totalRounds, questionsPerRound }) => {
+      console.log(`🎮 Match started with ${totalRounds} rounds, ${questionsPerRound} questions per round`);
+      setTotalRounds(totalRounds);
     });
 
     // 🆕 Handle round summary
@@ -365,7 +374,8 @@ export default function PlayGame() {
           score={scores[currentUser?.username] || 0}
           currentQuestion={question.index}
           totalQuestions={question.total || 5}
-          round={question.round || currentRound} // 🆕 show round
+          round={question.round || currentRound}
+          totalRounds={totalRounds}
           onQuit={handleQuitGame}
         />
 
@@ -392,7 +402,12 @@ export default function PlayGame() {
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-4 animate-pulse">🏁 ROUND {currentRound} COMPLETE!</h1>
-            <p className="text-2xl mb-6">Next round starts soon...</p>
+            <p className="text-xl mb-2 text-smart-green">Round {currentRound} of {totalRounds}</p>
+            {currentRound < totalRounds ? (
+              <p className="text-2xl mb-6">Round {currentRound + 1} starts soon...</p>
+            ) : (
+              <p className="text-2xl mb-6 text-yellow-400">Final round complete! Game ending...</p>
+            )}
             <div className="space-y-2 text-lg">
               {Object.entries(scores)
                 .sort((a, b) => b[1] - a[1])

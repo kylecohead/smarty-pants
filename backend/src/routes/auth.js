@@ -29,7 +29,7 @@ router.post("/signup", async (req, res) => {
     });
 
     const payload = { id: user.id, role: user.role };
-    const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
+    const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: "30m" });
     const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
     console.log(` SIGNUP: Created new tokens for user ${user.username} (ID: ${user.id})`);

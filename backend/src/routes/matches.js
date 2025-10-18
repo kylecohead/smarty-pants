@@ -36,10 +36,6 @@ router.post("/", authMiddleware, async (req, res) => {
     //   ? numQuestions
     //   : 5;
 
-    const questionsCount = questionsPerRound && questionsPerRound >= 3 && questionsPerRound <= 10
-      ? questionsPerRound
-      : 4;
-
     // Validate timeLimit (5-60 seconds, default to 10)
     const timeLimitSeconds = timeLimit && timeLimit >= 5 && timeLimit <= 60 
       ? timeLimit 
@@ -57,16 +53,54 @@ router.post("/", authMiddleware, async (req, res) => {
       }
     }
 
-    // Check if category/difficulty has enough questions
+    // Check available questions first
     const availableQuestions = await prisma.question.count({
       where: questionWhere,
     });
 
-    if (availableQuestions < questionsCount) {
+    if (availableQuestions < 3) {
       return res.status(400).json({
-        error: `Not enough questions in category "${category}"${questionWhere.difficulty ? ` (difficulty: ${questionWhere.difficulty})` : ""}. Available: ${availableQuestions}, Required: ${questionsCount}`,
+        error: `Not enough questions in category "${category}"${questionWhere.difficulty ? ` (difficulty: ${questionWhere.difficulty})` : ""}. Available: ${availableQuestions}, Minimum required: 3`,
       });
     }
+
+    // Validate and adapt configuration based on available questions
+    const requestedQuestionsPerRound = questionsPerRound && questionsPerRound >= 3 && questionsPerRound <= 10
+      ? questionsPerRound
+      : 4;
+    
+    const requestedTotalRounds = totalRounds && totalRounds >= 1 && totalRounds <= 5
+      ? totalRounds
+      : 3;
+
+    // Calculate maximum possible rounds with available questions
+    const maxPossibleRounds = Math.floor(availableQuestions / requestedQuestionsPerRound);
+    
+    // Adapt rounds to what's actually possible
+    const actualTotalRounds = Math.min(requestedTotalRounds, maxPossibleRounds, 5);
+    const actualQuestionsPerRound = requestedQuestionsPerRound;
+
+    // If we had to reduce rounds, ensure we still have at least 1 round
+    if (actualTotalRounds < 1) {
+      // If we can't even do 1 round with requested questions per round, reduce questions per round
+      const finalQuestionsPerRound = Math.min(availableQuestions, requestedQuestionsPerRound);
+      const finalTotalRounds = 1;
+      
+      console.log(`⚠️ Adapted game configuration: requested ${requestedTotalRounds} rounds × ${requestedQuestionsPerRound} questions, but only ${availableQuestions} available. Using ${finalTotalRounds} round × ${finalQuestionsPerRound} questions.`);
+      
+      var questionsPerRoundCount = finalQuestionsPerRound;
+      var totalRoundsCount = finalTotalRounds;
+    } else {
+      if (actualTotalRounds < requestedTotalRounds) {
+        console.log(`⚠️ Adapted game configuration: requested ${requestedTotalRounds} rounds × ${requestedQuestionsPerRound} questions, but only ${availableQuestions} available. Using ${actualTotalRounds} rounds × ${actualQuestionsPerRound} questions.`);
+      }
+      
+      var questionsPerRoundCount = actualQuestionsPerRound;
+      var totalRoundsCount = actualTotalRounds;
+    }
+
+    // Calculate total questions needed
+    const questionsCount = questionsPerRoundCount * totalRoundsCount;
 
     // Fetch random questions from the selected category/difficulty
     const allCategoryQuestions = await prisma.question.findMany({
@@ -91,8 +125,8 @@ router.post("/", authMiddleware, async (req, res) => {
       data: {
         title,
         category,
-        questionsPerRound,  
-        totalRounds,    
+        questionsPerRound: questionsPerRoundCount,  
+        totalRounds: totalRoundsCount,    
         difficulty: normDifficulty,
         timeLimit: timeLimitSeconds,
         isPublic: isPublic !== undefined ? Boolean(isPublic) : true,

@@ -132,6 +132,9 @@ export default function CreateGame() {
     }
   }, [secPerQ]);
   const [numQuestions, setNumQuestions] = useState(5); // Number of questions per game (5-10)
+  const [numRounds, setNumRounds] = useState(3); // Number of rounds per game (1-5)
+  const [maxRounds, setMaxRounds] = useState(5); // Maximum possible rounds based on available questions
+  const [availableQuestions, setAvailableQuestions] = useState(0); // Total available questions in category
   // Use lowercase values to match backend/OpenTDB storage: 'easy', 'medium', 'hard'
   const [difficulty, setDifficulty] = useState("easy"); // Default difficulty selection
 
@@ -227,6 +230,44 @@ export default function CreateGame() {
 
   const API_URL = "/api/users";
 
+  /**
+   * Fetch maximum possible rounds for current category/difficulty
+   */
+  const fetchMaxRounds = async () => {
+    try {
+      const params = new URLSearchParams({
+        category: mode.label,
+        questionsPerRound: numQuestions.toString()
+      });
+      
+      if (difficulty && difficulty !== "any") {
+        params.append("difficulty", difficulty);
+      }
+
+      const response = await fetch(`/api/questions/max-rounds?${params}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setMaxRounds(data.maxPossibleRounds);
+        setAvailableQuestions(data.availableQuestions);
+        
+        // Adjust current numRounds if it exceeds the maximum
+        if (numRounds > data.maxPossibleRounds) {
+          setNumRounds(Math.max(1, data.maxPossibleRounds));
+        }
+      } else {
+        console.error("Failed to fetch max rounds:", data.error);
+      }
+    } catch (error) {
+      console.error("Error fetching max rounds:", error);
+    }
+  };
+
+  // Fetch max rounds when category, difficulty, or questions per round changes
+  useEffect(() => {
+    fetchMaxRounds();
+  }, [mode.label, difficulty, numQuestions]);
+
   // Create match in database ==============================
   async function handleCreateGame() {
     try {
@@ -269,7 +310,7 @@ export default function CreateGame() {
           timeLimit: secPerQ, // seconds per question
 
           questionsPerRound: numQuestions,   // how many per round
-          totalRounds: 3, 
+          totalRounds: numRounds, 
 
           isScheduled: scheduleMode === "schedule", // defines whether the match is scheduled or not
           scheduledDelayMinutes:
@@ -615,6 +656,46 @@ export default function CreateGame() {
                     {numQuestions}
                   </span>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-white/90 text-sm">
+                  Number of rounds
+                  {maxRounds < 5 && (
+                    <span className="text-yellow-400 ml-1">
+                      (max {maxRounds} available)
+                    </span>
+                  )}
+                </label>
+                <div className="flex items-center gap-4 mt-1">
+                  <input
+                    type="range"
+                    min={1}
+                    max={maxRounds}
+                    step={1}
+                    value={Math.min(numRounds, maxRounds)}
+                    onChange={(e) =>
+                      setNumRounds(parseInt(e.target.value, 10))
+                    }
+                    className="w-full accent-white"
+                  />
+                  <span className="inline-block rounded-xl border border-white/20 bg-white/10 text-white text-xs px-2 py-1">
+                    {numRounds} {numRounds === 1 ? 'round' : 'rounds'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs mt-1">
+                  <p className="text-white/60">
+                    Total questions: {numQuestions * numRounds}
+                  </p>
+                  <p className="text-white/60">
+                    Available: {availableQuestions} questions
+                  </p>
+                </div>
+                {numQuestions * numRounds > availableQuestions && (
+                  <p className="text-red-400 text-xs mt-1">
+                    ⚠️ Not enough questions available. Game will be adapted automatically.
+                  </p>
+                )}
               </div>
 
               <div>
