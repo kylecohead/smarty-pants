@@ -453,20 +453,6 @@ export default function Landing() {
                                 <div className="ml-auto font-button font-bold text-smart-black text-base">
                                   {(player.highScore ?? 0).toLocaleString()}
                                 </div>
-                                {player.name !== user?.username && (
-                                  <button
-                                    onClick={() =>
-                                      handleInviteUser(
-                                        player.id || player.rank,
-                                        player.name
-                                      )
-                                    }
-                                    className="bg-smart-green hover:bg-smart-light-blue text-white text-xs px-2 py-1 rounded-lg transition-colors"
-                                    title={`Invite ${player.name} to a game`}
-                                  >
-                                    📤
-                                  </button>
-                                )}
                               </div>
                             ))}
                           </div>
