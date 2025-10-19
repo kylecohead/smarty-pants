@@ -159,10 +159,10 @@ router.get("/me", authMiddleware, async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    console.log(`🔍 GET ME: Retrieved user info for ${user.username} (ID: ${user.id})`);
+    console.log(`GET ME: Retrieved user info for ${user.username} (ID: ${user.id})`);
     res.json({ user });
   } catch (error) {
-    console.error("❌ Error getting current user:", error);
+    console.error("Error getting current user:", error);
     res.status(500).json({ error: "Failed to get current user" });
   }
 });

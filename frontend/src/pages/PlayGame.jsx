@@ -209,7 +209,7 @@ export default function PlayGame() {
 
     //  Handle round summary
     socket.on("roundSummary", ({ round, totalRounds, scores }) => {
-      console.log(`🏁 Round ${round} of ${totalRounds} finished`);
+      console.log(`Round ${round} of ${totalRounds} finished`);
       setCurrentRound(round);
       setTotalRounds(totalRounds);
       setScores(scores || {});

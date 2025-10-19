@@ -79,12 +79,12 @@ export default function Lobby() {
       if (response.ok) {
         const matchData = await response.json();
         setMatchDetails(matchData);
-        console.log("📋 Match details fetched:", matchData);
+        console.log("Match details fetched:", matchData);
       } else {
-        console.error(" Failed to fetch match details:", response.status);
+        console.error("Failed to fetch match details:", response.status);
       }
     } catch (err) {
-      console.error(" Error fetching match details:", err);
+      console.error("Error fetching match details:", err);
     }
   };
 

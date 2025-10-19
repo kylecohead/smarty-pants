@@ -382,7 +382,7 @@ router.get("/invite/accept/:id", async (req, res) => {
       return res.status(404).send(`
         <html>
           <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-            <h1>❌ Invitation Not Found</h1>
+            <h1>Invitation Not Found</h1>
             <p>This invitation link is invalid or has expired.</p>
           </body>
         </html>
@@ -393,7 +393,7 @@ router.get("/invite/accept/:id", async (req, res) => {
       return res.status(400).send(`
         <html>
           <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-            <h1>❌ Invalid Invitation</h1>
+            <h1>Invalid Invitation</h1>
             <p>This is not a valid game invitation.</p>
           </body>
         </html>
@@ -405,7 +405,7 @@ router.get("/invite/accept/:id", async (req, res) => {
       return res.send(`
         <html>
           <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-            <h1>ℹ️ Invitation ${status.charAt(0).toUpperCase() + status.slice(1)}</h1>
+            <h1>Invitation ${status.charAt(0).toUpperCase() + status.slice(1)}</h1>
             <p>This invitation has been ${status}.</p>
             <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/landing" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Go to Game</a>
           </body>
@@ -497,7 +497,7 @@ router.get("/invite/accept/:id", async (req, res) => {
       </head>
       <body>
         <div class="container">
-          <h1>🎉 Invitation Accepted!</h1>
+          <h1>Invitation Accepted!</h1>
           <p>You've successfully accepted the invitation to join <strong>${notification.match.title}</strong>!</p>
           
           <div id="status">
@@ -563,7 +563,7 @@ router.get("/invite/accept/:id", async (req, res) => {
     res.status(500).send(`
       <html>
         <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-          <h1>❌ Error</h1>
+          <h1>Error</h1>
           <p>There was an error processing your request. Please try again later.</p>
         </body>
       </html>
@@ -586,7 +586,7 @@ router.get("/invite/decline/:id", async (req, res) => {
       return res.status(404).send(`
         <html>
           <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-            <h1>❌ Invitation Not Found</h1>
+            <h1>Invitation Not Found</h1>
             <p>This invitation link is invalid or has expired.</p>
           </body>
         </html>
@@ -597,7 +597,7 @@ router.get("/invite/decline/:id", async (req, res) => {
       return res.status(400).send(`
         <html>
           <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-            <h1>❌ Invalid Invitation</h1>
+            <h1>Invalid Invitation</h1>
             <p>This is not a valid game invitation.</p>
           </body>
         </html>
@@ -609,7 +609,7 @@ router.get("/invite/decline/:id", async (req, res) => {
       return res.send(`
         <html>
           <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-            <h1>ℹ️ Invitation ${status.charAt(0).toUpperCase() + status.slice(1)}</h1>
+            <h1>ℹInvitation ${status.charAt(0).toUpperCase() + status.slice(1)}</h1>
             <p>This invitation has been ${status}.</p>
           </body>
         </html>
@@ -630,7 +630,7 @@ router.get("/invite/decline/:id", async (req, res) => {
     res.send(`
       <html>
         <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-          <h1>📝 Invitation Declined</h1>
+          <h1>Invitation Declined</h1>
           <p>You've declined the invitation to join <strong>${notification.match.title}</strong>.</p>
           <p style="color: #666;">
             Game hosted by: ${notification.sender.username}<br>
@@ -644,7 +644,7 @@ router.get("/invite/decline/:id", async (req, res) => {
     res.status(500).send(`
       <html>
         <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-          <h1>❌ Error</h1>
+          <h1>Error</h1>
           <p>There was an error processing your request. Please try again later.</p>
         </body>
       </html>

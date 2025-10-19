@@ -25,9 +25,9 @@ export function getRefreshToken() {
  * @param {string} refreshToken - Refresh token
  */
 export function storeTokens(accessToken, refreshToken) {
-  console.log("💾 Storing new tokens in localStorage");
-  console.log(`   Access Token: ${accessToken?.substring(0, 20)}...`);
-  console.log(`   Refresh Token: ${refreshToken?.substring(0, 20)}...`);
+  console.log("Storing new tokens in localStorage");
+  console.log(`Access Token: ${accessToken?.substring(0, 20)}...`);
+  console.log(`Refresh Token: ${refreshToken?.substring(0, 20)}...`);
   
   localStorage.setItem("accessToken", accessToken);
   localStorage.setItem("refreshToken", refreshToken);
@@ -42,7 +42,7 @@ export function storeTokens(accessToken, refreshToken) {
 export function clearTokens() {
   localStorage.removeItem("accessToken");
   localStorage.removeItem("refreshToken");
-  console.log("🗑️ Cleared tokens from localStorage");
+  console.log("Cleared tokens from localStorage");
 }
 
 /**
@@ -68,11 +68,11 @@ export async function authenticatedFetch(url, options = {}) {
   // If we get a 401 (Unauthorized), try to refresh the token
   if (response.status === 401 && token) {
     const requestId = Math.random().toString(36).substr(2, 6);
-    console.log(`🔄 Request ${requestId} to ${url}: Access token expired, attempting refresh...`);
+    console.log(`Request ${requestId} to ${url}: Access token expired, attempting refresh...`);
     
     const refreshSuccess = await refreshToken();
     if (refreshSuccess) {
-      console.log(`✅ Request ${requestId}: Token refreshed successfully, retrying request...`);
+      console.log(`Request ${requestId}: Token refreshed successfully, retrying request...`);
       
       // Retry the request with the new token
       const newToken = getAccessToken();
@@ -86,7 +86,7 @@ export async function authenticatedFetch(url, options = {}) {
       
       return fetch(url, { ...retryOptions, ...options });
     } else {
-      console.log(`❌ Request ${requestId}: Token refresh failed - user will be redirected to home`);
+      console.log(`Request ${requestId}: Token refresh failed - user will be redirected to home`);
       // Note: refreshToken() function already handles clearing tokens and redirect
       // Just return the original 401 response
       return response;
@@ -109,12 +109,12 @@ export async function refreshToken() {
 
   const currentRefreshToken = getRefreshToken();
   if (!currentRefreshToken) {
-    console.log("❌ No refresh token available");
+    console.log("No refresh token available");
     return false;
   }
 
   const refreshId = Math.random().toString(36).substr(2, 9);
-  console.log(`🔄 Starting refresh process... (ID: ${refreshId})`);
+  console.log(`Starting refresh process... (ID: ${refreshId})`);
 
   // Create the refresh promise
   refreshPromise = performRefresh(currentRefreshToken, refreshId);
@@ -146,18 +146,18 @@ async function performRefresh(currentRefreshToken, refreshId) {
       const oldToken = getAccessToken();
       localStorage.setItem("accessToken", data.accessToken);
       
-      console.log(`✅ Token refreshed successfully (ID: ${refreshId})`);
+      console.log(`Token refreshed successfully (ID: ${refreshId})`);
       console.log("Old token:", oldToken?.substring(0, 20) + "...");
       console.log("New token:", data.accessToken?.substring(0, 20) + "...");
       
       return true;
     } else {
       const errorData = await response.json().catch(() => ({}));
-      console.log(`❌ Token refresh failed (ID: ${refreshId}):`, response.status, errorData);
+      console.log(`Token refresh failed (ID: ${refreshId}):`, response.status, errorData);
       
       // Check if refresh token is expired or invalid
       if (response.status === 403 || response.status === 401) {
-        console.log(`🔒 Refresh token expired/invalid (ID: ${refreshId}) - logging out`);
+        console.log(`Refresh token expired/invalid (ID: ${refreshId}) - logging out`);
         handleExpiredRefreshToken();
         return false;
       }
@@ -167,8 +167,8 @@ async function performRefresh(currentRefreshToken, refreshId) {
     clearTokens();
     return false;
   } catch (error) {
-    console.error(`❌ Token refresh error (ID: ${refreshId}):`, error);
-    console.log(`🔒 Network error during refresh (ID: ${refreshId}) - logging out`);
+    console.error(`Token refresh error (ID: ${refreshId}):`, error);
+    console.log(`Network error during refresh (ID: ${refreshId}) - logging out`);
     logout("network_error_during_refresh");
     return false;
   }
@@ -207,7 +207,7 @@ export async function login(identifier, password) {
     }
     
     // Store tokens
-    console.log("🔑 LOGIN successful - storing tokens");
+    console.log("LOGIN successful - storing tokens");
     storeTokens(data.accessToken, data.refreshToken);
     
     return { success: true, user: data.user, role: data.role };
@@ -251,7 +251,7 @@ export async function signup(username, email, password) {
     }
     
     // Store tokens
-    console.log("🎉 SIGNUP successful - storing tokens");
+    console.log("SIGNUP successful - storing tokens");
     storeTokens(data.accessToken, data.refreshToken);
     
     return { success: true, user: data.user, role: data.role };
@@ -266,7 +266,7 @@ export async function signup(username, email, password) {
  * @param {string} reason - Optional reason for logout
  */
 export function logout(reason = "manual") {
-  console.log(`🚪 Logging out user (reason: ${reason})`);
+  console.log(`Logging out user (reason: ${reason})`);
   clearTokens();
   window.location.href = "/";
 }
@@ -275,7 +275,7 @@ export function logout(reason = "manual") {
  * Handle expired refresh token - logs out user and redirects to home
  */
 export function handleExpiredRefreshToken() {
-  console.log("🔒 Refresh token expired - logging out user");
+  console.log("Refresh token expired - logging out user");
   logout("refresh_token_expired");
 }
 

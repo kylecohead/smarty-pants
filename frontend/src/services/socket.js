@@ -22,7 +22,7 @@ export function getSocket(token) {
 
     // Handle reconnection
     socket.on("reconnect", () => {
-      console.log("🔄 Reconnected to the server");
+      console.log("Reconnected to the server");
       if (socket.auth.token) {
         socket.emit("joinMatch", { matchId: socket.matchId, token: socket.auth.token });
       }

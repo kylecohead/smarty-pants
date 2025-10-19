@@ -143,7 +143,7 @@ export function AuthProvider({ children }) {
 
   // Function to clear auth state
   const clearAuthState = () => {
-    console.log("🧹 AuthContext: Clearing auth state");
+    console.log("AuthContext: Clearing auth state");
     setUser(null);
     setIsLoggedIn(false);
     clearTokens();

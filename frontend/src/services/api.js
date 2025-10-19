@@ -54,7 +54,7 @@ const fetchWithAuth = async (endpoint, options = {}, isRetry = false) => {
   // If 401 and we haven't already retried, try to refresh token
   if (response.status === 401 && !isRetry) {
     try {
-      console.log("🔄 Access token expired, attempting refresh...");
+      console.log("Access token expired, attempting refresh...");
       
       const refreshToken = localStorage.getItem('refreshToken');
       if (!refreshToken) {
@@ -79,13 +79,13 @@ const fetchWithAuth = async (endpoint, options = {}, isRetry = false) => {
       // Update stored token
       localStorage.setItem('accessToken', refreshData.accessToken);
       
-      console.log("✅ Token refreshed successfully, retrying original request");
+      console.log("Token refreshed successfully, retrying original request");
       
       // Retry original request with new token
       return fetchWithAuth(endpoint, options, true);
       
     } catch (refreshError) {
-      console.error("❌ Token refresh failed:", refreshError);
+      console.error("Token refresh failed:", refreshError);
       
       // Clear tokens and redirect to login
       localStorage.removeItem('accessToken');
@@ -244,9 +244,9 @@ export const api = {
         'Content-Type': 'application/json'
       }
     });
-    console.log("🧩 incrementGamesPlayed status:", response.status);
+    console.log("incrementGamesPlayed status:", response.status);
     const data = await response.json();
-    console.log("🧩 incrementGamesPlayed data:", data);
+    console.log("incrementGamesPlayed data:", data);
     if (!response.ok) throw new Error('Failed to update games played');
     return data;
   },

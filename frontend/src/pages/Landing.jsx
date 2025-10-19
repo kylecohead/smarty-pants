@@ -384,7 +384,7 @@ export default function Landing() {
       const matchName = `Game with ${userName}`;
       const message = `${user.username} invited you to play a trivia game!`;
 
-      console.log(`🎮 Sending game invite to ${userName} (${userId})`);
+      console.log(`Sending game invite to ${userName} (${userId})`);
 
       await sendGameInvite(userId, matchName, message);
 
