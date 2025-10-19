@@ -99,7 +99,7 @@ test-socket:
 # -------- PRODUCTION --------
 #this is not working.... yet
 prod:
-	docker compose -f docker-compose.prod.yml run --rm frontend npm run build
+	docker compose -f docker-compose.prod.yml build
 	docker compose -f docker-compose.prod.yml up
 
 
