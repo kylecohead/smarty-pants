@@ -815,7 +815,8 @@ export function getActiveMatchesSummary() {
       matchId,
       hostId: match.hostId,
       hostUsername: hostPlayer?.username || null,
-      status: match.status || "UNKNOWN",
+      // Mark in-memory started matches as live for admin UI
+      status: match.started ? "LIVE" : (match.status || "LOBBY"),
       started: !!match.started,
       questionIndex: match.questionIndex || 0,
       totalQuestions: match.questions?.length || 0,

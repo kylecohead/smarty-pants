@@ -9,13 +9,13 @@
 
 ## 🧑‍💻 Team Members & Roles
 
-| Name                 | Student Number | Primary Role                    | Primary Responsibilities                                                                          |
-| -------------------- | -------------- | ------------------------------- | ------------------------------------------------------------------------------------------------- |
-| **Conrad Joubert**   | 26989581       | Game invites and authentication | Send, receive, accept and decline invitations to games to and from players, Refresh token control |
-| **Nina Swart**       | **26970341**   | Frontend Developer              | Styling, landing page, create & join game frontend                                                |
-| **Amy McDermott**    | **26911264**   | idk                             | leaderboard, game scheduling, match history                                                       |
-| **Kyle Cohead**      | **25964917**   | Real-time Systems               | Socket.IO setup, live gameplay logic                                                              |
-| **Wikus van Biljon** | **26927543**   | authentication                  | Login and signup, Docker, Socket.IO, version control                                              |
+| Name                 | Student Number | Primary Role                     | Primary Responsibilities                                                                          |
+| -------------------- | -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Conrad Joubert**   | 26989581       | Game invites and authentication  | Send, receive, accept and decline invitations to games to and from players, Refresh token control |
+| **Nina Swart**       | **26970341**   | Frontend Developer               | Styling, landing page, create & join game frontend                                                |
+| **Amy McDermott**    | **26911264**   | idk                              | leaderboard, game scheduling, match history                                                       |
+| **Kyle Cohead**      | **25964917**   | Admin functionality and scraping | Socket.IO setup, live gameplay logic                                                              |
+| **Wikus van Biljon** | **26927543**   | authentication                   | Login and signup, Docker, Socket.IO, version control                                              |
 
 ---
 
@@ -98,10 +98,11 @@
 | **2025-10-17** | Wikus  | `feature/rounds`          | Added multi-round functionality, fixed round transition logic, logging improvements          | ✅ Merged              |
 | **2025-10-18** | Amy    | `feature/amy-scores`           | Remove notifications on leaderboard (cleanup/UX)                                       | ✅ Merged             |
 | **2025-10-18** | Kyle   | `feature/adminEdit`            | Add admin feature: edit questions manually                                             | ✅ Merged             |
-| **2025-10-18** | Conrad   | `feature/conrad-admin`       | Added email invites and fixed auth                                                     | ✅ Merged             |
-| **2025-10-18** | Conrad   | `feature/conrad-admin`       | Added scheduling for private games                                                     | ✅ Merged             |
-| **2025-10-18** | Conrad   | `feature/conrad-admin`       | Added multiple rounds                                                                  | ✅ Merged             |
-
+| **2025-10-18** | Conrad | `feature/conrad-admin`         | Added email invites and fixed auth                                                     | ✅ Merged             |
+| **2025-10-18** | Conrad | `feature/conrad-admin`         | Added scheduling for private games                                                     | ✅ Merged             |
+| **2025-10-18** | Conrad | `feature/conrad-admin`         | Added multiple rounds                                                                  | ✅ Merged             |
+| **2025-10-19** | Kyle   | `feature/adminSched`           | Add scheduled games to admin live games list                                           | ✅ Merged             |
+| **2025-10-19** | Kyle   | `feature/adminSched`           | Add filtering and searching games for admins                                           | ✅ Merged             |
 
 
 | Date           | Member | Branch / Commit           | Description of Work Done                                                                     | Commit / Merge Status |
@@ -120,6 +121,9 @@
 
 
 ## 🕒 Last Updated
+
+**Timestamp** 2025-10-19 13:00
+**Updated by** Kyle Cohead
 
 **Timestamp** 2025-10-18 20:45
 **Updated by** Conrad Joubert
