@@ -661,7 +661,7 @@ router.post("/test-email", authMiddleware, async (req, res) => {
       return res.status(400).json({ error: "Email address is required" });
     }
 
-    console.log(`🧪 Testing email configuration with ${email}`);
+    console.log(` Testing email configuration with ${email}`);
     
     const result = await sendTestEmail(email);
     
@@ -781,9 +781,9 @@ router.post("/invites/email", authMiddleware, async (req, res) => {
         inviteId: notification.id,
       });
       
-      console.log(`📧 Email invite sent from ${match.host.username} to ${receiver.email} for match ${matchId}`);
+      console.log(` Email invite sent from ${match.host.username} to ${receiver.email} for match ${matchId}`);
     } catch (emailError) {
-      console.error("❌ Failed to send email, but notification was created:", emailError);
+      console.error(" Failed to send email, but notification was created:", emailError);
       // Don't fail the whole request if email fails, notification still exists
     }
 
@@ -796,7 +796,7 @@ router.post("/invites/email", authMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("❌ Error sending email invite:", error);
+    console.error(" Error sending email invite:", error);
     res.status(500).json({ error: "Failed to send email invite" });
   }
 });
