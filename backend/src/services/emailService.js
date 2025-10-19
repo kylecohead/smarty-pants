@@ -133,7 +133,7 @@ export async function sendTestEmail(to) {
   };
   sendSmtpEmail.to = [{ email: to }];
 
-  console.log('🧪 Sending test email via Brevo API to:', to);
+  console.log('Sending test email via Brevo API to:', to);
   
   try {
     const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
