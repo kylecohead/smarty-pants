@@ -91,7 +91,12 @@ export default function Landing() {
   const [expectedEmail, setExpectedEmail] = useState(null);
 
   // Use the global AuthContext
-  const { user, loading, isLoggedIn, handleLogout } = useAuth();
+  const { user, loading, isLoggedIn, handleLogout, refreshUser } = useAuth();
+
+  useEffect(() => {
+    refreshUser(); // 🔄 refresh the user stats on load
+  }, []);
+
 
   // Redirect to home if not authenticated (with a delay to allow AuthContext to initialize)
   useEffect(() => {
@@ -153,6 +158,7 @@ export default function Landing() {
 
   // Initial fetch on mount
   useEffect(() => {
+    // refreshUser(); //  refresh the user stats on load
     loadNotifications();
   }, []);
 
