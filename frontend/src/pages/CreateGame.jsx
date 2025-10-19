@@ -174,7 +174,7 @@ export default function CreateGame() {
         setSearchResults([]);
       }
     } catch (error) {
-      console.error("❌ User search error:", error);
+      console.error(" User search error:", error);
       setSearchResults([]);
     } finally {
       setSearchLoading(false);
@@ -257,20 +257,20 @@ export default function CreateGame() {
     try {
       const params = new URLSearchParams({
         category: mode.label,
-        questionsPerRound: numQuestions.toString()
+        questionsPerRound: numQuestions.toString(),
       });
-      
+
       if (difficulty && difficulty !== "any") {
         params.append("difficulty", difficulty);
       }
 
       const response = await fetch(`/api/questions/max-rounds?${params}`);
       const data = await response.json();
-      
+
       if (response.ok) {
         setMaxRounds(data.maxPossibleRounds);
         setAvailableQuestions(data.availableQuestions);
-        
+
         // Adjust current numRounds if it exceeds the maximum
         if (numRounds > data.maxPossibleRounds) {
           setNumRounds(Math.max(1, data.maxPossibleRounds));
@@ -298,7 +298,7 @@ export default function CreateGame() {
         return;
       }
 
-      // 🔹 Get current user info
+      //  Get current user info
       let currentUsername = "";
       try {
         const res = await fetch(`${API_URL}/me`, {
@@ -313,7 +313,7 @@ export default function CreateGame() {
         console.error("Fetch user failed:", err);
       }
 
-      // 🔹 Create match
+      //  Create match
       const res = await fetch("/api/matches", {
         method: "POST",
         headers: {
@@ -329,8 +329,8 @@ export default function CreateGame() {
           // numQuestions: numQuestions,
           timeLimit: secPerQ, // seconds per question
 
-          questionsPerRound: numQuestions,   // how many per round
-          totalRounds: numRounds, 
+          questionsPerRound: numQuestions, // how many per round
+          totalRounds: numRounds,
 
           isScheduled: scheduleMode === "schedule", // defines whether the match is scheduled or not
           scheduledDelayMinutes:
@@ -341,11 +341,11 @@ export default function CreateGame() {
       const match = await res.json();
       if (!res.ok) throw new Error(match.error || "Failed to create match!");
 
-      console.log("✅ Created match:", match.id, match);
+      console.log(" Created match:", match.id, match);
 
       // 🔹 Send invites to invited users if any
       if (invited.length > 0) {
-        console.log(`📤 Sending invites to ${invited.length} user(s)...`);
+        console.log(` Sending invites to ${invited.length} user(s)...`);
 
         for (const user of invited) {
           try {
@@ -353,19 +353,21 @@ export default function CreateGame() {
             const message = `${currentUsername} invited you to join "${matchName}" (${mode.label})`;
 
             await sendGameInvite(user.id, match.id, message);
-            console.log(`✅ Invite sent to ${user.username}`);
+            console.log(` Invite sent to ${user.username}`);
           } catch (inviteError) {
             console.error(
-              `❌ Failed to send invite to ${user.username}:`,
+              ` Failed to send invite to ${user.username}:`,
               inviteError
             );
           }
         }
       }
 
-      // 🔹 Send email invites if any
+      //  Send email invites if any
       if (emailInvited.length > 0) {
-        console.log(`📧 Sending email invites to ${emailInvited.length} email(s)...`);
+        console.log(
+          ` Sending email invites to ${emailInvited.length} email(s)...`
+        );
 
         for (const email of emailInvited) {
           try {
@@ -373,10 +375,10 @@ export default function CreateGame() {
             const message = `${currentUsername} invited you to join "${matchName}" (${mode.label})`;
 
             await sendEmailInvite(email, match.id, message);
-            console.log(`✅ Email invite sent to ${email}`);
+            console.log(` Email invite sent to ${email}`);
           } catch (inviteError) {
             console.error(
-              `❌ Failed to send email invite to ${email}:`,
+              ` Failed to send email invite to ${email}:`,
               inviteError
             );
           }
@@ -385,7 +387,7 @@ export default function CreateGame() {
 
       navigate(`/lobby/${match.id}`);
     } catch (err) {
-      console.error("❌ Error creating match:", err);
+      console.error(" Error creating match:", err);
       alert(err.message);
     }
   }
@@ -453,9 +455,7 @@ export default function CreateGame() {
 
             {/* Max Players setting (available for both public and private) */}
             <div className="mt-4">
-              <label className="block text-white/90 text-sm">
-                Max players
-              </label>
+              <label className="block text-white/90 text-sm">Max players</label>
               <div className="flex items-center gap-4 mt-1">
                 <input
                   type="range"
@@ -573,7 +573,11 @@ export default function CreateGame() {
                       value={emailQuery}
                       onChange={(e) => setEmailQuery(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && emailQuery.trim() && emailQuery.includes('@')) {
+                        if (
+                          e.key === "Enter" &&
+                          emailQuery.trim() &&
+                          emailQuery.includes("@")
+                        ) {
                           addEmailInvite(emailQuery.trim());
                         }
                       }}
@@ -584,7 +588,7 @@ export default function CreateGame() {
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white/60">
                       📧
                     </span>
-                    {emailQuery.trim() && emailQuery.includes('@') && (
+                    {emailQuery.trim() && emailQuery.includes("@") && (
                       <button
                         onClick={() => addEmailInvite(emailQuery.trim())}
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white text-sm"
@@ -598,10 +602,15 @@ export default function CreateGame() {
                 {/* Email invites */}
                 {emailInvited.length > 0 && (
                   <div className="mt-3">
-                    <label className="block text-white/90 text-sm mb-2">Email Invites</label>
+                    <label className="block text-white/90 text-sm mb-2">
+                      Email Invites
+                    </label>
                     <div className="flex flex-wrap gap-2">
                       {emailInvited.map((email) => (
-                        <div key={email} className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1 text-sm text-white">
+                        <div
+                          key={email}
+                          className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1 text-sm text-white"
+                        >
                           <span>📧 {email}</span>
                           <button
                             onClick={() => removeEmailInvite(email)}
@@ -765,13 +774,11 @@ export default function CreateGame() {
                     max={maxRounds}
                     step={1}
                     value={Math.min(numRounds, maxRounds)}
-                    onChange={(e) =>
-                      setNumRounds(parseInt(e.target.value, 10))
-                    }
+                    onChange={(e) => setNumRounds(parseInt(e.target.value, 10))}
                     className="w-full accent-white"
                   />
                   <span className="inline-block rounded-xl border border-white/20 bg-white/10 text-white text-xs px-2 py-1">
-                    {numRounds} {numRounds === 1 ? 'round' : 'rounds'}
+                    {numRounds} {numRounds === 1 ? "round" : "rounds"}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs mt-1">
@@ -784,7 +791,8 @@ export default function CreateGame() {
                 </div>
                 {numQuestions * numRounds > availableQuestions && (
                   <p className="text-red-400 text-xs mt-1">
-                    ⚠️ Not enough questions available. Game will be adapted automatically.
+                    ⚠️ Not enough questions available. Game will be adapted
+                    automatically.
                   </p>
                 )}
               </div>

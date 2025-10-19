@@ -94,9 +94,8 @@ export default function Landing() {
   const { user, loading, isLoggedIn, handleLogout, refreshUser } = useAuth();
 
   useEffect(() => {
-    refreshUser(); // 🔄 refresh the user stats on load
+    refreshUser(); //  refresh the user stats on load
   }, []);
-
 
   // Redirect to home if not authenticated (with a delay to allow AuthContext to initialize)
   useEffect(() => {
@@ -104,7 +103,9 @@ export default function Landing() {
       // Give AuthContext a moment to process newly stored tokens
       const redirectTimer = setTimeout(() => {
         if (!isLoggedIn) {
-          console.log("❌ User not authenticated after delay, redirecting to home...");
+          console.log(
+            " User not authenticated after delay, redirecting to home..."
+          );
           navigate("/");
         }
       }, 100); // Small delay to allow token processing
@@ -117,41 +118,51 @@ export default function Landing() {
   useEffect(() => {
     if (!user || loading) return;
 
-    console.log("🏠 Landing page: User data available, checking for pending invites...");
+    console.log(
+      " Landing page: User data available, checking for pending invites..."
+    );
 
     // Check for pending invite after successful login
-    const pendingInvite = localStorage.getItem('pendingInvite') || localStorage.getItem('pendingGameInvite');
+    const pendingInvite =
+      localStorage.getItem("pendingInvite") ||
+      localStorage.getItem("pendingGameInvite");
     if (pendingInvite) {
       try {
         const invite = JSON.parse(pendingInvite);
-        console.log('🎯 Found pending invite after login:', invite);
-        
+        console.log(" Found pending invite after login:", invite);
+
         // Validate email if expectedEmail is specified
         if (invite.expectedEmail && user.email !== invite.expectedEmail) {
-          console.log(`❌ Email validation failed: expected ${invite.expectedEmail}, got ${user.email}`);
-          setError(`This invitation was sent to ${invite.expectedEmail}, but you logged in as ${user.email}. Please log out and log in with the correct account.`);
+          console.log(
+            ` Email validation failed: expected ${invite.expectedEmail}, got ${user.email}`
+          );
+          setError(
+            `This invitation was sent to ${invite.expectedEmail}, but you logged in as ${user.email}. Please log out and log in with the correct account.`
+          );
           setExpectedEmail(invite.expectedEmail);
-          localStorage.removeItem('pendingInvite');
-          localStorage.removeItem('pendingGameInvite');
+          localStorage.removeItem("pendingInvite");
+          localStorage.removeItem("pendingGameInvite");
           return;
         }
-        
+
         // Email matches or no validation required, proceed to lobby
-        localStorage.removeItem('pendingInvite');
-        localStorage.removeItem('pendingGameInvite');
-        
+        localStorage.removeItem("pendingInvite");
+        localStorage.removeItem("pendingGameInvite");
+
         // Show success message and redirect to the game lobby
         if (invite.gameTitle && invite.senderName) {
-          setInviteMessage(`✅ Successfully joined "${invite.gameTitle}" from ${invite.senderName}!`);
+          setInviteMessage(
+            ` Successfully joined "${invite.gameTitle}" from ${invite.senderName}!`
+          );
         }
-        
+
         setTimeout(() => {
           navigate(`/lobby/${invite.matchId}`);
         }, 1000); // Small delay to ensure user sees the landing page briefly
       } catch (e) {
-        console.error('❌ Error parsing pending invite:', e);
-        localStorage.removeItem('pendingInvite');
-        localStorage.removeItem('pendingGameInvite');
+        console.error(" Error parsing pending invite:", e);
+        localStorage.removeItem("pendingInvite");
+        localStorage.removeItem("pendingGameInvite");
       }
     }
   }, [user, loading, navigate]);
@@ -165,7 +176,7 @@ export default function Landing() {
   // Listen for user data refresh events from settings modal
   useEffect(() => {
     const handleUserRefresh = () => {
-      console.log("🔄 Refreshing user data after settings update...");
+      console.log(" Refreshing user data after settings update...");
       fetchUser();
     };
 
@@ -189,22 +200,32 @@ export default function Landing() {
 
   // Handle email invite acceptance
   useEffect(() => {
-    const inviteAccepted = searchParams.get('inviteAccepted');
-    const matchId = searchParams.get('matchId');
-    const email = searchParams.get('email');
-    const gameTitle = searchParams.get('gameTitle');
-    const senderName = searchParams.get('senderName');
-    const requireLogin = searchParams.get('requireLogin');
+    const inviteAccepted = searchParams.get("inviteAccepted");
+    const matchId = searchParams.get("matchId");
+    const email = searchParams.get("email");
+    const gameTitle = searchParams.get("gameTitle");
+    const senderName = searchParams.get("senderName");
+    const requireLogin = searchParams.get("requireLogin");
 
-    if (inviteAccepted === 'true' && matchId) {
-      console.log('🎯 Processing email invite acceptance:', { matchId, email, gameTitle, senderName, requireLogin });
-      
+    if (inviteAccepted === "true" && matchId) {
+      console.log(" Processing email invite acceptance:", {
+        matchId,
+        email,
+        gameTitle,
+        senderName,
+        requireLogin,
+      });
+
       // Show a success message or notification
       if (gameTitle && senderName) {
-        console.log(`✅ Successfully accepted invite to "${gameTitle}" from ${senderName}`);
-        
+        console.log(
+          ` Successfully accepted invite to "${gameTitle}" from ${senderName}`
+        );
+
         // Show a brief success message to the user
-        setInviteMessage(`Welcome! You've accepted the invitation to join "${gameTitle}" from ${senderName}`);
+        setInviteMessage(
+          `Welcome! You've accepted the invitation to join "${gameTitle}" from ${senderName}`
+        );
         setTimeout(() => setInviteMessage(null), 5000); // Clear after 5 seconds
       }
 
@@ -214,54 +235,66 @@ export default function Landing() {
         gameTitle,
         senderName,
         fromEmail: true,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       // Check if user is logged in
       if (isAuthenticated() && user) {
         // Verify that the logged-in user matches the email the invite was sent to
         if (email && user.email !== email) {
-          console.log(`❌ Email mismatch: invite sent to ${email}, but logged in as ${user.email}`);
+          console.log(
+            ` Email mismatch: invite sent to ${email}, but logged in as ${user.email}`
+          );
           setInviteMessage(null); // Clear any success message
-          setError(`This invitation was sent to ${email}, but you're logged in as ${user.email}. Please log out and log in with the correct account.`);
+          setError(
+            `This invitation was sent to ${email}, but you're logged in as ${user.email}. Please log out and log in with the correct account.`
+          );
           setExpectedEmail(email);
           return;
         }
-        
+
         // User is logged in with correct email, redirect to lobby
-        console.log('🎮 User is authenticated with correct email, redirecting to lobby...');
+        console.log(
+          " User is authenticated with correct email, redirecting to lobby..."
+        );
         setTimeout(() => {
           navigate(`/lobby/${matchId}`);
         }, 2000); // Brief delay to show the welcome message
       } else {
         // User needs to log in first
-        console.log('🔑 User needs to log in to join the game');
-        
+        console.log(" User needs to log in to join the game");
+
         // Store the invite for after login with email validation
         const inviteDataWithEmail = {
           ...pendingInviteData,
-          expectedEmail: email // Store the expected email for validation
+          expectedEmail: email, // Store the expected email for validation
         };
-        localStorage.setItem('pendingGameInvite', JSON.stringify(inviteDataWithEmail));
-        
+        localStorage.setItem(
+          "pendingGameInvite",
+          JSON.stringify(inviteDataWithEmail)
+        );
+
         // If this came from email acceptance, show login prompt
-        if (requireLogin === 'true') {
+        if (requireLogin === "true") {
           setShowLoginPrompt(true);
           setExpectedEmail(email); // Store the expected email for display
         } else {
           // Store as pending invite for when they do log in
-          localStorage.setItem('pendingInvite', JSON.stringify(inviteDataWithEmail));
+          localStorage.setItem(
+            "pendingInvite",
+            JSON.stringify(inviteDataWithEmail)
+          );
         }
       }
 
       // Clean up URL parameters
       const newParams = new URLSearchParams(searchParams);
-      newParams.delete('inviteAccepted');
-      newParams.delete('matchId');
-      newParams.delete('email');
-      newParams.delete('gameTitle');
-      newParams.delete('senderName');
-      newParams.delete('requireLogin');
+      newParams.delete("inviteAccepted");
+      newParams.delete("matchId");
+      newParams.delete("email");
+      newParams.delete("gameTitle");
+      newParams.delete("senderName");
+      newParams.delete("requireLogin");
       setSearchParams(newParams);
     }
   }, [searchParams, user, navigate]);
@@ -358,9 +391,9 @@ export default function Landing() {
       // Show success message
       alert(`Invite sent to ${userName}!`);
 
-      console.log(`✅ Game invite sent successfully to ${userName}`);
+      console.log(` Game invite sent successfully to ${userName}`);
     } catch (error) {
-      console.error("❌ Failed to send game invite:", error);
+      console.error("Failed to send game invite:", error);
       alert(`Failed to send invite to ${userName}. Please try again.`);
     }
   }
@@ -372,8 +405,9 @@ export default function Landing() {
 
   if (error) {
     // Check if this is an email mismatch error by looking for the expected email
-    const isEmailMismatch = expectedEmail && error.includes("invitation was sent to");
-    
+    const isEmailMismatch =
+      expectedEmail && error.includes("invitation was sent to");
+
     return (
       <div
         className="min-h-screen bg-smart-dark-blue text-smart-white overflow-y-auto bg-cover bg-center bg-no-repeat flex items-center justify-center"
@@ -386,11 +420,12 @@ export default function Landing() {
             <div className="text-red-400 mb-4 text-4xl">⚠️</div>
             <h2 className="text-xl font-bold mb-4">Account Mismatch</h2>
             <p className="text-sm text-red-100 mb-4">{error}</p>
-            
+
             {isEmailMismatch && (
               <div className="space-y-3">
                 <p className="text-xs text-red-200">
-                  Required account: <span className="font-mono font-bold">{expectedEmail}</span>
+                  Required account:{" "}
+                  <span className="font-mono font-bold">{expectedEmail}</span>
                 </p>
                 <div className="space-y-2">
                   <button
@@ -402,11 +437,11 @@ export default function Landing() {
                   <button
                     onClick={() => {
                       // Clear all invite data and go back to home
-                      localStorage.removeItem('pendingInvite');
-                      localStorage.removeItem('pendingGameInvite');
+                      localStorage.removeItem("pendingInvite");
+                      localStorage.removeItem("pendingGameInvite");
                       setError(null);
                       setExpectedEmail(null);
-                      navigate('/');
+                      navigate("/");
                     }}
                     className="w-full bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
                   >
@@ -415,7 +450,7 @@ export default function Landing() {
                 </div>
               </div>
             )}
-            
+
             {!isEmailMismatch && (
               <button
                 onClick={() => navigate("/")}
@@ -436,14 +471,14 @@ export default function Landing() {
 
   const handleSignOut = () => {
     // Use the global logout function
-    handleLogout('manual-logout');
+    handleLogout("manual-logout");
     // Navigate to login
     navigate("/");
   };
 
   const handleLogoutAndRetry = () => {
     // Use the global logout function
-    handleLogout('email-mismatch-retry');
+    handleLogout("email-mismatch-retry");
     // Clear the error state
     setInviteMessage(null);
     setShowLoginPrompt(false);
@@ -456,22 +491,22 @@ export default function Landing() {
   const handleTestAPI = async () => {
     try {
       if (!user) {
-        console.log("⚠️ No user loaded yet.");
+        console.log(" No user loaded yet.");
         return;
       }
 
-      console.log(`🚀 Testing API for user ID: ${user.id}`);
+      console.log(` Testing API for user ID: ${user.id}`);
 
       // Example 1: test getCurrentUser()
       const me = await api.getCurrentUser();
-      console.log("✅ getCurrentUser() success:", me);
+      console.log(" getCurrentUser() success:", me);
 
       // Example 2: test incrementGamesPlayed()
       const result = await api.incrementGamesPlayed(user.id);
 
-      console.log("✅ incrementGamesPlayed() success:", result);
+      console.log("incrementGamesPlayed() success:", result);
     } catch (err) {
-      console.error("❌ API test failed:", err);
+      console.error(" API test failed:", err);
     }
   };
   // =========================================================
@@ -579,7 +614,7 @@ export default function Landing() {
 
         {/* Title */}
         <Heading />
-        
+
         {/* Invite Messages and Login Prompt */}
         {inviteMessage && (
           <div className="mt-4 mx-auto max-w-md">
@@ -589,15 +624,18 @@ export default function Landing() {
             </div>
           </div>
         )}
-        
+
         {showLoginPrompt && !isAuthenticated() && (
           <div className="mt-4 mx-auto max-w-md">
             <div className="bg-blue-600/20 border border-blue-400 backdrop-blur-sm rounded-xl p-4 text-center">
               <div className="text-blue-400 mb-2">🔑</div>
-              <p className="text-sm text-blue-100 mb-1">Please log in to join the game</p>
+              <p className="text-sm text-blue-100 mb-1">
+                Please log in to join the game
+              </p>
               {expectedEmail && (
                 <p className="text-xs text-blue-200 mb-3">
-                  You must log in as: <span className="font-mono font-bold">{expectedEmail}</span>
+                  You must log in as:{" "}
+                  <span className="font-mono font-bold">{expectedEmail}</span>
                 </p>
               )}
               <button

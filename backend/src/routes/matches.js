@@ -260,4 +260,20 @@ router.get("/:id", authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/matches/:id/cancel - host cancels a created match before starting
+router.post("/:id/cancel", authMiddleware, async (req, res) => {
+  const matchId = parseInt(req.params.id);
+  const userId = req.user.id;
+
+  try {
+    // Use the socket helper to clean up runtime and mark DB finished
+    const { endMatchByHost } = await import("../socket.js");
+    await endMatchByHost(matchId, userId);
+    res.json({ cancelled: true });
+  } catch (err) {
+    console.error("Host cancel failed:", err);
+    res.status(500).json({ error: err.message || "Failed to cancel match" });
+  }
+});
+
 export default router;

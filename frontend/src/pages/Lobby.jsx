@@ -62,7 +62,7 @@ export default function Lobby() {
       const data = await api.getCurrentUser();
       setCurrentUser(data.user);
     } catch (err) {
-      console.error("❌ Failed to fetch user:", err);
+      console.error(" Failed to fetch user:", err);
     }
   };
 
@@ -81,10 +81,10 @@ export default function Lobby() {
         setMatchDetails(matchData);
         console.log("📋 Match details fetched:", matchData);
       } else {
-        console.error("❌ Failed to fetch match details:", response.status);
+        console.error(" Failed to fetch match details:", response.status);
       }
     } catch (err) {
-      console.error("❌ Error fetching match details:", err);
+      console.error(" Error fetching match details:", err);
     }
   };
 
@@ -96,7 +96,7 @@ export default function Lobby() {
   // Listen for user data refresh events from settings modal
   useEffect(() => {
     const handleUserRefresh = () => {
-      console.log("🔄 Refreshing user data in lobby after settings update...");
+      console.log(" Refreshing user data in lobby after settings update...");
       fetchCurrentUser();
     };
 
@@ -122,35 +122,35 @@ export default function Lobby() {
 
     // Attach listeners
     socket.on("connect", () => {
-      console.log("✅ Connected:", socket.id);
+      console.log(" Connected:", socket.id);
       setSocketConnected(true);
       socket.emit("joinMatch", { matchId, token });
     });
 
     socket.on("playersUpdate", ({ players }) => {
-      console.log("👥 playersUpdate:", players);
+      console.log(" playersUpdate:", players);
       setPlayers(players);
     });
 
     // socket.on("matchStarted", ({ firstQuestion }) => {
-    //   console.log("🏁 Match started!");
+    //   console.log(" Match started!");
     //   navigate(`/game/play/${matchId}`, { state: { firstQuestion } });
     // });
     socket.on("matchStarted", () => {
-      console.log("🏁 Match started!");
+      console.log(" Match started!");
       navigate(`/game/play/${matchId}`);
     });
 
     socket.on("matchEnded", ({ scores }) => {
-      console.log("🎯 Match ended:", scores);
+      console.log(" Match ended:", scores);
     });
 
     socket.on("matchPaused", () => {
-      console.warn("⏸️ Match paused (host left)");
+      console.warn("⏸ Match paused (host left)");
     });
 
     socket.on("hostLeft", ({ message }) => {
-      console.log("👑 Host left the lobby:", message);
+      console.log(" Host left the lobby:", message);
       alert(message);
       // Navigate back to game menu after host leaves
       navigate("/game");
@@ -174,7 +174,7 @@ export default function Lobby() {
     });
 
     socket.on("disconnect", () => {
-      console.warn("⚠️ Disconnected from server");
+      console.warn(" Disconnected from server");
       setSocketConnected(false);
     });
 
@@ -183,14 +183,14 @@ export default function Lobby() {
 
     // Handle browser unload
     const handleBeforeUnload = () => {
-      console.log("🚪 Leaving match (browser unload):", matchId);
+      console.log(" Leaving match (browser unload):", matchId);
       socket.emit("leaveMatch", { matchId });
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     // Cleanup when component unmounts
     return () => {
-      console.log("🧹 Unmounting Lobby component");
+      console.log(" Unmounting Lobby component");
 
       window.removeEventListener("beforeunload", handleBeforeUnload);
 
@@ -198,12 +198,31 @@ export default function Lobby() {
       const nextUrl = window.location.pathname;
       const leavingCompletely = !nextUrl.includes("/game/play");
 
+      // If user is the host and the match hasn't been started yet, cancel it so it doesn't linger
+      if (isHost && matchDetails && matchDetails.status !== "ACTIVE") {
+        (async () => {
+          try {
+            const token = localStorage.getItem("accessToken");
+            await fetch(`/api/matches/${matchId}/cancel`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+            console.log("Host cancelled unused match:", matchId);
+          } catch (err) {
+            console.error("Failed to cancel match on unmount:", err);
+          }
+        })();
+      }
+
       if (socket.connected && leavingCompletely) {
-        console.log("🚪 Leaving match completely:", matchId);
+        console.log(" Leaving match completely:", matchId);
         socket.emit("leaveMatch", { matchId });
         socket.disconnect();
       } else {
-        console.log("🔄 Transitioning to gameplay — keeping socket alive");
+        console.log(" Transitioning to gameplay — keeping socket alive");
       }
     };
   }, [matchId, navigate]);
@@ -214,7 +233,7 @@ export default function Lobby() {
     const socket = getSocket(token);
 
     socket.on("playersUpdate", ({ matchId, players }) => {
-      console.log("👥 Players updated:", players);
+      console.log(" Players updated:", players);
       setPlayers(players); // Update the player list in state
     });
 
@@ -270,14 +289,14 @@ export default function Lobby() {
     if (remainingMs === 0 && !hasAutoStarted) {
       const socket = socketRef.current;
       if (socket && socket.connected) {
-        console.log("⏱️ Countdown reached zero — auto-starting match");
-        console.log("🔑 Host token being used for auto-start");
+        console.log(" Countdown reached zero — auto-starting match");
+        console.log(" Host token being used for auto-start");
 
         // This should work since isHost is true and socket has host's token
         socket.emit("startMatch", { matchId });
         setHasAutoStarted(true);
       } else {
-        console.error("❌ Socket not connected for auto-start");
+        console.error(" Socket not connected for auto-start");
       }
     }
   }, [remainingMs, isHost, hasAutoStarted, matchId]);
@@ -286,14 +305,14 @@ export default function Lobby() {
 
   const handleStartGame = () => {
     const socket = socketRef.current;
-    if (!socket) return console.warn("⚠️ No socket instance found");
+    if (!socket) return console.warn(" No socket instance found");
 
     if (!socket.connected) {
-      console.warn("⚠️ Socket not connected yet");
+      console.warn(" Socket not connected yet");
       return;
     }
 
-    console.log("🚀 Starting match:", matchId);
+    console.log(" Starting match:", matchId);
     socket.emit("startMatch", { matchId });
   };
 

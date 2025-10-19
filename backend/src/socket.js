@@ -240,6 +240,7 @@ function sendQuestion(io, matchId) {
 
   io.to(`match-${matchId}`).emit("newQuestion", {
     index: questionIndex % questionsPerRound, // question index within current round
+    seq: questionIndex, // absolute question sequence (0-based) for dedupe
     total: questionsPerRound, // questions per round, not total questions
     round: match.roundIndex + 1,
     totalRounds: match.totalRounds,
@@ -275,7 +276,7 @@ function showRoundSummary(io, matchId) {
   match.advanceTimeout = setTimeout(() => {
     match.roundIndex++;
     match.questionIndex = match.roundIndex * match.questionsPerRound;
-    console.log(`➡️ Starting round ${match.roundIndex + 1} for match ${matchId}`);
+    console.log(` Starting round ${match.roundIndex + 1} for match ${matchId}`);
     sendQuestion(io, matchId);
   }, 8000);
 }
@@ -629,6 +630,7 @@ export default function setupSocket(server) {
       console.log(`[RESEND] Current question for match ${matchId}`);
       socket.emit("newQuestion", {
         index: match.questionIndex % match.questionsPerRound, // question index within current round
+        seq: match.questionIndex,
         total: match.questionsPerRound, // questions per round
         round: match.roundIndex + 1,
         totalRounds: match.totalRounds,
@@ -763,7 +765,7 @@ function showQuestionResults(io, matchId) {
         answered: false,
       });
       
-      // ✨ Track non-response for tiebreaker (full time penalty)
+      // Track non-response for tiebreaker (full time penalty)
       if (!match.playerStats[player.username]) {
         match.playerStats[player.username] = {
           correctCount: 0,
@@ -963,4 +965,52 @@ export async function adminEndMatch(matchId) {
   }
 
   return { ended: true };
+}
+
+/**
+ * End a match requested by the host (when they leave the lobby without starting).
+ * This behaves like the host-left path: notify players, mark match finished (incomplete), and clean up runtime state.
+ */
+export async function endMatchByHost(matchId, userId) {
+  if (!ioServer) throw new Error("Socket server not initialized");
+  const match = activeMatches.get(String(matchId));
+
+  // If there's an in-memory match, ensure the userId matches hostId
+  if (match) {
+    if (Number(match.hostId) !== Number(userId)) {
+      throw new Error("Only the host can cancel this match");
+    }
+
+    // Notify all players that host left
+    ioServer.to(`match-${matchId}`).emit("hostLeft", {
+      message:
+        "The host has left the lobby before starting the match. The match has been cancelled.",
+      matchId: Number(matchId),
+    });
+
+    // Clear timers and remove from memory
+    clearAdvanceTimeout(match);
+    if (match.questionTimer) {
+      clearTimeout(match.questionTimer);
+      match.questionTimer = null;
+    }
+
+    activeMatches.delete(String(matchId));
+  }
+
+  // Persist match as finished but incomplete in DB
+  try {
+    await prisma.match.update({
+      where: { id: Number(matchId) },
+      data: {
+        status: "FINISHED",
+        completed: false,
+        finishedAt: new Date(),
+      },
+    });
+  } catch (err) {
+    console.error("Error marking match finished during host cancel:", err);
+  }
+
+  return { cancelled: true };
 }

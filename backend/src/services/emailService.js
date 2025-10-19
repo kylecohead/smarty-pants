@@ -9,13 +9,13 @@ apiKey.apiKey = process.env.BREVO_API_KEY;
 
 const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
-console.log('🔧 Email Configuration:', {
+console.log(' Email Configuration:', {
   service: 'Brevo API',
   apiKeyConfigured: !!process.env.BREVO_API_KEY,
   senderEmail: process.env.BREVO_SENDER_EMAIL || 'not-configured'
 });
 
-console.log('📧 Email service using Brevo API (bypasses Docker SMTP issues!)');
+console.log(' Email service using Brevo API (bypasses Docker SMTP issues!)');
 
 export async function sendGameInviteEmail({
   to,
@@ -99,8 +99,8 @@ Note: This invitation will expire after 24 hours.
   
   try {
     const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log('✅ Email sent successfully via Brevo API!');
-    console.log('   📨 Message ID:', response.messageId);
+    console.log(' Email sent successfully via Brevo API!');
+    console.log('    Message ID:', response.messageId);
     
     return {
       success: true,
@@ -110,14 +110,14 @@ Note: This invitation will expire after 24 hours.
       declineUrl: declineUrl
     };
   } catch (error) {
-    console.error('❌ Brevo API call failed:', error);
+    console.error(' Brevo API call failed:', error);
     throw new Error(`Failed to send email via Brevo API: ${error.message}`);
   }
 }
 
 export async function sendTestEmail(to) {
   const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-  sendSmtpEmail.subject = '🧪 Test Email from Smartie Pants (Brevo API)';
+  sendSmtpEmail.subject = ' Test Email from Smartie Pants (Brevo API)';
   sendSmtpEmail.htmlContent = `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
       <h2>🧪 Test Email</h2>
@@ -137,7 +137,7 @@ export async function sendTestEmail(to) {
   
   try {
     const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log('✅ Test email sent successfully via Brevo API!');
+    console.log(' Test email sent successfully via Brevo API!');
     
     return {
       success: true,
@@ -145,7 +145,7 @@ export async function sendTestEmail(to) {
       to: to
     };
   } catch (error) {
-    console.error('❌ Test email failed:', error);
+    console.error(' Test email failed:', error);
     throw new Error(`Test email failed: ${error.message}`);
   }
 }

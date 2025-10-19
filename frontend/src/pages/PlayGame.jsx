@@ -38,7 +38,7 @@ export default function PlayGame() {
   const [isTie, setIsTie] = useState(false);
   const [tiedPlayers, setTiedPlayers] = useState([]);
 
-  // 🆕 Round tracking
+  // Round tracking
   const [currentRound, setCurrentRound] = useState(1);
   const [totalRounds, setTotalRounds] = useState(1);
   const [showRoundSummary, setShowRoundSummary] = useState(false);
@@ -49,6 +49,7 @@ export default function PlayGame() {
   const questionStartTimeRef = useRef(0);
   const timeLeftRef = useRef(0);
   const isAnsweredRef = useRef(isAnswered);
+  const lastQuestionSeqRef = useRef(-1);
   useEffect(() => {
     isAnsweredRef.current = isAnswered;
   }, [isAnswered]);
@@ -59,10 +60,13 @@ export default function PlayGame() {
       const data = await api.getCurrentUser();
       setCurrentUser(data.user);
     } catch (err) {
-      console.error("❌ Failed to fetch user:", err);
+      console.error(" Failed to fetch user:", err);
 
-      if (err.message.includes("Invalid token") || err.message.includes("Unauthorized")) {
-        console.log("🔄 Token expired, attempting refresh...");
+      if (
+        err.message.includes("Invalid token") ||
+        err.message.includes("Unauthorized")
+      ) {
+        console.log(" Token expired, attempting refresh...");
         const refreshToken = localStorage.getItem("refreshToken");
         if (refreshToken) {
           try {
@@ -70,13 +74,13 @@ export default function PlayGame() {
             const data = await api.getCurrentUser();
             setCurrentUser(data.user);
           } catch (refreshErr) {
-            console.error("❌ Token refresh failed:", refreshErr);
+            console.error(" Token refresh failed:", refreshErr);
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
             navigate("/login");
           }
         } else {
-          console.log("❌ No refresh token available");
+          console.log(" No refresh token available");
           localStorage.removeItem("accessToken");
           navigate("/login");
         }
@@ -91,11 +95,12 @@ export default function PlayGame() {
   // Listen for user data refresh (e.g., from settings)
   useEffect(() => {
     const handleUserRefresh = () => {
-      console.log("🔄 Refreshing user data in game after settings update...");
+      console.log(" Refreshing user data in game after settings update...");
       fetchCurrentUser();
     };
     window.addEventListener("refreshUserData", handleUserRefresh);
-    return () => window.removeEventListener("refreshUserData", handleUserRefresh);
+    return () =>
+      window.removeEventListener("refreshUserData", handleUserRefresh);
   }, []);
 
   // Socket setup
@@ -110,8 +115,17 @@ export default function PlayGame() {
       setTimeout(() => socket.emit("requestCurrentQuestion", { matchId }), 500);
     });
 
-    // Handle new question
+    // Handle new question (ignore duplicates using seq)
     socket.on("newQuestion", (data) => {
+      // If server provides absolute sequence, dedupe messages
+      if (data?.seq != null) {
+        if (data.seq <= lastQuestionSeqRef.current) {
+          console.debug("Ignoring duplicate/old newQuestion seq=", data.seq);
+          return; // ignore older or duplicate message
+        }
+        lastQuestionSeqRef.current = data.seq;
+      }
+
       clearInterval(timerRef.current);
       clearTimeout(timeoutGuardRef.current);
       setQuestion(data);
@@ -123,7 +137,10 @@ export default function PlayGame() {
       setShowRecap(false);
       setRecapData(null);
       setShowRoundSummary(false); // hide if it was showing
-      timeoutGuardRef.current = setTimeout(() => startTimer(data.timeLimit || 10000), 200);
+      timeoutGuardRef.current = setTimeout(
+        () => startTimer(data.timeLimit || 10000),
+        200
+      );
     });
 
     // Handle answer confirmation
@@ -131,7 +148,9 @@ export default function PlayGame() {
       if (!isAnswered) {
         setIsAnswered(true);
         clearTimeout(timeoutGuardRef.current);
-        console.log(`🧠 Answer submitted: ${correct ? "✅ Correct" : "❌ Wrong"} (+${points})`);
+        console.log(
+          ` Answer submitted: ${correct ? " Correct" : " Wrong"} (+${points})`
+        );
       }
     });
 
@@ -139,12 +158,16 @@ export default function PlayGame() {
     socket.on("questionResults", ({ responses, scores, correctAnswer }) => {
       setScores(scores);
       setCurrentCorrectAnswer(correctAnswer || null);
-      const yourResponse = responses.find((r) => r.username === currentUser.username);
+      const yourResponse = responses.find(
+        (r) => r.username === currentUser.username
+      );
 
       const currentLeaderboard = Object.entries(scores)
         .sort((a, b) => b[1] - a[1])
         .map(([playerName, totalScore], index) => {
-          const playerResponse = responses.find((r) => r.username === playerName);
+          const playerResponse = responses.find(
+            (r) => r.username === playerName
+          );
           return {
             id: index,
             name: playerName,
@@ -178,11 +201,13 @@ export default function PlayGame() {
 
     // Handle match started - get initial round info
     socket.on("matchStarted", ({ totalRounds, questionsPerRound }) => {
-      console.log(`🎮 Match started with ${totalRounds} rounds, ${questionsPerRound} questions per round`);
+      console.log(
+        ` Match started with ${totalRounds} rounds, ${questionsPerRound} questions per round`
+      );
       setTotalRounds(totalRounds);
     });
 
-    // 🆕 Handle round summary
+    //  Handle round summary
     socket.on("roundSummary", ({ round, totalRounds, scores }) => {
       console.log(`🏁 Round ${round} of ${totalRounds} finished`);
       setCurrentRound(round);
@@ -226,7 +251,7 @@ export default function PlayGame() {
 
     // Handle host leaving
     socket.on("hostLeft", ({ message, scores }) => {
-      console.log("👑 Host left:", message);
+      console.log(" Host left:", message);
       setScores(scores || {});
       setMatchEnded(true);
       clearInterval(timerRef.current);
@@ -332,12 +357,23 @@ export default function PlayGame() {
     const winner = formattedLeaderboard[0];
 
     return (
-      <div className="min-h-screen flex items-center justify-center text-white" style={{ backgroundColor: colors.darkBlue }}>
+      <div
+        className="min-h-screen flex items-center justify-center text-white"
+        style={{ backgroundColor: colors.darkBlue }}
+      >
         <GameOverScreen
           winner={
             isTie
-              ? { name: "🤝 It's a Tie!", score: winner?.total || 0, isYou: false }
-              : { name: winner.name, score: winner.total, isYou: winner.name === currentUser?.username }
+              ? {
+                  name: "🤝 It's a Tie!",
+                  score: winner?.total || 0,
+                  isYou: false,
+                }
+              : {
+                  name: winner.name,
+                  score: winner.total,
+                  isYou: winner.name === currentUser?.username,
+                }
           }
           score={scores[currentUser?.username] || 0}
           finalLeaderboard={formattedLeaderboard}
@@ -368,7 +404,10 @@ export default function PlayGame() {
 
   // ================== QUESTION DISPLAY ==================
   return (
-    <div className="min-h-screen text-white relative bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${backgroundGamePlay})` }}>
+    <div
+      className="min-h-screen text-white relative bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${backgroundGamePlay})` }}
+    >
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8">
         <GameHeader
           score={scores[currentUser?.username] || 0}
@@ -397,16 +436,24 @@ export default function PlayGame() {
         </main>
       </div>
 
-      {/* 🆕 Round Summary Overlay */}
+      {/*  Round Summary Overlay */}
       {showRoundSummary && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
           <div className="text-center">
-            <h1 className="text-5xl font-bold mb-4 animate-pulse">🏁 ROUND {currentRound} COMPLETE!</h1>
-            <p className="text-xl mb-2 text-smart-green">Round {currentRound} of {totalRounds}</p>
+            <h1 className="text-5xl font-bold mb-4 animate-pulse">
+              🏁 ROUND {currentRound} COMPLETE!
+            </h1>
+            <p className="text-xl mb-2 text-smart-green">
+              Round {currentRound} of {totalRounds}
+            </p>
             {currentRound < totalRounds ? (
-              <p className="text-2xl mb-6">Round {currentRound + 1} starts soon...</p>
+              <p className="text-2xl mb-6">
+                Round {currentRound + 1} starts soon...
+              </p>
             ) : (
-              <p className="text-2xl mb-6 text-yellow-400">Final round complete! Game ending...</p>
+              <p className="text-2xl mb-6 text-yellow-400">
+                Final round complete! Game ending...
+              </p>
             )}
             <div className="space-y-2 text-lg">
               {Object.entries(scores)
@@ -441,7 +488,10 @@ export default function PlayGame() {
       {showQuitConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-md">
-            <QuitConfirmModal onConfirm={confirmQuitGame} onCancel={cancelQuit} />
+            <QuitConfirmModal
+              onConfirm={confirmQuitGame}
+              onCancel={cancelQuit}
+            />
           </div>
         </div>
       )}
@@ -449,7 +499,11 @@ export default function PlayGame() {
       {/* Game Over Modal (backup) */}
       {matchEnded && (
         <div className="fixed inset-0 z-50">
-          <GameOverModal scores={scores} currentUser={currentUser} onClose={() => navigate("/landing")} />
+          <GameOverModal
+            scores={scores}
+            currentUser={currentUser}
+            onClose={() => navigate("/landing")}
+          />
         </div>
       )}
     </div>

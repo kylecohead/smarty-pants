@@ -7,20 +7,20 @@ import { authenticatedFetch } from "./auth.js";
  */
 export async function fetchNotifications() {
   try {
-    console.log("📬 Fetching notifications...");
+    console.log(" Fetching notifications...");
     const response = await authenticatedFetch("/api/notifications");
     
     if (response.ok) {
       const data = await response.json();
-      console.log(`✅ Fetched ${data.notifications.length} notifications`);
+      console.log(` Fetched ${data.notifications.length} notifications`);
       return { success: true, notifications: data.notifications };
     } else {
       const errorData = await response.json().catch(() => ({}));
-      console.error("❌ Failed to fetch notifications:", response.status, errorData);
+      console.error(" Failed to fetch notifications:", response.status, errorData);
       return { success: false, error: errorData.error || "Failed to fetch notifications" };
     }
   } catch (error) {
-    console.error("❌ Error fetching notifications:", error);
+    console.error(" Error fetching notifications:", error);
     return { success: false, error: "Network error while fetching notifications" };
   }
 }
@@ -34,7 +34,7 @@ export async function fetchNotifications() {
  */
 export async function sendEmailInvite(email, matchId, message = null) {
   try {
-    console.log(`📧 Sending email invite to ${email} for match ${matchId}`);
+    console.log(` Sending email invite to ${email} for match ${matchId}`);
     
     const response = await authenticatedFetch("/api/notifications/invites/email", {
       method: "POST",
@@ -47,7 +47,7 @@ export async function sendEmailInvite(email, matchId, message = null) {
 
     if (response.ok) {
       const data = await response.json();
-      console.log(`✅ Email invite sent successfully to ${email}`);
+      console.log(` Email invite sent successfully to ${email}`);
       return { 
         success: true, 
         notification: data.notification,
@@ -56,11 +56,11 @@ export async function sendEmailInvite(email, matchId, message = null) {
       };
     } else {
       const errorData = await response.json().catch(() => ({}));
-      console.error("❌ Failed to send email invite:", response.status, errorData);
+      console.error(" Failed to send email invite:", response.status, errorData);
       return { success: false, error: errorData.error || "Failed to send email invite" };
     }
   } catch (error) {
-    console.error("❌ Error sending email invite:", error);
+    console.error(" Error sending email invite:", error);
     return { success: false, error: "Network error while sending email invite" };
   }
 }
@@ -74,7 +74,7 @@ export async function sendEmailInvite(email, matchId, message = null) {
  */
 export async function sendGameInvite(receiverId, matchId, message = null) {
   try {
-    console.log(`🎯 Sending game invite to user ${receiverId} for match ${matchId}`);
+    console.log(` Sending game invite to user ${receiverId} for match ${matchId}`);
     
     const response = await authenticatedFetch("/api/notifications/invites", {
       method: "POST",
@@ -87,15 +87,15 @@ export async function sendGameInvite(receiverId, matchId, message = null) {
 
     if (response.ok) {
       const data = await response.json();
-      console.log(`✅ Game invite sent successfully`);
+      console.log(` Game invite sent successfully`);
       return { success: true, notification: data.notification };
     } else {
       const errorData = await response.json().catch(() => ({}));
-      console.error("❌ Failed to send invite:", response.status, errorData);
+      console.error(" Failed to send invite:", response.status, errorData);
       return { success: false, error: errorData.error || "Failed to send invite" };
     }
   } catch (error) {
-    console.error("❌ Error sending invite:", error);
+    console.error(" Error sending invite:", error);
     return { success: false, error: "Network error while sending invite" };
   }
 }
@@ -107,7 +107,7 @@ export async function sendGameInvite(receiverId, matchId, message = null) {
  */
 export async function acceptGameInvite(notificationId) {
   try {
-    console.log(`✅ Accepting game invite ${notificationId}`);
+    console.log(` Accepting game invite ${notificationId}`);
     
     const response = await authenticatedFetch(`/api/notifications/invites/${notificationId}/accept`, {
       method: "PUT",
@@ -115,15 +115,15 @@ export async function acceptGameInvite(notificationId) {
 
     if (response.ok) {
       const data = await response.json();
-      console.log(`✅ Invite accepted successfully`);
+      console.log(` Invite accepted successfully`);
       return { success: true, ...data };
     } else {
       const errorData = await response.json().catch(() => ({}));
-      console.error("❌ Failed to accept invite:", response.status, errorData);
+      console.error(" Failed to accept invite:", response.status, errorData);
       return { success: false, error: errorData.error || "Failed to accept invite" };
     }
   } catch (error) {
-    console.error("❌ Error accepting invite:", error);
+    console.error(" Error accepting invite:", error);
     return { success: false, error: "Network error while accepting invite" };
   }
 }
@@ -135,7 +135,7 @@ export async function acceptGameInvite(notificationId) {
  */
 export async function declineGameInvite(notificationId) {
   try {
-    console.log(`❌ Declining game invite ${notificationId}`);
+    console.log(` Declining game invite ${notificationId}`);
     
     const response = await authenticatedFetch(`/api/notifications/invites/${notificationId}/decline`, {
       method: "PUT",
@@ -143,15 +143,15 @@ export async function declineGameInvite(notificationId) {
 
     if (response.ok) {
       const data = await response.json();
-      console.log(`✅ Invite declined successfully`);
+      console.log(` Invite declined successfully`);
       return { success: true, ...data };
     } else {
       const errorData = await response.json().catch(() => ({}));
-      console.error("❌ Failed to decline invite:", response.status, errorData);
+      console.error(" Failed to decline invite:", response.status, errorData);
       return { success: false, error: errorData.error || "Failed to decline invite" };
     }
   } catch (error) {
-    console.error("❌ Error declining invite:", error);
+    console.error(" Error declining invite:", error);
     return { success: false, error: "Network error while declining invite" };
   }
 }
@@ -163,7 +163,7 @@ export async function declineGameInvite(notificationId) {
  */
 export async function dismissNotification(notificationId) {
   try {
-    console.log(`🗑️ Dismissing notification ${notificationId}`);
+    console.log(` Dismissing notification ${notificationId}`);
     
     const response = await authenticatedFetch(`/api/notifications/${notificationId}`, {
       method: "DELETE",
@@ -171,15 +171,15 @@ export async function dismissNotification(notificationId) {
 
     if (response.ok) {
       const data = await response.json();
-      console.log(`✅ Notification dismissed successfully`);
+      console.log(` Notification dismissed successfully`);
       return { success: true, ...data };
     } else {
       const errorData = await response.json().catch(() => ({}));
-      console.error("❌ Failed to dismiss notification:", response.status, errorData);
+      console.error(" Failed to dismiss notification:", response.status, errorData);
       return { success: false, error: errorData.error || "Failed to dismiss notification" };
     }
   } catch (error) {
-    console.error("❌ Error dismissing notification:", error);
+    console.error(" Error dismissing notification:", error);
     return { success: false, error: "Network error while dismissing notification" };
   }
 }
@@ -191,7 +191,7 @@ export async function dismissNotification(notificationId) {
  */
 export async function markNotificationAsRead(notificationId) {
   try {
-    console.log(`👁️ Marking notification ${notificationId} as read`);
+    console.log(` Marking notification ${notificationId} as read`);
     
     const response = await authenticatedFetch(`/api/notifications/${notificationId}/read`, {
       method: "PUT",
@@ -199,15 +199,15 @@ export async function markNotificationAsRead(notificationId) {
 
     if (response.ok) {
       const data = await response.json();
-      console.log(`✅ Notification marked as read`);
+      console.log(` Notification marked as read`);
       return { success: true, notification: data.notification };
     } else {
       const errorData = await response.json().catch(() => ({}));
-      console.error("❌ Failed to mark notification as read:", response.status, errorData);
+      console.error(" Failed to mark notification as read:", response.status, errorData);
       return { success: false, error: errorData.error || "Failed to mark as read" };
     }
   } catch (error) {
-    console.error("❌ Error marking notification as read:", error);
+    console.error(" Error marking notification as read:", error);
     return { success: false, error: "Network error while marking as read" };
   }
 }

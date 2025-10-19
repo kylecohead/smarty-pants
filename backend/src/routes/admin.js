@@ -17,6 +17,7 @@ function requireAdmin(req, res, next) {
 // GET /api/admin/matches - list active runtime matches
 router.get("/matches", authMiddleware, requireAdmin, async (req, res) => {
   try {
+    console.time("GET /api/admin/matches");
     const summary = getActiveMatchesSummary();
 
     // Enrich with DB data (title, createdAt) when available
@@ -40,14 +41,25 @@ router.get("/matches", authMiddleware, requireAdmin, async (req, res) => {
       select: { id: true, title: true, category: true, scheduledStartAt: true, hostId: true },
     });
 
-    const enrichedScheduled = await Promise.all(
-      scheduledMatches.map(async (m) => {
-        // Only include if not already in runtime summary
-        if (summary.find((s) => Number(s.matchId) === m.id)) return null;
-        // Only include scheduled matches that have at least one connected player
-        const players = await prisma.matchPlayer.findMany({ where: { matchId: m.id, connected: true }, select: { userId: true } });
-        if (!players || players.length === 0) return null;
-        return {
+    // Build a map of scheduled match ids that are not already present in runtime summary
+    const scheduledToCheck = scheduledMatches
+      .filter((m) => !summary.find((s) => Number(s.matchId) === m.id))
+      .map((m) => m.id);
+
+    let enrichedScheduled = [];
+    if (scheduledToCheck.length > 0) {
+      // Query connected player counts for all scheduled matches in one grouped query to avoid N+1
+      const counts = await prisma.matchPlayer.groupBy({
+        by: ["matchId"],
+        where: { matchId: { in: scheduledToCheck }, connected: true },
+        _count: { _all: true },
+      });
+
+      const countsMap = new Map(counts.map((c) => [Number(c.matchId), c._count._all]));
+
+      enrichedScheduled = scheduledMatches
+        .filter((m) => countsMap.get(Number(m.id)) > 0)
+        .map((m) => ({
           matchId: String(m.id),
           hostId: m.hostId,
           hostUsername: null,
@@ -55,16 +67,16 @@ router.get("/matches", authMiddleware, requireAdmin, async (req, res) => {
           started: false,
           questionIndex: 0,
           totalQuestions: 0,
-          players: players.map((p) => ({ userId: p.userId })),
+          players: new Array(countsMap.get(Number(m.id))).fill(0).map((_, i) => ({ userId: null })),
           title: m.title,
           createdAt: null,
           category: m.category,
           scheduledStartAt: m.scheduledStartAt,
-        };
-      })
-    );
+        }));
+    }
 
-    const enriched = [...enrichedRuntime, ...enrichedScheduled.filter(Boolean)];
+  const enriched = [...enrichedRuntime, ...enrichedScheduled.filter(Boolean)];
+  console.timeEnd("GET /api/admin/matches");
 
     res.json({ matches: enriched });
   } catch (err) {
