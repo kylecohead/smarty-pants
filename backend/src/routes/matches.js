@@ -214,6 +214,14 @@ router.post("/:id/join", authMiddleware, async (req, res) => {
       return res.status(400).json({ error: "Already joined this match" });
     }
 
+    // Enforce maxPlayers limit (prevent joins beyond configured maximum)
+    const match = await prisma.match.findUnique({ where: { id: matchId }, select: { maxPlayers: true } });
+    const currentCount = await prisma.matchPlayer.count({ where: { matchId } });
+    const maxPlayers = (match?.maxPlayers) || 5;
+    if (currentCount >= maxPlayers) {
+      return res.status(400).json({ error: "Match is full" });
+    }
+
     const join = await prisma.matchPlayer.create({
       data: { matchId, userId }
     });

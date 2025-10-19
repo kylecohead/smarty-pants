@@ -453,13 +453,23 @@ export default function setupSocket(server) {
             hostId: true,
             timeLimit: true,
             questionsPerRound: true, 
-            totalRounds: true,       
+            totalRounds: true,
+            maxPlayers: true,
           },
         });
 
         if (!dbMatch) throw new Error("Match not found");
         if (dbMatch.status === "FINISHED")
           throw new Error("Match already ended");
+
+        // Enforce maxPlayers for socket joins as well
+        const existingSession = activeMatches.get(matchId);
+        const currentPlayers = existingSession ? existingSession.players.size : 0;
+        const maxPlayers = (dbMatch?.maxPlayers) || 5;
+        if (currentPlayers >= maxPlayers) {
+          socket.emit('error', { message: 'Match is full' });
+          return;
+        }
 
         if (!activeMatches.has(matchId)) {
           activeMatches.set(matchId, {

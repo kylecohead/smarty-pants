@@ -463,12 +463,8 @@ export default function Lobby() {
         <div className="px-4 py-4 flex justify-center">
           <button
             onClick={handleStartGame}
-            disabled={!isLobbyFull}
-            className={`rounded-2xl px-10 py-4 text-xl font-bold border-2 border-white text-white transition-opacity shadow-lg ${
-              isLobbyFull
-                ? "bg-transparent hover:bg-white/10"
-                : "bg-transparent border-white/30 text-white/50 cursor-not-allowed"
-            }`}
+            title="Start the match for all players (you can start before lobby is full)"
+            className={`rounded-2xl px-10 py-4 text-xl font-bold border-2 border-white text-white transition-opacity shadow-lg bg-transparent hover:bg-white/10`}
           >
             Start Game
           </button>
