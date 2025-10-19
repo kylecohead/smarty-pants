@@ -422,7 +422,7 @@ router.get("/invite/accept/:id", async (req, res) => {
       },
     });
 
-    console.log(`✅ Email invite accepted: notification ${notificationId}`);
+    console.log(` Email invite accepted: notification ${notificationId}`);
 
     // Create an interactive page that redirects to login and handles post-login flow
     res.send(`
@@ -559,7 +559,7 @@ router.get("/invite/accept/:id", async (req, res) => {
       </html>
     `);
   } catch (error) {
-    console.error("❌ Error accepting email invite:", error);
+    console.error(" Error accepting email invite:", error);
     res.status(500).send(`
       <html>
         <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
@@ -625,7 +625,7 @@ router.get("/invite/decline/:id", async (req, res) => {
       },
     });
 
-    console.log(`❌ Email invite declined: notification ${notificationId}`);
+    console.log(` Email invite declined: notification ${notificationId}`);
 
     res.send(`
       <html>
@@ -640,7 +640,7 @@ router.get("/invite/decline/:id", async (req, res) => {
       </html>
     `);
   } catch (error) {
-    console.error("❌ Error declining email invite:", error);
+    console.error(" Error declining email invite:", error);
     res.status(500).send(`
       <html>
         <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
@@ -672,7 +672,7 @@ router.post("/test-email", authMiddleware, async (req, res) => {
       to: result.to
     });
   } catch (error) {
-    console.error("❌ Test email failed:", error);
+    console.error(" Test email failed:", error);
     res.status(500).json({ 
       error: "Test email failed",
       details: error.message 
