@@ -134,10 +134,14 @@
 | **2025-10-18** | Conrad | `feature/conrad-admin`         | Added multiple rounds                                                                  | ✅                    |
 | **2025-10-19** | Kyle   | `feature/adminSched`           | Add scheduled games to admin live games list                                           | ✅                    |
 | **2025-10-19** | Kyle   | `feature/adminSched`           | Add filtering and searching games for admins                                           | ✅                    |
+| **2025-10-19** | Wikus   | `main`           | Nerged Final changes                                          | ✅                    |
 
 ---
 
 ## 🕒 Last Updated
+
+**Timestamp** 2025-10-19 22:49
+**Updated by** Wikus van Biljon
 
 **Timestamp:** 2025-10-15:56  
 **Updated by:** Nina Swart

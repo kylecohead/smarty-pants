@@ -102,11 +102,9 @@ make nuke
 ```
 Smartie-Pants
 ├── backend
+│   ├── cookies.txt
 │   ├── Dockerfile
 │   ├── entrypoint.sh
-│   ├── generated
-│   │   └── prisma
-│   ├── node_modules
 │   ├── package.json
 │   ├── package-lock.json
 │   ├── prisma
@@ -120,34 +118,30 @@ Smartie-Pants
 │   │   ├── index.js
 │   │   ├── middleware
 │   │   ├── routes
+│   │   ├── services
 │   │   ├── socket.js
 │   │   ├── test.js
 │   │   └── utils
 │   └── uploads
 ├── docker-compose.prod.yml
 ├── docker-compose.yml
-├── docs.txt
 ├── frontend
 │   ├── design-tokens.md
-│   ├── dist
-│   │   ├── assets
-│   │   ├── index.html
-│   │   └── vite.svg
 │   ├── Dockerfile
 │   ├── eslint.config.js
 │   ├── index.html
 │   ├── nginx.conf
-│   ├── node_modules
 │   ├── package.json
 │   ├── package-lock.json
 │   ├── postcss.config.js
 │   ├── public
-│   │   └── vite.svg
+│   │   └── pp.svg
 │   ├── src
 │   │   ├── App.jsx
 │   │   ├── assets
 │   │   ├── components
 │   │   ├── config
+│   │   ├── contexts
 │   │   ├── data
 │   │   ├── hooks
 │   │   ├── index.css
@@ -160,6 +154,10 @@ Smartie-Pants
 │   └── vite.config.js
 ├── Makefile
 ├── nginx.conf
+├── OpenTDB_API.postman_collection.json
+├── package.json
+├── package-lock.json
+├── PROJECT_LOG.md
 └── README.md
 ```
 
