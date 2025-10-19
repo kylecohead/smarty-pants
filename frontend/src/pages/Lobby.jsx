@@ -244,7 +244,10 @@ export default function Lobby() {
   // Compute countdown
   useEffect(() => {
     const scheduledStart = matchDetails?.scheduledStartAt;
-    if (!scheduledStart) { setRemainingMs(null); return; }
+    if (!scheduledStart) {
+      setRemainingMs(null);
+      return;
+    }
 
     const target = new Date(scheduledStart).getTime();
     const tick = () => {
@@ -263,18 +266,18 @@ export default function Lobby() {
     // 3. Countdown reached zero
     // 4. We haven't already auto-started
     if (!isHost || remainingMs === null) return;
-    
+
     if (remainingMs === 0 && !hasAutoStarted) {
       const socket = socketRef.current;
       if (socket && socket.connected) {
-        console.log('⏱️ Countdown reached zero — auto-starting match');
-        console.log('🔑 Host token being used for auto-start');
-        
+        console.log("⏱️ Countdown reached zero — auto-starting match");
+        console.log("🔑 Host token being used for auto-start");
+
         // This should work since isHost is true and socket has host's token
         socket.emit("startMatch", { matchId });
         setHasAutoStarted(true);
       } else {
-        console.error('❌ Socket not connected for auto-start');
+        console.error("❌ Socket not connected for auto-start");
       }
     }
   }, [remainingMs, isHost, hasAutoStarted, matchId]);
@@ -296,10 +299,12 @@ export default function Lobby() {
 
   // Helper to format time
   function formatCountdown(ms) {
-    if (ms == null) return '--:--';
+    if (ms == null) return "--:--";
     const total = Math.max(0, Math.floor(ms / 1000));
-    const m = Math.floor(total / 60).toString().padStart(2, '0');
-    const s = (total % 60).toString().padStart(2, '0');
+    const m = Math.floor(total / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = (total % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   }
 
@@ -351,21 +356,25 @@ export default function Lobby() {
               {/** Countdown if scheduled */}
               {matchDetails?.scheduledStartAt && (
                 <div className="ml-3 inline-flex items-center gap-2 rounded-lg bg-smart-yellow px-3 py-1">
-                  <span className="text-black text-sm font-semibold">Starts in:</span>
+                  <span className="text-black text-sm font-semibold">
+                    Starts in:
+                  </span>
                   <span className="text-black text-sm font-bold tabular-nums">
                     {formatCountdown(remainingMs)}
                   </span>
                 </div>
               )}
 
-              <div className="absolute right-0 inline-block bg-smart-pink rounded-lg px-3 py-1">
-                <span className="text-white text-sm font-semibold mr-2">
-                  Code:
-                </span>
-                <span className="text-white text-sm font-bold tracking-wider select-all">
-                  {matchId}
-                </span>
-              </div>
+              {matchDetails?.isPublic !== false && (
+                <div className="absolute right-0 inline-block bg-smart-pink rounded-lg px-3 py-1">
+                  <span className="text-white text-sm font-semibold mr-2">
+                    Code:
+                  </span>
+                  <span className="text-white text-sm font-bold tracking-wider select-all">
+                    {matchId}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Player grid */}

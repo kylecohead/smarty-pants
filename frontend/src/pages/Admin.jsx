@@ -26,6 +26,19 @@ const initialStats = { total: 0, byCategory: [] };
 export default function Admin() {
   const navigate = useNavigate();
 
+  // Helper: format remaining time until a scheduled ISO datetime
+  function formatCountdown(iso) {
+    try {
+      const target = new Date(iso).getTime();
+      const diff = Math.max(0, target - Date.now());
+      const mins = Math.floor(diff / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      return `${mins}m ${secs}s`;
+    } catch (e) {
+      return "--";
+    }
+  }
+
   // ===========================
   // State Management
   // ===========================
@@ -36,6 +49,8 @@ export default function Admin() {
   const [loading, setLoading] = useState(false); // Initial data load
   const [liveMatches, setLiveMatches] = useState([]); // Active runtime matches for admins
   const [refreshingMatches, setRefreshingMatches] = useState(false);
+  const [matchSearch, setMatchSearch] = useState("");
+  const [matchCategoryFilter, setMatchCategoryFilter] = useState("All");
   const [importing, setImporting] = useState(false); // Import operation in progress
   const [resetting, setResetting] = useState(false); // Reset operation in progress
   const [error, setError] = useState(null); // Error message display
@@ -57,10 +72,18 @@ export default function Admin() {
   useEffect(() => {
     loadEverything();
     loadLiveMatches();
+
+    const interval = setInterval(() => {
+      loadLiveMatches();
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Load live matches (admins only)
   async function loadLiveMatches() {
+    // Prevent overlapping refreshes
+    if (refreshingMatches) return;
     setRefreshingMatches(true);
     try {
       const data = await api.getActiveMatches();
@@ -87,6 +110,27 @@ export default function Admin() {
     }
     return questions.filter((q) => q.category === selectedCategory);
   }, [questions, selectedCategory]);
+
+  // Filter live matches by search query (title) and category
+  const filteredLiveMatches = useMemo(() => {
+    const q = (matchSearch || "").trim().toLowerCase();
+    return liveMatches.filter((m) => {
+      // Category filter
+      if (matchCategoryFilter && matchCategoryFilter !== "All") {
+        if (
+          (m.category || "").toLowerCase() !== matchCategoryFilter.toLowerCase()
+        ) {
+          return false;
+        }
+      }
+
+      // Search by title or matchId
+      if (!q) return true;
+      const title = (m.title || "").toLowerCase();
+      const idStr = String(m.matchId || "");
+      return title.includes(q) || idStr.includes(q);
+    });
+  }, [liveMatches, matchSearch, matchCategoryFilter]);
 
   // ===========================
   // Data Loading
@@ -387,23 +431,36 @@ export default function Admin() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-bold">Live Matches</h2>
             <div className="flex items-center gap-2">
-              <button
-                onClick={loadLiveMatches}
-                disabled={refreshingMatches}
-                className="rounded-lg bg-blue-500 px-3 py-1 text-xs font-semibold"
+              <input
+                value={matchSearch}
+                onChange={(e) => setMatchSearch(e.target.value)}
+                placeholder="Search by match title"
+                className="rounded-md border border-white/20 bg-black/20 px-3 py-2 text-sm text-white"
+              />
+              <select
+                value={matchCategoryFilter}
+                onChange={(e) => setMatchCategoryFilter(e.target.value)}
+                className="rounded-md border border-white/20 bg-black/20 px-3 py-2 text-sm text-white"
               >
-                {refreshingMatches ? "Refreshing…" : "Refresh"}
-              </button>
+                <option value="All">All</option>
+                {(categories || [])
+                  .filter((c) => c !== "All")
+                  .map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+              </select>
             </div>
           </div>
 
-          {liveMatches.length === 0 ? (
+          {filteredLiveMatches.length === 0 ? (
             <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
-              No active matches right now.
+              No active matches match your filters.
             </div>
           ) : (
             <div className="space-y-3">
-              {liveMatches.map((m) => (
+              {filteredLiveMatches.map((m) => (
                 <div
                   key={m.matchId}
                   className="rounded-xl border border-white/10 bg-white/5 p-4"
@@ -415,7 +472,13 @@ export default function Admin() {
                         {m.title || `Match ${m.matchId}`}
                       </div>
                       <div className="text-xs text-white/70">
-                        Players: {m.players.length} · Status: {m.status}
+                        Players: {m.players.length} · Status:{" "}
+                        {m.status === "live" ? "live" : m.status ?? "unknown"}
+                        {m.scheduledStartAt && m.status !== "live" && (
+                          <span className="ml-2 text-xs text-white/60">
+                            • starts in: {formatCountdown(m.scheduledStartAt)}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2">
