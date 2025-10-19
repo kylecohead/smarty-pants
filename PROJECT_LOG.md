@@ -23,15 +23,19 @@
 
 | Date           | Member | Branch                         | Description of Work Done                                                               | Commit / Merge Status |
 | -------------- | ------ | ------------------------------ | -------------------------------------------------------------------------------------- | --------------------- |
+| **2025-09-19** | Wikus  | `main`           | Project setup complete, initial files committed, database seeded                             | ✅ Merged              |
+| **2025-09-19** | Wikus  | `main`           | Added Docker setup and Prisma database schema with seed data                                 | ✅ Merged              |
 | **2025-09-19** | Nina   | `main`                         | Initialized React project with Vite and Tailwind                                       | ✅ Merged             |
 | **2025-09-19** | Nina   | `main`                         | Initialized all pages & routing to pages                                               | ✅ Merged             |
 | **2025-09-19** | Wikus  | `dev`                          | Set up Express backend, Docker Compose, and initial API routes                         | ✅ Merged             |
 | **2025-09-20** | Nina   | `feature/Nina-createAndJoin`   | Created Join Game Lobby static layout and navigation to `JoinGame.jsx`                 | ✅ Merged             |
 | **2025-09-20** | Kyle   | `feature/kyle-play-game`       | Implemented single player game play logic                                              | ✅ Merged             |
 | **2025-09-20** | Wikus  | `dev`                          | Added initial Prisma schema and basic user authentication                              | ✅ Merged             |
+| **2025-09-20** | Wikus  | `dev`                     | Integrated Nina’s changes and Docker Compose configuration for backend/frontend              | ✅ Merged              |
 | **2025-09-23** | Wikus  | `backend-setup`                | Integrated Prisma ORM, bcrypt hashing, and JWT auth middleware                         | ✅ Merged             |
 | **2025-09-25** | Wikus  | `backend-setup`                | Finalized database schema and migrations for Users, Matches, Questions                 | ✅ Merged             |
 | **2025-09-27** | Wikus  | `backend-setup`                | Added token validation middleware and protected route enforcement                      | ✅ Merged             |
+| **2025-09-28** | Wikus  | `feature/socket-backend`  | Added initial Socket.IO backend integration and test support                                 | ✅ Merged              |
 | **2025-09-29** | Kyle   | `feature/kyle-play-game`       | Implemented (hard-coded) multiplayer player game play logic                            | ✅ Merged             |
 | **2025-09-29** | Amy    | `feature/amy-lobby`            | Implement lobby feature, simulating players joining every 2 seconds                    | ✅ Merged             |
 | **2025-09-29** | Wikus  | `feature/wikus-auth`           | Implemented frontend JWT authentication; connected login/signup to backend             | ✅ Merged             |
@@ -77,20 +81,42 @@
 | **2025-10-10** | Kyle   | `feature/public-games`         | Removed hard coded public games                                                        | ✅ Merged             |
 | **2025-10-10** | Kyle   | `feature/public-games`         | Fixed navigation, ensure descriptive button labels                                     | ✅ Merged             |
 | **2025-10-10** | Kyle   | `feature/public-games`         | Implemented complete/incomplete game validation (stats discarded for incomplete games) | ✅ Merged             |
+| **2025-10-10** | Wikus  | `feature/wikus-prod`      | Implemented production Docker deployment workflow, Cloudflare tunnel setup                   | ✅ Merged              |
+| **2025-10-12** | Wikus  | `feature/deploy`          | Added deploy links, fixed favicon/title, deployment tested on Ubuntu hosting                 | ✅ Merged              |
+| **2025-10-13** | Wikus  | `feature/deploy`          | Completed production deployment with Makefile automation and Nginx reverse proxy             | ✅ Merged              |
 | **2025-10-11** | Conrad | `feature/conrad-admin`         | Implemented refresh tokens and the send, receive, accept and decline of game invites.  | ✅ Merged             |
 | **2025-10-12** | Kyle   | `feature/correct`              | Added correct answer viewing after each question and lobby max players                 | ✅ Merged             |
 | **2025-10-12** | Amy    | `feature/amy-scores`           | Add number-of-matches-played logic; add game wins counting; add best-score logic       | ✅ Merged             |
 | **2025-10-12** | Amy    | `feature/amy-scores`           | Settings page shows user-specific data (stats)                                         | ✅ Merged             |
 | **2025-10-13** | Amy    | `feature/amy-scores`           | Add leaderboard logic                                                                  | ✅ Merged             |
 | **2025-10-13** | Amy    | `feature/amy-scores`           | Add user match history to Landing page                                                 | ✅ Merged             |
+| **2025-10-14** | Wikus  | `feature/tiebreak`        | Added tiebreak logic, updated stats auth flow and round number handling                      | ✅ Merged              |
+| **2025-10-15** | Wikus  | `feature/stats-update`    | Fixed player stats persistence, improved delete and settings update flow                     | ✅ Merged              |
 | **2025-10-15** | Amy    | `feature/amy-scheduling`       | Initial scheduling logic for creating matches                                          | ✅ Merged             |
 | **2025-10-16** | Amy    | `feature/amy-scheduling`       | Working game scheduling; add scheduling UI styling                                     | ✅ Merged             |
 | **2025-10-17** | Kyle   | `feature/difficulty`           | Add question difficulty selecting and seed 20 Q's/cat                                  | ✅ Merged             |
+| **2025-10-17** | Wikus  | `feature/rounds`          | Added multi-round functionality, fixed round transition logic, logging improvements          | ✅ Merged              |
 | **2025-10-18** | Amy    | `feature/amy-scores`           | Remove notifications on leaderboard (cleanup/UX)                                       | ✅ Merged             |
 | **2025-10-18** | Kyle   | `feature/adminEdit`            | Add admin feature: edit questions manually                                             | ✅ Merged             |
 | **2025-10-18** | Conrad   | `feature/conrad-admin`       | Added email invites and fixed auth                                                     | ✅ Merged             |
 | **2025-10-18** | Conrad   | `feature/conrad-admin`       | Added scheduling for private games                                                     | ✅ Merged             |
 | **2025-10-18** | Conrad   | `feature/conrad-admin`       | Added multiple rounds                                                                  | ✅ Merged             |
+
+
+
+| Date           | Member | Branch / Commit           | Description of Work Done                                                                     | Commit / Merge Status |
+| -------------- | ------ | ------------------------- | -------------------------------------------------------------------------------------------- | --------------------- |
+
+
+    
+
+
+
+
+
+
+
+
 
 
 ## 🕒 Last Updated
