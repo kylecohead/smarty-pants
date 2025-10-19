@@ -45,6 +45,19 @@ const colors = {
   muted: "#94A3B8",
 };
 
+const categories = [
+  "All",
+  "General Knowledge",
+  "Science",
+  "Entertainment",
+  "Geography",
+  "Sports",
+  "Politics",
+];
+
+const difficulties = ["All", "Easy", "Medium", "Hard"];
+
+
 export default function JoinGameLobby() {
   const navigate = useNavigate();
 
@@ -250,14 +263,48 @@ export default function JoinGameLobby() {
               Public Games
             </h2>
 
-            {/* Search Filter */}
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            {/* Search */}
             <input
               type="text"
               placeholder="Search games..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white placeholder:text-pink-200/70 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
+              className="flex-1 rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white placeholder:text-pink-200/70 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
             />
+
+            {/* Category Filter */}
+            <select
+              value={categoryFilter}
+              onChange={(e) =>
+                setCategoryFilter(e.target.value === "All" ? "" : e.target.value)
+              }
+              className="rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
+            >
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+
+            {/* Difficulty Filter */}
+            <select
+              value={difficultyFilter}
+              onChange={(e) =>
+                setDifficultyFilter(e.target.value === "All" ? "" : e.target.value)
+              }
+              className="rounded-xl bg-pink-500/20 border-2 border-pink-400/40 text-white px-4 py-3 text-base outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
+            >
+              {difficulties.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </div>
+
 
             {loadingGames ? (
               <p className="text-center text-pink-200/80 text-lg">
