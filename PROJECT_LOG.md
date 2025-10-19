@@ -105,10 +105,6 @@
 | **2025-10-19** | Kyle   | `feature/adminSched`           | Add filtering and searching games for admins                                           | ✅ Merged             |
 
 
-| Date           | Member | Branch / Commit           | Description of Work Done                                                                     | Commit / Merge Status |
-| -------------- | ------ | ------------------------- | -------------------------------------------------------------------------------------------- | --------------------- |
-
-
     
 
 
@@ -121,6 +117,9 @@
 
 
 ## 🕒 Last Updated
+
+**Timestamp** 2025-10-19 13:05
+**Updated by** Wikus van Biljon
 
 **Timestamp** 2025-10-19 13:00
 **Updated by** Kyle Cohead
