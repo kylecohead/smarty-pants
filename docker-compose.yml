@@ -26,7 +26,7 @@ services:
       NODE_ENV: development
       ACCESS_TOKEN_SECRET: supersecretaccess
       REFRESH_TOKEN_SECRET: supersecretrefresh
-      BREVO_API_KEY: ***REMOVED***
+      BREVO_API_KEY: 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
       BREVO_SENDER_EMAIL: smartiep73@gmail.com
       FRONTEND_URL: http://localhost:5173
     ports:
