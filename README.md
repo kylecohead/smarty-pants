@@ -91,44 +91,6 @@ The following seeded accounts are available after running `make reset` or `make 
 
 ---
 
-## Project Structure
-Smartie-Pants/
-├── backend/
-│   ├── prisma/
-│   │   ├── schema.prisma
-│   │   └── seed.js
-│   ├── scripts/
-│   ├── src/
-│   │   ├── config/
-│   │   ├── middleware/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   ├── utils/
-│   │   ├── index.js
-│   │   └── socket.js
-│   ├── uploads/
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── contexts/
-│   │   ├── hooks/
-│   │   ├── modals/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   ├── utils/
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── vite.config.js
-│   └── Dockerfile
-├── docker-compose.yml
-├── docker-compose.prod.yml
-├── Makefile
-├── nginx.conf
-└── OpenTDB_API.postman_collection.json
-
----
-
 ## API Documentation
 
 This project consumes the [Open Trivia Database (OpenTDB)](https://opentdb.com/) API to populate the question bank via an automated scraping script. No questions are entered manually.
